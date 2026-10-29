@@ -122,6 +122,7 @@ namespace MazeParty.Multiplayer
                         return false;
                     }
                 }
+                RestoreTileAmplifier(snapshot, playerSnapshots);
                 RestoreBoardMines(snapshot.mines, mineOwnerSlots);
                 RestoreBoardWalls(snapshot.walls);
                 RestoreAchievements(snapshot, playerSnapshots);
@@ -212,6 +213,7 @@ namespace MazeParty.Multiplayer
 
             if (snapshot == null || controller == null ||
                 !AreMagicMazeSnapshotsValid(snapshot, _boardTopology) ||
+                !AreTileAmplifierSnapshotsValid(snapshot) ||
                 !BoardMapSelection.TryCreate(
                     snapshot.boardMapId,
                     snapshot.boardMapContentVersion,
@@ -574,6 +576,7 @@ namespace MazeParty.Multiplayer
                     MatchRecoveryFingerprint.CreatePlayerKey(playerId));
                 if (players[slot] != null)
                 {
+                    players[slot].usedTileAmplifier = HasUsedTileAmplifier(slot);
                     players[slot].achievementProgress = string.IsNullOrEmpty(_achievementMatchId)
                         ? string.Empty : JsonUtility.ToJson(_achievementPlayers[slot]);
                     foreach (var member in controller.CurrentSession.Players)
@@ -663,6 +666,8 @@ namespace MazeParty.Multiplayer
                 boardEffectSeed = _boardEffectSeed.Value,
                 boardEffectRevision = _boardEffectRevision.Value,
                 magicMazeWallGeneration = _magicMazeWallGeneration.Value,
+                magicMazeShuffledTurn = _magicMazeShuffledTurn,
+                tileAmplifierTurn = HasTileAmplifierForTurn(Turn) ? Turn : 0,
                 magicMazeEffects = CaptureMagicMazeEffects(),
                 boardMapId = CurrentBoardMapSelection.MapId,
                 boardMapContentVersion =

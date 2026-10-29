@@ -30,7 +30,7 @@ namespace MazeParty.Multiplayer.Tests
             Invoke("AdvanceMagicMazeOnServer",122d);Assert.That(_match.BoardEffectRevision,Is.EqualTo(revision+1));
             var saved=(MagicMazeEffectSnapshot[])typeof(NetworkMatchState).GetMethod("CaptureMagicMazeEffects",Private).Invoke(_match,null);
             var snapshot=new MatchRecoverySnapshot{boardMapId=MagicMazeRules.MapId,boardEffectSeed=42,boardEffectRevision=revision+1,
-                turn=3,scheduleTurnCount=15,checkpoint=MatchRecoveryCheckpoint.MinigameIntroReady,magicMazeEffects=saved};
+                turn=3,scheduleTurnCount=15,magicMazeShuffledTurn=3,checkpoint=MatchRecoveryCheckpoint.MinigameIntroReady,magicMazeEffects=saved};
             Assert.That(NetworkMatchState.AreMagicMazeSnapshotsValid(snapshot,_topology),Is.True);
             Invoke("InitializeMagicMazeOnServer");Invoke("RestoreBoardEffects",snapshot);
             foreach(var pair in saved)

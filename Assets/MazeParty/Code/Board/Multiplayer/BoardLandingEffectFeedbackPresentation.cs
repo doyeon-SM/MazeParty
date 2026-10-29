@@ -191,7 +191,9 @@ namespace MazeParty.Multiplayer
                     }
 
                     iconKind = BoardMapIconKind.Item;
-                    label = GameText.T("ITEM ACQUIRED");
+                    label = snapshot.SignedAmount > 1
+                        ? GameText.F("ITEMS ACQUIRED +{0}", snapshot.SignedAmount)
+                        : GameText.T("ITEM ACQUIRED");
                     return true;
                 default:
                     return false;

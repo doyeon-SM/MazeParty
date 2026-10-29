@@ -38,6 +38,47 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
         [Test]
+        public void TileAmplifier_CheckpointPreservesUsageRewardsAndShuffle_RejectsCorruption_AndMigratesV7()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var saved = CreateValidSnapshot();
+            saved.boardMapId = MagicMazeRules.MapId; saved.boardMapContentVersion = 1;
+            saved.magicMazeEffects = new[] { new MagicMazeEffectSnapshot(Vector2Int.zero, BoardLandingEffectType.ItemReward) };
+            saved.checkpoint = MatchRecoveryCheckpoint.MinigameIntroReady;
+            saved.currentMinigame = saved.scheduleEntries[saved.turn - 1];
+            saved.tileAmplifierTurn = saved.turn; saved.magicMazeShuffledTurn = saved.turn;
+            saved.players[0].usedTileAmplifier = true; saved.players[2].usedTileAmplifier = true;
+            saved.players[1].occupiedItemMask = 7;
+            saved.players[1].itemSlot0 = (byte)PrototypeItemId.Mine;
+            saved.players[1].itemSlot1 = (byte)PrototypeItemId.TileAmplifier;
+            saved.players[1].itemSlot2 = (byte)PrototypeItemId.Pistol;
+            var payload = codec.Encode(saved);
+            Assert.That(codec.TryDecode(payload, out var loaded), Is.True);
+            Assert.That(loaded.players[0].usedTileAmplifier && loaded.players[2].usedTileAmplifier, Is.True);
+            Assert.That(loaded.players[1].itemSlot1, Is.EqualTo((byte)PrototypeItemId.TileAmplifier));
+            Assert.That(loaded.magicMazeShuffledTurn, Is.EqualTo(2));
+            Assert.That(MatchRecoveryResumeRules.Resolve(loaded).State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            foreach (var bad in new[] { "map", "turn", "overview", "unshuffled", "future-shuffle", "no-users", "legacy" })
+            {
+                var broken = JsonUtility.FromJson<MatchRecoverySnapshot>(payload);
+                if (bad == "map") broken.boardMapId = "maze-graybox";
+                if (bad == "turn") broken.tileAmplifierTurn--;
+                if (bad == "overview") { broken.checkpoint = MatchRecoveryCheckpoint.TurnOverview; broken.currentMinigame = 0; }
+                if (bad == "unshuffled") broken.magicMazeShuffledTurn = 0;
+                if (bad == "future-shuffle") broken.magicMazeShuffledTurn++;
+                if (bad == "no-users") foreach (var player in broken.players) player.usedTileAmplifier = false;
+                if (bad == "legacy") broken.recoveryVersion = 7;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(broken), out _), Is.False, bad);
+            }
+            var legacy = CreateValidSnapshot(); legacy.recoveryVersion = 7; legacy.turn = 4;
+            legacy.boardMapId = MagicMazeRules.MapId; legacy.boardMapContentVersion = 1;
+            legacy.magicMazeEffects = saved.magicMazeEffects;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(legacy), out var migrated), Is.True);
+            Assert.That(migrated.magicMazeShuffledTurn, Is.EqualTo(3));
+            Assert.That(migrated.tileAmplifierTurn, Is.Zero);
+        }
+
+        [Test]
         public void SavedTurn_PreservesBothDiceForEverySlotRegardlessOfRollOrderAndGlobalRandom()
         {
             var snapshot = CreateValidSnapshot();
@@ -458,11 +499,11 @@ namespace MazeParty.Multiplayer.Tests
         public void Decode_ItemIdsPreserveActiveItemsAndRejectRetiredOrUnknownInventoryAndOffers()
         {
             var codec = new MatchRecoverySnapshotCodec();
-            foreach (var raw in new byte[] { 1, 2, 3, 9, 16, 255, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15 })
+            foreach (var raw in new byte[] { 1, 2, 3, 9, 17, 255, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16 })
             foreach (var inShop in new[] { false, true })
             {
                 var snapshot = CreateValidSnapshot();
-                var valid = raw >= 4 && raw <= 8 || raw >= 10 && raw <= 15;
+                var valid = raw >= 4 && raw <= 8 || raw >= 10 && raw <= 16;
                 if (inShop)
                     snapshot.itemShops[0] = new MatchRecoveryItemShopSnapshot
                     {

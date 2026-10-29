@@ -964,3 +964,6 @@ The previous connection could not be cleaned up. Please restart the game before 
 STUN,기절시키기,気絶させる,击晕,擊暈
 Magic Maze,마법미로,魔法迷路,魔法迷宫,魔法迷宮
 MAGIC MAZE,마법미로,魔法迷路,魔法迷宫,魔法迷宮
+"Tile Amplifier","칸 증폭기","マス増幅器","格子增幅器","格子增幅器"
+"ITEMS ACQUIRED +{0}","아이템 {0}개 획득","アイテムを{0}個獲得","获得{0}件道具","獲得{0}件道具"
+"Magic Maze only. Amplifies everyone's gold, health and item tiles this turn; events excluded. Each different user adds +1 to the multiplier (2x, 3x, 4x...). Once per player per turn. Gain up to 3 random items in empty slots. Reshuffles tiles once after this turn, except the final turn.","마법미로 전용. 이번 턴 모두의 골드·체력·아이템 칸 효과를 증폭합니다. 이벤트는 제외됩니다. 다른 사용자가 사용할 때마다 2→3→4배로 증가하며, 각 플레이어는 턴당 1회만 사용할 수 있습니다. 아이템은 빈 슬롯에 맞춰 최대 3개를 각각 무작위로 획득합니다. 마지막 턴을 제외하고 턴 종료 후 칸 효과를 한 번 재배치합니다.","魔法迷路専用。このターン全員のゴールド・HP・アイテムマス効果を増幅。イベントは対象外。使用者が増えるたび2→3→4倍に増加し、各プレイヤーは1ターン1回まで。空き枠に最大3個のランダムアイテムを獲得。最終ターン以外は終了後にマス効果を1回シャッフル。","魔法迷宫专用。本回合增强所有人的金币、生命和道具格效果，不含事件。每位新使用者使倍率增加1倍（2、3、4倍…），每人每回合限用一次。按空槽数量分别随机获得最多3件道具。除最终回合外，回合结束后重排格子效果一次。","魔法迷宮專用。本回合增強所有人的金幣、生命和道具格效果，不含事件。每位新使用者使倍率增加1倍（2、3、4倍…），每人每回合限用一次。按空槽數量分別隨機獲得最多3件道具。除最終回合外，回合結束後重排格子效果一次。"

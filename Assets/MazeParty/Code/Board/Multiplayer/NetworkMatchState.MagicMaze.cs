@@ -13,7 +13,7 @@ namespace MazeParty.Multiplayer
         private int _magicMazeShuffledTurn;
         public bool IsMagicMaze => BoardMapId == MagicMazeRules.MapId;
         public bool IsMagicMazeShuffle => IsMagicMaze && FlowState == BoardFlowState.MagicMazeChange &&
-            MagicMazeRules.ShufflesTiles(Turn, TotalTurns);
+            MagicMazeRules.ShufflesTiles(Turn, TotalTurns, HasTileAmplifierForTurn(Turn));
         public double MagicMazeElapsed => IsMagicMazeShuffle ? Math.Max(0d, MagicMazeRules.ShuffleDuration - StateRemaining) : 0d;
         public int MagicMazePreviewStep => IsMagicMazeShuffle ? MagicMazeRules.PreviewStep(MagicMazeElapsed) : -1;
         public int MagicMazeWallGeneration => _magicMazeWallGeneration.Value;
@@ -48,7 +48,7 @@ namespace MazeParty.Multiplayer
         {
             if (!IsServer || !IsMagicMaze || _flow == null || _flow.IsPaused ||
                 _flow.State != BoardFlowState.MagicMazeChange ||
-                !MagicMazeRules.ShufflesTiles(_flow.CurrentTurn, TotalTurns) ||
+                !MagicMazeRules.ShufflesTiles(_flow.CurrentTurn, TotalTurns, HasTileAmplifierForTurn(_flow.CurrentTurn)) ||
                 _magicMazeShuffledTurn == _flow.CurrentTurn ||
                 _flow.ToFlowTime(now) - _flow.StateStartedAt < MagicMazeRules.FinalIconAt) return;
             CommitMagicMazeShuffleOnServer();
@@ -56,7 +56,7 @@ namespace MazeParty.Multiplayer
         private void CommitMagicMazeShuffleOnServer()
         {
             if (!IsServer || !IsMagicMaze || _flow == null ||
-                !MagicMazeRules.ShufflesTiles(_flow.CurrentTurn, TotalTurns) ||
+                !MagicMazeRules.ShufflesTiles(_flow.CurrentTurn, TotalTurns, HasTileAmplifierForTurn(_flow.CurrentTurn)) ||
                 _magicMazeShuffledTurn == _flow.CurrentTurn || !EnsureBoardLandingEffectLayout()) return;
             var fixedTiles = GetMagicMazeFixedTiles();
             PublishMagicMazeEffects(MagicMazeRules.ShuffleEffects(_boardEffectLayout.Effects, fixedTiles,
@@ -111,16 +111,19 @@ namespace MazeParty.Multiplayer
             _magicMazeEffects.Clear();
             foreach (var effect in snapshot.magicMazeEffects) _magicMazeEffects.Add(effect);
             _magicMazeWallGeneration.Value = snapshot.magicMazeWallGeneration;
+            _magicMazeShuffledTurn = snapshot.magicMazeShuffledTurn;
             _cachedBoardEffectRevision = -1;
         }
         public static bool AreMagicMazeSnapshotsValid(MatchRecoverySnapshot snapshot, BoardTopology topology = null)
         {
             if (snapshot.magicMazeEffects == null) return false;
             if (snapshot.boardMapId != MagicMazeRules.MapId)
-                return snapshot.magicMazeEffects.Length == 0 && snapshot.magicMazeWallGeneration == 0;
+                return snapshot.magicMazeEffects.Length == 0 && snapshot.magicMazeWallGeneration == 0 && snapshot.magicMazeShuffledTurn == 0;
             var completedBoardTurn = snapshot.checkpoint == MatchRecoveryCheckpoint.TurnOverview ? snapshot.turn - 1 : snapshot.turn;
             completedBoardTurn = Math.Min(completedBoardTurn, snapshot.scheduleTurnCount - 1);
-            if (snapshot.magicMazeWallGeneration != completedBoardTurn / 5 ||
+            if (snapshot.magicMazeShuffledTurn < completedBoardTurn / 3 * 3 ||
+                snapshot.magicMazeShuffledTurn > completedBoardTurn ||
+                snapshot.magicMazeWallGeneration != completedBoardTurn / 5 ||
                 snapshot.magicMazeEffects.Length < 1 || snapshot.magicMazeEffects.Length > 1024) return false;
             var effects = new Dictionary<Vector2Int, BoardLandingEffectType>();
             foreach (var effect in snapshot.magicMazeEffects)

@@ -53,8 +53,8 @@ namespace MazeParty.Gameplay
         private Transform _firstPersonItemRoot;
         private GameObject _topViewHighlight;
         private GameObject _shieldVfx;
-        private readonly Transform[] _worldItemModels = new Transform[(int)PrototypeItemId.Wall + 1];
-        private readonly Transform[] _firstPersonItemModels = new Transform[(int)PrototypeItemId.Wall + 1];
+        private readonly Transform[] _worldItemModels = new Transform[byte.MaxValue + 1];
+        private readonly Transform[] _firstPersonItemModels = new Transform[byte.MaxValue + 1];
         private CapsuleCollider _bodyHitbox;
         private SphereCollider _headHitbox;
         private SphereCollider _leftHandHitbox;

@@ -66,9 +66,10 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(PrefabUtility.IsPartOfPrefabAsset(world.Chest), Is.True);
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {
-                PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak, PrototypeItemId.Bombardment, PrototypeItemId.GhostPass, PrototypeItemId.Wall }));
+                PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak, PrototypeItemId.Bombardment, PrototypeItemId.GhostPass, PrototypeItemId.Wall, PrototypeItemId.TileAmplifier }));
             var expectedWeaponModels = new Dictionary<PrototypeItemId, string>
             {
+                { PrototypeItemId.TileAmplifier, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
                 { PrototypeItemId.Wall, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
                 { PrototypeItemId.GhostPass, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
                 { PrototypeItemId.Bombardment, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
@@ -100,6 +101,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     AssetDatabase.GetAssetPath(definition.Icon),
                     Is.EqualTo(
+                        definition.Id == PrototypeItemId.TileAmplifier ? "Assets/MazeParty/Art/Icons/TileAmplifier.png" :
                         "Assets/Ignore/AIImage/Icons/TitleStyle/" + definition.Id + ".png"),
                     definition.Id.ToString());
                 Assert.That(itemIcons.Add(definition.Icon), Is.True,
@@ -140,7 +142,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(meshPaths, Does.Contain(expectedModelPath),
                     definition.Id + " must use its approved source model.");
             }
-            Assert.That(itemIcons.Count, Is.EqualTo(11));
+            Assert.That(itemIcons.Count, Is.EqualTo(12));
             var first = new System.Random(901);
             var second = new System.Random(901);
             var found = new System.Collections.Generic.HashSet<PrototypeItemId>();

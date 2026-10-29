@@ -12,10 +12,10 @@ namespace MazeParty.Gameplay
         public const double FinalIconAt = BoardCameraCloudTiming.Duration + IconChanges * IconInterval;
         public const double ExitCloudAt = FinalIconAt + 1d;
         public const double ShuffleDuration = ExitCloudAt + BoardCameraCloudTiming.Duration;
-        public static bool ShufflesTiles(int turn, int total) => turn > 0 && turn < total && turn % 3 == 0;
+        public static bool ShufflesTiles(int turn, int total, bool requested = false) => turn > 0 && turn < total && (requested || turn % 3 == 0);
         public static bool ChangesWalls(int turn, int total) => turn > 0 && turn < total && turn % 5 == 0;
-        public static bool ChangesMap(int turn, int total) => ShufflesTiles(turn, total) || ChangesWalls(turn, total);
-        public static double Duration(int turn, int total) => ShufflesTiles(turn, total) ? ShuffleDuration : 0d;
+        public static bool ChangesMap(int turn, int total, bool requested = false) => ShufflesTiles(turn, total, requested) || ChangesWalls(turn, total);
+        public static double Duration(int turn, int total, bool requested = false) => ShufflesTiles(turn, total, requested) ? ShuffleDuration : 0d;
         // Nearest integer, with half rounded up. The same count is kept for every generation.
         public static int InactiveWallCount(int count) => (count * 3 + 5) / 10;
         public static int PreviewStep(double elapsed) => elapsed < BoardCameraCloudTiming.Duration || elapsed >= FinalIconAt

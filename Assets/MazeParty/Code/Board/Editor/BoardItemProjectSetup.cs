@@ -192,6 +192,7 @@ namespace MazeParty.Editor
             EnsureBombardmentAsset();
             EnsureGhostPassAsset();
             EnsureWallAsset();
+            EnsureTileAmplifierAsset();
             SharedVfxProjectSetup.EnsureBoardItemBindings(
                 explosion,
                 impact,

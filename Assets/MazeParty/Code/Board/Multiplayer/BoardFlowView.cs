@@ -939,7 +939,8 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
                 _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
                 !BoardUtilityItemView.IsTargetPickerOpen &&
-                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass || item == PrototypeItemId.Wall));
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass || item == PrototypeItemId.Wall ||
+                 item == PrototypeItemId.TileAmplifier && !match.HasUsedTileAmplifier(_localAvatar.AssignedSlot)));
         }
 
         private void RefreshInteractionPrompt()
@@ -1083,7 +1084,7 @@ namespace MazeParty.Multiplayer
 
             for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
-                uiBindings.Hud.PresentGhostPass(slot, match.HasUsedGhostPass(slot), _hudFeedbackNow);
+                uiBindings.Hud.PresentGhostPass(slot, match.HasUsedGhostPass(slot) || match.ShowTileAmplifierOutline(slot), _hudFeedbackNow);
                 var isPresent = match.IsPlayerPresent(slot);
                 var avatar = match.GetAvatarForSlot(slot);
                 SetText(_playerHudRows[slot].Name, ResolveBoardPlayerName(avatar, slot));

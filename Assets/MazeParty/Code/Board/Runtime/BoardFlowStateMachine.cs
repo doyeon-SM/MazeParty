@@ -83,6 +83,8 @@ namespace MazeParty.Gameplay
         private bool _actionTimeoutDeferred;
         private bool _ascendingResolveDeferred;
         private readonly bool _magicMaze;
+        private bool _magicMazeShuffleRequested;
+        private double MagicMazeChangeDuration => MagicMazeRules.Duration(CurrentTurn, TotalTurns, _magicMazeShuffleRequested);
 
         public BoardFlowStateMachine(
             GameplayPhaseClock actionClock = null,
@@ -131,6 +133,7 @@ namespace MazeParty.Gameplay
                 throw new ArgumentOutOfRangeException(nameof(startingTurn));
 
             ActionClock.Stop();
+            _magicMazeShuffleRequested = false;
             IsStarted = true;
             IsPaused = false;
             CurrentTurn = startingTurn;
@@ -179,6 +182,7 @@ namespace MazeParty.Gameplay
             }
 
             ActionClock.Stop();
+            _magicMazeShuffleRequested = false;
             IsStarted = true;
             IsPaused = false;
             CurrentTurn = turn;
@@ -291,7 +295,7 @@ namespace MazeParty.Gameplay
                         if (logicalNow >= boundary && !deferLandingEffectResolve)
                         {
                             // A late frame must not consume the next screen's ready time.
-                            TransitionTo(_magicMaze && MagicMazeRules.ChangesMap(CurrentTurn, TotalTurns)
+                            TransitionTo(_magicMaze && MagicMazeRules.ChangesMap(CurrentTurn, TotalTurns, _magicMazeShuffleRequested)
                                 ? BoardFlowState.MagicMazeChange : BoardFlowState.MinigameIntroReady, logicalNow);
                             // Give the authoritative owner a tick to settle map mutations before leaving.
                             keepAdvancing = false;
@@ -301,7 +305,7 @@ namespace MazeParty.Gameplay
                     }
                     case BoardFlowState.MagicMazeChange:
                     {
-                        if (logicalNow >= _stateStartedAt + MagicMazeRules.Duration(CurrentTurn, TotalTurns))
+                        if (logicalNow >= _stateStartedAt + MagicMazeChangeDuration)
                             TransitionTo(BoardFlowState.MinigameIntroReady, logicalNow);
                         break;
                     }
@@ -329,6 +333,14 @@ namespace MazeParty.Gameplay
 
             if (transitions > TransitionSafetyLimit)
                 throw new InvalidOperationException("Board flow exceeded its transition safety limit.");
+        }
+
+        public bool TryRequestMagicMazeShuffle()
+        {
+            if (!_magicMaze || !IsStarted || IsPaused || State != BoardFlowState.Action || CurrentTurn >= TotalTurns)
+                return false;
+            _magicMazeShuffleRequested = true;
+            return true;
         }
 
         public bool TryReportPlayerArrived(int playerSlot, double synchronizedNow)
@@ -536,7 +548,7 @@ namespace MazeParty.Gameplay
                         _landingEffectResolveDurationSeconds,
                         logicalNow);
                 case BoardFlowState.MagicMazeChange:
-                    return Remaining(_stateStartedAt, MagicMazeRules.Duration(CurrentTurn, TotalTurns), logicalNow);
+                    return Remaining(_stateStartedAt, MagicMazeChangeDuration, logicalNow);
                 case BoardFlowState.MinigameIntroReady:
                     return Remaining(_stateStartedAt, MinigameIntroReadyDurationSeconds, logicalNow);
                 case BoardFlowState.MinigameLoading:
@@ -605,6 +617,7 @@ namespace MazeParty.Gameplay
                 return;
             }
 
+            _magicMazeShuffleRequested = false;
             CurrentTurn++;
             _arrivedPlayerMask = 0;
             LastActionEndReason = BoardActionEndReason.None;

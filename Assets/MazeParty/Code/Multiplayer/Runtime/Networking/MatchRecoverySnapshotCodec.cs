@@ -61,6 +61,21 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
+            if (snapshot.recoveryVersion >= 1 && snapshot.recoveryVersion <= MatchRecoverySnapshot.LegacyRecoveryVersionWithoutTileAmplifier)
+            {
+                if (snapshot.tileAmplifierTurn != 0 || snapshot.magicMazeShuffledTurn != 0 || snapshot.players == null)
+                    return false;
+                foreach (var player in snapshot.players)
+                    if (player == null || player.usedTileAmplifier) return false;
+                if (snapshot.recoveryVersion == MatchRecoverySnapshot.LegacyRecoveryVersionWithoutTileAmplifier)
+                {
+                    var completed = snapshot.checkpoint == MatchRecoveryCheckpoint.TurnOverview ? snapshot.turn - 1 : snapshot.turn;
+                    snapshot.magicMazeShuffledTurn = snapshot.boardMapId == MagicMazeRules.MapId
+                        ? Math.Min(completed, snapshot.scheduleTurnCount - 1) / 3 * 3 : 0;
+                    snapshot.recoveryVersion = MatchRecoverySnapshot.CurrentRecoveryVersion;
+                    return true;
+                }
+            }
             if (snapshot.recoveryVersion >= 1 && snapshot.recoveryVersion <= MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMagicMaze)
             {
                 if (snapshot.boardMapId == MagicMazeRules.MapId || snapshot.magicMazeWallGeneration != 0 ||
@@ -169,6 +184,7 @@ namespace MazeParty.Multiplayer
                 snapshot.itemShops.Length != ItemShopRules.ShopCount ||
                 snapshot.mines == null ||
                 !NetworkMatchState.AreMagicMazeSnapshotsValid(snapshot) ||
+                !NetworkMatchState.AreTileAmplifierSnapshotsValid(snapshot) ||
                 !NetworkMatchState.AreWallSnapshotsValid(snapshot.walls, snapshot.boardMapId, snapshot.turn, snapshot.checkpoint) ||
                 !NetworkMatchState.AreChestSnapshotsValid(snapshot.chests, snapshot.turn) ||
                 !TryDecodeMinigameSeed(snapshot.currentMinigameSeed, out _))

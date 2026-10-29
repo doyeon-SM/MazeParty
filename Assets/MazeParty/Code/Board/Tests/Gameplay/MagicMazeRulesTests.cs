@@ -42,6 +42,34 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(MagicMazeRules.PreviewStep(4.5), Is.EqualTo(-1));
         }
         [Test]
+        public void ItemRequestedShuffle_UsesFullTimelineOnce_PreservesPeriodicSchedule_AndSkipsFinalTurn()
+        {
+            foreach (var turn in new[] { 2, 3, 5, 15 })
+            {
+                var flow = new BoardFlowStateMachine(totalTurns: 15, magicMaze: true);
+                flow.Start(0, turn);
+                Assert.That(flow.TryRequestMagicMazeShuffle(), Is.False);
+                flow.Tick(7);
+                for (var use = 0; use < 4; use++) Assert.That(flow.TryRequestMagicMazeShuffle(), Is.EqualTo(turn < 15));
+                for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 8);
+                flow.Tick(13); flow.TryCompleteCombat(13); flow.Tick(17);
+                if (turn == 15) { Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady)); continue; }
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MagicMazeChange));
+                Assert.That(flow.GetStateRemaining(17), Is.EqualTo(7.5d));
+                flow.Pause(21.5); flow.Resume(121.5);
+                flow.Tick(124.499); Assert.That(flow.State, Is.EqualTo(BoardFlowState.MagicMazeChange));
+                flow.Tick(124.5); Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+                flow.TrySkipMinigame(124.5); flow.Tick(127.5); flow.Tick(134.5);
+                for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 135.5);
+                flow.Tick(140.5); flow.TryCompleteCombat(140.5); flow.Tick(144.5);
+                Assert.That(flow.State, Is.EqualTo(MagicMazeRules.ChangesMap(turn + 1, 15)
+                    ? BoardFlowState.MagicMazeChange : BoardFlowState.MinigameIntroReady));
+            }
+            var normal = new BoardFlowStateMachine(); normal.Start(0); normal.Tick(7);
+            Assert.That(normal.TryRequestMagicMazeShuffle(), Is.False);
+        }
+
+        [Test]
         public void WallRotation_PreservesCount_ExcludesPrevious_AndReplaysExactly()
         {
             foreach(var count in new[]{4,31,94,100,104})

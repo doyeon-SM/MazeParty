@@ -1229,6 +1229,7 @@ namespace MazeParty.Multiplayer
             switch (transition.Current)
             {
                 case BoardFlowState.TurnOverview:
+                    ResetTileAmplifierOnServer();
                     EndAllMinigameRuntimes();
                     _selectedMinigameNetworkLoadCompleted = false;
                     ResetCombatRuntimeOnServer();

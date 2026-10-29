@@ -346,7 +346,7 @@ namespace MazeParty.Multiplayer
                 case BoardLandingEffectType.GoldGain:
                 case BoardLandingEffectType.GoldLoss:
                     var goldDelta = avatar.ApplyGoldDeltaOnServer(
-                        BoardLandingEffectLayout.GetGoldDelta(effect));
+                        BoardLandingEffectLayout.GetGoldDelta(effect) * LandingEffectMultiplier);
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
@@ -364,7 +364,7 @@ namespace MazeParty.Multiplayer
                 case BoardLandingEffectType.Healing20:
                 case BoardLandingEffectType.Healing10:
                     var healed = avatar.HealOnServer(
-                        BoardLandingEffectLayout.GetHealthDelta(effect));
+                        BoardLandingEffectLayout.GetHealthDelta(effect) * LandingEffectMultiplier);
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
@@ -380,7 +380,7 @@ namespace MazeParty.Multiplayer
                 case BoardLandingEffectType.Damage20:
                     var healthBefore = avatar.CurrentHealth;
                     avatar.ApplyDamage(new DamageRequest(
-                        -BoardLandingEffectLayout.GetHealthDelta(effect),
+                        -BoardLandingEffectLayout.GetHealthDelta(effect) * LandingEffectMultiplier,
                         DamageKind.Environment,
                         null));
                     var damage = Math.Max(0, healthBefore - avatar.CurrentHealth);
@@ -419,29 +419,22 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             BoardTile tile)
         {
-            var random = new System.Random(unchecked(
-                _boardEffectSeed.Value ^ (_turn.Value * 486187739) ^
-                (slot * 16777619)));
-            var reward = PrototypeItemCatalog.GetRandomId(random, BoardMapId);
-            if (avatar.TryAddItemOnServer(reward))
+            var random = new System.Random(GetLandingItemRewardSeed(slot));
+            var count = 0;
+            var lastReward = PrototypeItemId.None;
+            for (var index = 0; index < Math.Min(3, LandingEffectMultiplier); index++)
             {
-                PublishLandingEffectOnServer(
-                    slot,
-                    tile,
-                    BoardLandingEffectType.ItemReward,
-                    GameText.N("ITEM ACQUIRED"));
-                PublishLandingEffectFeedbackOnServer(
-                    slot,
-                    BoardLandingEffectFeedbackKind.Item,
-                    itemId: reward);
-                return;
+                var reward = PrototypeItemCatalog.GetRandomId(random, BoardMapId);
+                if (!avatar.TryAddItemOnServer(reward)) break;
+                count++;
+                lastReward = reward;
             }
-
-            PublishLandingEffectOnServer(
-                slot,
-                tile,
-                BoardLandingEffectType.ItemReward,
-                GameText.N("ITEM REWARD +0 (INVENTORY FULL)"));
+            PublishLandingEffectOnServer(slot, tile, BoardLandingEffectType.ItemReward,
+                count > 1 ? GameText.N("ITEMS ACQUIRED +{0}") :
+                count == 1 ? GameText.N("ITEM ACQUIRED") : GameText.N("ITEM REWARD +0 (INVENTORY FULL)"),
+                count.ToString(CultureInfo.InvariantCulture));
+            if (count > 0)
+                PublishLandingEffectFeedbackOnServer(slot, BoardLandingEffectFeedbackKind.Item, count, itemId: lastReward);
         }
 
         private void ResolveSpecialEventOnServer(

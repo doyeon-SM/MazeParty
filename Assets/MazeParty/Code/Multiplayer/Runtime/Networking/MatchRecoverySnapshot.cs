@@ -26,7 +26,8 @@ namespace MazeParty.Multiplayer
         public const int LegacyRecoveryVersionWithoutGameSettings = 4;
         public const int LegacyRecoveryVersionWithoutWalls = 5;
         public const int LegacyRecoveryVersionWithoutMagicMaze = 6;
-        public const int CurrentRecoveryVersion = 7;
+        public const int LegacyRecoveryVersionWithoutTileAmplifier = 7;
+        public const int CurrentRecoveryVersion = 8;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public string originalHostPlayerKey = string.Empty;
@@ -48,6 +49,8 @@ namespace MazeParty.Multiplayer
         public int boardEffectSeed;
         public int boardEffectRevision;
         public int magicMazeWallGeneration;
+        public int magicMazeShuffledTurn;
+        public int tileAmplifierTurn;
         public MagicMazeEffectSnapshot[] magicMazeEffects = Array.Empty<MagicMazeEffectSnapshot>();
         public string boardMapId = string.Empty;
         public int boardMapContentVersion;
@@ -66,6 +69,7 @@ namespace MazeParty.Multiplayer
     public sealed class MatchRecoveryPlayerSnapshot
     {
         public string playerKey = string.Empty;
+        public bool usedTileAmplifier;
         // JSON string preserves absence; Unity expands null inline objects into default instances.
         public string achievementProgress = string.Empty;
         public string displayName = string.Empty;
