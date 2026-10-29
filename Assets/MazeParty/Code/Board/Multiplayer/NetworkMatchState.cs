@@ -1890,34 +1890,21 @@ namespace MazeParty.Multiplayer
             _nextPunchAllowedAt[slot] = now + BoardCombatRules.PunchCooldownSeconds;
             attacker.PresentPunchOnServer();
             var direction = authoritativeDirection;
-            var hits = Physics.SphereCastAll(
-                authoritativeOrigin,
-                BoardCombatRules.PunchRadius,
-                direction,
-                BoardCombatRules.PunchRange,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
-            NetworkPlayerAvatar target = null;
-            var closestDistance = float.MaxValue;
-            for (var i = 0; i < hits.Length; i++)
-            {
-                var candidate = hits[i].collider != null
-                    ? hits[i].collider.GetComponentInParent<NetworkPlayerAvatar>()
-                    : null;
-                if (candidate == null || candidate == attacker ||
-                    !IsCombatParticipant(candidate.AssignedSlot) ||
-                    !IsCombatAlive(candidate.AssignedSlot) ||
-                    candidate.LogicalBoardTileCoordinate != _combatTile.Value ||
-                    hits[i].distance >= closestDistance)
+            var didHit = BoardItemPhysics.Cast(
+                authoritativeOrigin, direction, BoardCombatRules.PunchRange,
+                attacker.gameObject, out var contact, BoardCombatRules.PunchRadius,
+                hitZonesOnly: true,
+                playerFilter: collider =>
                 {
-                    continue;
-                }
-
-                target = candidate;
-                closestDistance = hits[i].distance;
-            }
-
-            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now);
+                    var candidate = collider.GetComponentInParent<NetworkPlayerAvatar>();
+                    return candidate != null && candidate != attacker &&
+                        IsCombatParticipant(candidate.AssignedSlot) &&
+                        IsCombatAlive(candidate.AssignedSlot) &&
+                        candidate.LogicalBoardTileCoordinate == _combatTile.Value;
+                });
+            var target = didHit ? contact.collider.GetComponentInParent<NetworkPlayerAvatar>() : null;
+            var region = PlayerHitDamageRules.RegionOf(didHit ? contact.collider : null);
+            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now, region);
             if (target == null)
             {
                 return true;
@@ -1932,10 +1919,13 @@ namespace MazeParty.Multiplayer
             }
             knockbackDirection.Normalize();
 
+            CombatHitVfx.ResolveContact(contact, authoritativeOrigin, direction,
+                BoardCombatRules.PunchRange, out var hitPoint, out var hitNormal);
             var eliminated = target.ApplyCombatPunchOnServer(
                 attacker,
                 knockbackDirection * BoardCombatRules.PunchKnockbackSpeed,
-                damage);
+                damage, region);
+            PresentCombatHitSparkRpc(hitPoint, hitNormal);
             if (!eliminated)
             {
                 return true;
@@ -1954,6 +1944,12 @@ namespace MazeParty.Multiplayer
                 ResolveCurrentCombatOnServer(now);
             }
             return true;
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentCombatHitSparkRpc(Vector3 point, Vector3 normal)
+        {
+            FindAnyObjectByType<BoardFlowCameraPresenter>()?.PresentCombatHitSpark(point, normal);
         }
 
         internal void PublishBoardKillOnServer(

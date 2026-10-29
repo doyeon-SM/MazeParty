@@ -30,6 +30,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardLandingEffectFeedbackView
             landingEffectFeedbackPrefab;
         [SerializeField] private GameObject landingEventLightningPrefab;
+        [SerializeField] private GameObject combatHitSparkVfxPrefab;
         [SerializeField] private GameObject landingGiftPrefab;
         [SerializeField] private GameObject landingHealingShieldPrefab;
         [SerializeField, Min(0f)] private float resourceTransferHeadOffset = 0.3f;
@@ -127,6 +128,17 @@ namespace MazeParty.Multiplayer
             OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
         }
 
+        public void ConfigureCombatHitSpark(GameObject prefab)
+        {
+            combatHitSparkVfxPrefab = prefab;
+            OneShotVfxPool.Prewarm(combatHitSparkVfxPrefab, 4);
+        }
+
+        public void PresentCombatHitSpark(Vector3 point, Vector3 normal)
+        {
+            CombatHitVfx.Play(combatHitSparkVfxPrefab, point, normal);
+        }
+
         public void ConfigureLandingRewardAssets(GameObject giftPrefab, GameObject healingShieldPrefab)
         {
             landingGiftPrefab = giftPrefab;
@@ -138,6 +150,7 @@ namespace MazeParty.Multiplayer
             BindCameraEvents();
             if (localPlayerMarker != null) localPlayerMarker.Hide();
             OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
+            OneShotVfxPool.Prewarm(combatHitSparkVfxPrefab, 4);
         }
 
         private void OnDisable()
@@ -412,7 +425,7 @@ namespace MazeParty.Multiplayer
                 var bit = (byte)(1 << snapshot.Slot);
                 if ((_landingEventPlayedMask & bit) == 0 && landingEventLightningPrefab != null)
                 {
-                    OneShotVfxPool.Play(landingEventLightningPrefab, avatar.transform.position,
+                    OneShotVfxPool.Play(landingEventLightningPrefab, PlayerAvatarVisual.GetFeetPosition(avatar.transform),
                         Quaternion.identity, (float)BoardEffectShotTiming.Motion);
                     _landingEventPlayedMask |= bit;
                 }

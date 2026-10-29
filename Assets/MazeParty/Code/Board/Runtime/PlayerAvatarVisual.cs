@@ -108,6 +108,13 @@ namespace MazeParty.Gameplay
         private Color _bodyColor = DefaultBodyColor;
         private bool _mouthBlowing;
 
+        // Standing and crouching controllers share the same foot plane.
+        public static Vector3 GetFeetPosition(Transform root)
+        {
+            return root.TransformPoint(Vector3.up *
+                (StandingControllerCenterY - StandingControllerHeight * 0.5f));
+        }
+
         public bool IsBuilt => _worldModel != null;
         public PlayerAvatarPresentationBindings Bindings => bindings;
         public bool IsCrouching => _crouching;

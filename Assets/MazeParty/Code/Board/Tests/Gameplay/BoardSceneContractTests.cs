@@ -134,6 +134,10 @@ namespace MazeParty.Gameplay.Tests
                 var presenter = scene.GetRootGameObjects()
                     .SelectMany(go => go.GetComponentsInChildren<MonoBehaviour>(true))
                     .Single(c => c != null && c.GetType().FullName == "MazeParty.Multiplayer.BoardFlowCameraPresenter");
+                var hitSpark = new SerializedObject(presenter).FindProperty("combatHitSparkVfxPrefab").objectReferenceValue;
+                Assert.That(hitSpark, Is.SameAs(AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/VFX/ArenaCombatHitSpark.prefab")),
+                    "Board combat must keep the same authored hit VFX as ArenaCombat.");
                 var ghost = (Component)new SerializedObject(presenter).FindProperty("forestGhostPrefab").objectReferenceValue;
                 Assert.That(ghost, Is.Not.Null);
                 Assert.That(AssetDatabase.GetAssetPath(ghost),

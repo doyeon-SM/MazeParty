@@ -1198,10 +1198,11 @@ namespace MazeParty.Multiplayer
             _serverPitch = 0f;
         }
 
-        public int ResolveCombatPunchDamageOnServer(bool hit, double now)
+        public int ResolveCombatPunchDamageOnServer(bool hit, double now,
+            PlayerHitRegion region = PlayerHitRegion.Body)
         {
             if (!IsServer || !IsCombatAlive) return 0;
-            var damage = _combatPunchSequence.Resolve(hit, now, _combatHealth.Value);
+            var damage = _combatPunchSequence.Resolve(hit, now, _combatHealth.Value, region);
             if (damage > 0 && _combatPunchSequence.LastStrike == 3)
                 NetworkMatchState.Instance?.RecordAchievementOnServer(AssignedSlot, PartyAchievement.ThreePunches);
             return damage;
@@ -1220,7 +1221,8 @@ namespace MazeParty.Multiplayer
         public bool ApplyCombatPunchOnServer(
             NetworkPlayerAvatar attacker,
             Vector3 knockbackVelocity,
-            int damage)
+            int damage,
+            PlayerHitRegion region = PlayerHitRegion.Body)
         {
             if (!IsServer || CombatState != NetworkCombatState.Active ||
                 _combatHealth.Value <= 0 || damage <= 0)
@@ -1235,7 +1237,7 @@ namespace MazeParty.Multiplayer
             RecordDamageOnServer(appliedDamage, attacker);
             NetworkMatchState.Instance?.RecordStatisticsDamageOnServer(this, attacker, appliedDamage, -1);
             BeginBoardKnockdownOnServer(appliedDamage, _combatHealth.Value > 0);
-            PresentHitRpc((byte)PlayerHitRegion.Body, true, damage);
+            PresentHitRpc((byte)region, true, damage);
             if (_combatHealth.Value > 0)
             {
                 if (!IsKnockedDown) _combatKnockbackVelocity += Vector3.ClampMagnitude(

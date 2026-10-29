@@ -75,16 +75,21 @@ namespace MazeParty.Multiplayer
                     direction,
                     item.Range,
                     avatar.gameObject,
-                    out var hit);
+                    out var hit,
+                    hitZonesOnly: true);
                 var hitPlayer = false;
                 if (didHit)
                 {
                     endpoint = hit.point;
                     var target = hit.collider.GetComponentInParent<NetworkPlayerAvatar>();
                     hitPlayer = target != null;
-                    if (hitPlayer) target.ApplyDamage(new DamageRequest(
-                        item.Damage, DamageKind.Item, avatar.gameObject,
-                        itemId: id));
+                    if (hitPlayer)
+                    {
+                        var region = PlayerHitDamageRules.RegionOf(hit.collider);
+                        var damage = PlayerHitDamageRules.ApplyRegionMultiplier(item.Damage, region);
+                        target.ApplyDamage(new DamageRequest(
+                            damage, DamageKind.Item, avatar.gameObject, region, id));
+                    }
                 }
                 PresentBoardShotRpc(origin, endpoint, (byte)id, didHit, hitPlayer);
             }

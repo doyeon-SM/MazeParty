@@ -237,35 +237,20 @@ namespace MazeParty.Multiplayer
             _nextPunchAllowedAt[slot] =
                 now + BoardCombatRules.PunchCooldownSeconds;
             attacker.PresentPunchOnServer();
-            var hits = Physics.SphereCastAll(
-                authoritativeOrigin,
-                BoardCombatRules.PunchRadius,
-                direction,
-                BoardCombatRules.PunchRange,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
-            NetworkPlayerAvatar target = null;
-            var closestDistance = float.MaxValue;
-            var contact = default(RaycastHit);
-            for (var index = 0; index < hits.Length; index++)
-            {
-                var candidate = hits[index].collider != null
-                    ? hits[index].collider.GetComponentInParent<NetworkPlayerAvatar>()
-                    : null;
-                if (candidate == null || candidate == attacker ||
-                    !TryResolveAuthoritativeSlot(candidate, out var targetSlot) ||
-                    !CanAcceptInputForSlot(targetSlot) ||
-                    hits[index].distance >= closestDistance)
+            var didHit = BoardItemPhysics.Cast(
+                authoritativeOrigin, direction, BoardCombatRules.PunchRange,
+                attacker.gameObject, out var contact, BoardCombatRules.PunchRadius,
+                hitZonesOnly: true,
+                playerFilter: collider =>
                 {
-                    continue;
-                }
-
-                target = candidate;
-                closestDistance = hits[index].distance;
-                contact = hits[index];
-            }
-
-            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now);
+                    var candidate = collider.GetComponentInParent<NetworkPlayerAvatar>();
+                    return candidate != null && candidate != attacker &&
+                        TryResolveAuthoritativeSlot(candidate, out var targetSlot) &&
+                        CanAcceptInputForSlot(targetSlot);
+                });
+            var target = didHit ? contact.collider.GetComponentInParent<NetworkPlayerAvatar>() : null;
+            var region = PlayerHitDamageRules.RegionOf(didHit ? contact.collider : null);
+            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now, region);
             if (target == null)
             {
                 return true;
@@ -280,22 +265,14 @@ namespace MazeParty.Multiplayer
             }
             knockbackDirection.Normalize();
 
-            // Capture before damage can disable the victim's colliders. Sphere casts
-            // starting in an overlap have an undefined point, so use the surface.
-            var hitPoint = contact.distance > 0.0001f
-                ? contact.point
-                : contact.collider.ClosestPoint(authoritativeOrigin);
-            if (contact.distance <= 0.0001f && (hitPoint - authoritativeOrigin).sqrMagnitude < 0.0001f)
-                hitPoint = contact.collider.ClosestPoint(authoritativeOrigin - direction *
-                    (contact.collider.bounds.size.magnitude + BoardCombatRules.PunchRange));
-            var hitNormal = contact.distance > 0.0001f && contact.normal.sqrMagnitude > 0.0001f
-                ? contact.normal.normalized : -direction;
+            CombatHitVfx.ResolveContact(contact, authoritativeOrigin, direction,
+                BoardCombatRules.PunchRange, out var hitPoint, out var hitNormal);
 
             var eliminated = target.ApplyCombatPunchOnServer(
                 attacker,
                 knockbackDirection *
                 BoardCombatRules.PunchKnockbackSpeed,
-                damage);
+                damage, region);
             PresentHitSparkRpc(hitPoint, hitNormal);
             if (!eliminated)
             {

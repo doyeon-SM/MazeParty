@@ -126,7 +126,8 @@ namespace MazeParty.Multiplayer
                     direction,
                     PrototypeItemCatalog.Get(itemId).Range,
                     gameObject,
-                    out var hit))
+                    out var hit,
+                    hitZonesOnly: true))
             {
                 return false;
             }

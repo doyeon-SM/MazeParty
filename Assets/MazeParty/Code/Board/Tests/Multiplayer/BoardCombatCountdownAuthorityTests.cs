@@ -7,6 +7,7 @@ using Unity.Netcode;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.TestTools;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -161,6 +162,78 @@ namespace MazeParty.Multiplayer.Tests
             view.SetCountdown(3, true, false);
             Assert.That(view.IsVisible, Is.True, "Shared minigame countdown still works");
             Assert.That(prompt.gameObject.activeSelf, Is.False, "Minigames do not show board combat prompt");
+        }
+
+        [Test]
+        public void BoardAndArenaPunches_UseServerHitRegionsAndRespectCover()
+        {
+            var attacker = _players[0];
+            var victim = _players[1];
+            var origin = new Vector3(1000f, 1000f, 1000f);
+            attacker.transform.position = origin;
+            victim.transform.position = origin + Vector3.forward * 1.4f;
+            var eye = new GameObject("Punch eye").transform;
+            eye.SetParent(attacker.transform, false);
+            eye.localPosition = Vector3.up * 0.75f;
+            typeof(NetworkPlayerAvatar).GetField("eyePivot", Private).SetValue(attacker, eye);
+            victim.gameObject.AddComponent<PlayerHitZoneOwner>();
+            var hitbox = new GameObject("Authored hit region");
+            hitbox.transform.SetParent(victim.transform, false);
+            hitbox.transform.localPosition = Vector3.up * 0.75f;
+            var sphere = hitbox.AddComponent<SphereCollider>();
+            sphere.radius = 0.2f;
+            sphere.isTrigger = true;
+            var zone = hitbox.AddComponent<PlayerHitZone>();
+            var wall = Child("Solid cover").AddComponent<BoxCollider>();
+            wall.transform.position = eye.position + Vector3.forward * 0.65f;
+            wall.size = new Vector3(2f, 2f, 0.1f);
+            for (var slot = 0; slot < 2; slot++)
+            {
+                Set(_players[slot], "_hasLogicalTile", true);
+                Set(_players[slot], "_logicalTileCoordinate", Vector2Int.zero);
+            }
+            Set(_match, "_combatEndsAt", _match.SynchronizedNow + 30d);
+            var arena = Child("Arena runtime").AddComponent<NetworkArenaCombatState>();
+            typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(arena, true);
+            typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(arena, true);
+            var arenaPlayers = (NetworkPlayerAvatar[])typeof(NetworkArenaCombatState)
+                .GetField("_avatars", Private).GetValue(arena);
+            System.Array.Copy(_players, arenaPlayers, 4);
+            Set(arena, "_matchActive", true);
+            Set(arena, "_phase", (byte)NetworkArenaCombatPhase.Playing);
+            Set(arena, "_phaseEndsAt", _match.SynchronizedNow + 30d);
+
+            foreach (var arenaMode in new[] { false, true })
+                foreach (var region in new[] { PlayerHitRegion.Head, PlayerHitRegion.Body, PlayerHitRegion.Hand })
+                    foreach (var covered in new[] { false, true })
+                    {
+                        zone.Configure(region);
+                        wall.gameObject.SetActive(covered);
+                        Set(victim, "_combatHealth", 100);
+                        typeof(NetworkPlayerAvatar).GetField("_combatPunchSequence", Private)
+                            .SetValue(attacker, default(CombatPunchSequence));
+                        var runtime = arenaMode ? (NetworkBehaviour)arena : _match;
+                        System.Array.Clear((double[])runtime.GetType().GetField("_nextPunchAllowedAt", Private)
+                            .GetValue(runtime), 0, 4);
+                        Physics.SyncTransforms();
+                        typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(runtime, false);
+                        Assert.That(arenaMode
+                            ? arena.TryPunchOnServer(attacker, eye.position, eye.forward)
+                            : _match.TryCombatPunchOnServer(attacker, eye.position, eye.forward), Is.False);
+                        typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(runtime, true);
+                        Assert.That(arenaMode
+                            ? arena.TryPunchOnServer(attacker, eye.position + Vector3.up * 10, eye.forward)
+                            : _match.TryCombatPunchOnServer(attacker, eye.position + Vector3.up * 10, eye.forward), Is.False);
+                        var rpcCount = covered ? 1 : 3;
+                        for (var rpc = 0; rpc < rpcCount; rpc++)
+                            LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                        Assert.That(arenaMode
+                            ? arena.TryPunchOnServer(attacker, eye.position, eye.forward)
+                            : _match.TryCombatPunchOnServer(attacker, eye.position, eye.forward), Is.True);
+                        var expectedDamage = covered ? 0 : region == PlayerHitRegion.Head ? 6 : 5;
+                        Assert.That(victim.CombatHealth, Is.EqualTo(100 - expectedDamage),
+                            $"arena={arenaMode}, region={region}, covered={covered}");
+                    }
         }
 
         private GameObject Child(string name)

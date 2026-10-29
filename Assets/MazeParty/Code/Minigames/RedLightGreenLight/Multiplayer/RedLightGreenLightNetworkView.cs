@@ -400,7 +400,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var position = runner.Root.position;
+            var position = PlayerAvatarVisual.GetFeetPosition(runner.Root);
             if (penaltyVfxPrefab != null)
             {
                 OneShotVfxPool.Play(

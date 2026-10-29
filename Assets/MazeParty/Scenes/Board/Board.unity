@@ -5703,6 +5703,7 @@ MonoBehaviour:
   resourceTransferKeyPrefab: {fileID: 5763527392341924887, guid: 97909a6d33d76194c949ebeeac5f92f4, type: 3}
   landingEffectFeedbackPrefab: {fileID: 73536901730914453, guid: d1d51ae957162df4ebfed799518d5fb2, type: 3}
   landingEventLightningPrefab: {fileID: 4374848859648381583, guid: 4406f2ebf4af00a419646e0df20adbcf, type: 3}
+  combatHitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 2c8fae67a1dcad347954e4f755bb4de7, type: 3}
   landingGiftPrefab: {fileID: 4662300302048209276, guid: c317ad8f4d19679499922bbff0ff0be8, type: 3}
   landingHealingShieldPrefab: {fileID: 1450662250858090858, guid: b99a68b07069be241881e107e8b308e9, type: 3}
   resourceTransferHeadOffset: 0.3

@@ -58,6 +58,26 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void PunchSequence_HeadshotsScaleAfterComboAndHealthBonuses_HandsEqualBody()
+        {
+            foreach (var entry in new[]
+            {
+                (health: 100, head: new[] { 6, 8, 12 }, normal: new[] { 5, 7, 10 }),
+                (health: 50, head: new[] { 7, 10, 14 }, normal: new[] { 6, 8, 12 }),
+                (health: 10, head: new[] { 10, 13, 18 }, normal: new[] { 8, 11, 15 })
+            })
+                foreach (var region in new[] { PlayerHitRegion.Head, PlayerHitRegion.Body, PlayerHitRegion.Hand })
+                {
+                    var sequence = new CombatPunchSequence();
+                    for (var strike = 0; strike < 3; strike++)
+                        Assert.That(sequence.Resolve(true, strike * 0.65d, entry.health, region),
+                            Is.EqualTo((region == PlayerHitRegion.Head ? entry.head : entry.normal)[strike]),
+                            $"health={entry.health}, region={region}, strike={strike}");
+                    Assert.That(sequence.Resolve(false, 2d, entry.health, region), Is.Zero);
+                }
+        }
+
+        [Test]
         public void PunchSequence_PausePreservesRemainingWindowAndExpiredSequencesStayExpired()
         {
             foreach (var entry in new[]

@@ -137,7 +137,8 @@ namespace MazeParty.Gameplay
 
         // Board barriers constrain movement only. Other solid geometry blocks items.
         public static bool Cast(Vector3 origin, Vector3 direction, float distance,
-            GameObject source, out RaycastHit result, float radius = 0f, bool ignorePlayers = false)
+            GameObject source, out RaycastHit result, float radius = 0f, bool ignorePlayers = false,
+            bool hitZonesOnly = false, Predicate<Collider> playerFilter = null)
         {
             var hits = radius > 0f
                 ? Physics.SphereCastAll(origin, radius, direction, distance, ~0, QueryTriggerInteraction.Collide)
@@ -152,6 +153,10 @@ namespace MazeParty.Gameplay
                 if (player != null)
                 {
                     if (ignorePlayers) continue;
+                    // Movement capsules must not hide the authored head/body/hand triggers.
+                    // Blast and projectile sweeps keep their existing collider policy.
+                    if (hitZonesOnly && c.GetComponent<PlayerHitZone>() == null) continue;
+                    if (playerFilter != null && !playerFilter(c)) continue;
                     result = hit;
                     return true;
                 }
