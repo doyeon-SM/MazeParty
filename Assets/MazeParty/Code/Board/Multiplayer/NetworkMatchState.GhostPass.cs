@@ -19,7 +19,7 @@ namespace MazeParty.Multiplayer
         // Called only after the authoritative action validation and charge consumption.
         private void RegisterGhostPassOnServer(int slot)
         {
-            if (!IsServer || !HasForestGhost || slot < 0 || slot >= MultiplayerConstants.MaxPlayers) return;
+            if (!IsServer || !HasForestGhost || Turn <= 1 || slot < 0 || slot >= MultiplayerConstants.MaxPlayers) return;
             if (_ghostPassTurn.Value != Turn)
             {
                 _ghostPassTurn.Value = Turn;

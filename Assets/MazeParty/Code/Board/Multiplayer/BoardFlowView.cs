@@ -939,7 +939,7 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
                 _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
                 !BoardUtilityItemView.IsTargetPickerOpen &&
-                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass || item == PrototypeItemId.Wall ||
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass && match.Turn > 1 || item == PrototypeItemId.Wall ||
                  item == PrototypeItemId.TileAmplifier && !match.HasUsedTileAmplifier(_localAvatar.AssignedSlot)));
         }
 

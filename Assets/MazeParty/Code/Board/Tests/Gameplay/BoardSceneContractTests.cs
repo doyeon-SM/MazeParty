@@ -143,6 +143,17 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(AssetDatabase.GetAssetPath(ghost),
                     Is.EqualTo("Assets/MazeParty/Prefabs/Board/World/ForestGhost.prefab"));
                 Assert.That(ghost.GetType().GetProperty("HasRequiredReferences").GetValue(ghost), Is.EqualTo(true));
+                var ghostData = new SerializedObject(ghost);
+                var ghostModel = (Transform)ghostData.FindProperty("model").objectReferenceValue;
+                var ghostAnimator = (Animator)ghostData.FindProperty("animator").objectReferenceValue;
+                Assert.That(ghostAnimator, Is.Not.Null,
+                    "Non-legacy ghost clips require an Animator in Player builds.");
+                Assert.That(ghostAnimator.transform, Is.SameAs(ghostModel));
+                Assert.That(ghostAnimator.enabled, Is.True);
+                Assert.That(ghostAnimator.runtimeAnimatorController, Is.Null,
+                    "Only the replicated ghost timeline may sample the animation.");
+                Assert.That(ghostData.FindProperty("head").objectReferenceValue, Is.Not.Null);
+                Assert.That(ghostData.FindProperty("captionAnchor").objectReferenceValue, Is.Not.Null);
                 Assert.That(ghost.GetComponentsInChildren<MonoBehaviour>(true)
                     .Any(c => c != null && c.GetType().FullName == "Sample.GhostScript"), Is.False,
                     "The ghost presentation must not run the asset demo's keyboard/UI controller.");

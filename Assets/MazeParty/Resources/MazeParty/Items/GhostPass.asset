@@ -16,7 +16,7 @@ MonoBehaviour:
   UseTiming: 0
   DisplayName: Ghost Pass
   RequiredMapId: forest-graybox
-  Description: Forest only. This turn's ghost steals from a random eligible opponent and delivers the stolen resource to the first user. Later uses are consumed without changing the recipient. Stolen health heals living users only.
+  Description: Forest only. This turn's ghost steals from a random eligible opponent and delivers the stolen resource to the first user. Later uses are consumed without changing the recipient. Stolen health heals living users only. Available from turn 2.
   Price: 12
   SpawnWeight: 1
   Charges: 1

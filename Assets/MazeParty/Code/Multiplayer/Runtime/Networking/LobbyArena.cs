@@ -5,13 +5,14 @@ namespace MazeParty.Multiplayer
     /// <summary>
     /// Defines the small shared waiting room used before the board scene loads.
     /// Movement remains server authoritative; this component only supplies stable
-    /// spawn positions and horizontal room bounds.
+    /// spawn poses and horizontal room bounds.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LobbyArena : MonoBehaviour
     {
         [SerializeField] private LobbyArenaBindings bindings;
         private bool _missingBindingsReported;
+        private Camera _lobbyCamera;
 
         public static LobbyArena Instance { get; private set; }
 
@@ -54,9 +55,9 @@ namespace MazeParty.Multiplayer
                 return null;
             }
 
-            // The parameter remains for source compatibility. Camera composition
-            // belongs to the authored lobby scene and is never changed here.
-            _ = lobbyCamera;
+            // Read the authored camera to orient arriving players.
+            // Its composition remains controlled by the lobby scene.
+            arena._lobbyCamera = lobbyCamera;
             Instance = arena;
             return arena;
         }
@@ -74,6 +75,24 @@ namespace MazeParty.Multiplayer
             }
             ReportMissingBindings();
             return transform.position;
+        }
+
+        public Quaternion GetSpawnRotation(int slot)
+        {
+            if (_lobbyCamera != null)
+            {
+                var direction = _lobbyCamera.transform.position - GetSpawnPosition(slot);
+                direction.y = 0f;
+                if (direction.sqrMagnitude > 0.0001f)
+                {
+                    return Quaternion.LookRotation(direction, Vector3.up);
+                }
+            }
+
+            var anchor = HasRequiredReferences && slot >= 0 && slot < SpawnCount
+                ? bindings.SpawnAnchors[slot]
+                : transform;
+            return Quaternion.Euler(0f, anchor.eulerAngles.y, 0f);
         }
 
         public Vector3 ClampHorizontalPosition(Vector3 position, float radius)

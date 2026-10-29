@@ -283,7 +283,8 @@ namespace MazeParty.Multiplayer
             var input = Vector2.zero;
             var quietWalkHeld = false;
             var match = NetworkMatchState.Instance;
-            var lobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
+            var lobbyMovement = CanUseLobbyInput();
+            var lobbyInput = lobbyMovement || CanUseCeremonyInput();
             var keyboard = lobbyInput
                 ? (LocalInputGate.BlocksMovementInput ? null : Keyboard.current)
                 : LocalKeyboard;
@@ -305,6 +306,12 @@ namespace MazeParty.Multiplayer
             if (lobbyInput && input.sqrMagnitude > 0.0001f)
             {
                 _localYaw = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg;
+                _localPitch = 0f;
+                ApplyLocalEyeRotation();
+            }
+            else if (lobbyMovement)
+            {
+                _localYaw = transform.eulerAngles.y;
                 _localPitch = 0f;
                 ApplyLocalEyeRotation();
             }

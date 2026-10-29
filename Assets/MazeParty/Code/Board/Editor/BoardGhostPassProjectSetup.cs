@@ -9,7 +9,7 @@ namespace MazeParty.Editor
 {
     public static partial class BoardItemProjectSetup
     {
-        public const string GhostPassDescription = "Forest only. This turn's ghost steals from a random eligible opponent and delivers the stolen resource to the first user. Later uses are consumed without changing the recipient. Stolen health heals living users only.";
+        public const string GhostPassDescription = "Forest only. This turn's ghost steals from a random eligible opponent and delivers the stolen resource to the first user. Later uses are consumed without changing the recipient. Stolen health heals living users only. Available from turn 2.";
         [MenuItem("MazeParty/Board/Install Ghost Pass")]
         public static void InstallGhostPass()
         {

@@ -178,6 +178,10 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            if (itemId == PrototypeItemId.GhostPass &&
+                NetworkMatchState.Instance != null && NetworkMatchState.Instance.Turn <= 1)
+                return false;
+
             if (itemId != PrototypeItemId.Grenade)
             {
                 return true;

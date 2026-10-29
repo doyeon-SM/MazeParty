@@ -1421,14 +1421,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            var arena = LobbyArena.Instance;
+            var rotation = arena.GetSpawnRotation(_slot.Value);
             _serverInput = Vector2.zero;
             _serverQuietWalkHeld = false;
-            _serverYaw = 0f;
+            _serverYaw = rotation.eulerAngles.y;
             _serverPitch = 0f;
             _combatKnockbackVelocity = Vector3.zero;
-            TeleportController(
-                LobbyArena.Instance.GetSpawnPosition(_slot.Value),
-                Quaternion.identity);
+            TeleportController(arena.GetSpawnPosition(_slot.Value), rotation);
             _lobbyPositionInitialized = true;
         }
 
@@ -2524,7 +2524,8 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
-            var canUseLobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
+            var lobbyMovement = CanUseLobbyInput();
+            var canUseLobbyInput = lobbyMovement || CanUseCeremonyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
                                     HasResolvedItemChoice && !IsSwapping && !IsSettingBombardment &&
                                     !IsBoardDeathInProgressOnServer && !IsKnockedDown;
@@ -2540,7 +2541,12 @@ namespace MazeParty.Multiplayer
 
             _serverInput = Vector2.ClampMagnitude(input, 1f);
             _serverQuietWalkHeld = !canUseLobbyInput && quietWalkHeld;
-            _serverYaw = Mathf.Repeat(yaw, 360f);
+            // Idle input can arrive before the owner receives the spawn rotation.
+            // Lobby facing changes only when the player actually moves.
+            if (!lobbyMovement || _serverInput.sqrMagnitude > 0.0001f)
+            {
+                _serverYaw = Mathf.Repeat(yaw, 360f);
+            }
             _serverPitch = canUseLobbyInput ? 0f : Mathf.Clamp(pitch, -85f, 85f);
         }
 

@@ -50,6 +50,7 @@ namespace MazeParty.Multiplayer
             if (Vector3.Distance(origin, claimedOrigin) > 1.5f || Vector3.Dot(direction, claimedDirection.normalized) < .94f)
                 return false;
 
+            if (id == PrototypeItemId.GhostPass && Turn <= 1) return false;
             if (id == PrototypeItemId.TileAmplifier && HasUsedTileAmplifier(avatar.AssignedSlot)) return false;
             BoardGate wallGate = null;
             if (id == PrototypeItemId.Wall && (!avatar.HasResolvedItemChoice || !TryGetWallPlacement(avatar, origin, direction, out wallGate))) return false;

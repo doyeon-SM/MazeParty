@@ -202,6 +202,7 @@ namespace MazeParty.Multiplayer
             if (match.IsReconnectPaused && !match.IsCombatRetreatActive)
             {
                 _wasReconnectPaused = true;
+                RefreshForestGhostPresentation(match);
                 ApplyLocalBodyVisibility(cameraDirector.ActiveMode);
                 RefreshOpponentNameplateOcclusion(
                     match,
@@ -227,7 +228,8 @@ namespace MazeParty.Multiplayer
                                RefreshLandingCameraFocus(match);
             var ghostFocus = RefreshForestGhostPresentation(match);
             var targetMode = ghostFocus
-                ? (match.ForestGhost.Slot >= 0 ? GameplayMode.BoardResourceEvent : GameplayMode.CombatSpectator)
+                ? (match.ForestGhost.IsIntro || match.ForestGhost.Slot >= 0 ? GameplayMode.BoardResourceEvent : GameplayMode.CombatSpectator)
+                : match.IsForestGhostReturningToTopView ? GameplayMode.BoardTopDown
                 : splitEvent ? GameplayMode.BoardResourceEvent : match.IsKeyShopRevealActive
                 ? purchasePhase == KeyPurchasePresentationPhase.AcquireKey
                     ? GameplayMode.BoardResourceEvent
@@ -253,7 +255,10 @@ namespace MazeParty.Multiplayer
                 _observedRevision = match.StateRevision;
                 if (cameraDirector.ActiveMode != targetMode)
                 {
-                    if (ghostFocus || targetMode == GameplayMode.BoardResourceEvent ||
+                    if (match.IsForestGhostReturningToTopView)
+                        cameraDirector.SwitchTo(targetMode, () => System.Math.Max(0d,
+                            match.ForestGhost.Elapsed(match.SynchronizedNow) - BoardForestGhostRules.Duration));
+                    else if (ghostFocus || targetMode == GameplayMode.BoardResourceEvent ||
                         cameraDirector.ActiveMode == GameplayMode.BoardResourceEvent ||
                         purchasePhase == KeyPurchasePresentationPhase.RevealShop &&
                         _observedKeyPurchasePhase != KeyPurchasePresentationPhase.RevealShop)

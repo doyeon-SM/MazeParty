@@ -11,7 +11,10 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<BoardForestGhostSnapshot> _forestGhost = new();
         private bool _forestGhostComplete;
         public BoardForestGhostSnapshot ForestGhost => _forestGhost.Value;
-        public bool IsForestGhostActive => FlowState == BoardFlowState.LandingEffectResolve && ForestGhost.Active;
+        public bool IsForestGhostActive => FlowState == BoardFlowState.LandingEffectResolve && ForestGhost.Active &&
+            (!ForestGhost.IsIntro || !ForestGhost.HasReached(SynchronizedNow, BoardForestGhostRules.Duration));
+        public bool IsForestGhostReturningToTopView => FlowState == BoardFlowState.LandingEffectResolve &&
+            ForestGhost.Active && ForestGhost.IsIntro && ForestGhost.HasReached(SynchronizedNow, BoardForestGhostRules.Duration);
         private bool HasForestGhost => BoardMapId == BoardForestGhostRules.MapId;
 
         private void ResetForestGhostOnServer()
@@ -28,6 +31,22 @@ namespace MazeParty.Multiplayer
             {
                 // Landing deaths (and their coin flights) must finish before selecting a target.
                 if (HasBoardDeathInProgressOnServer() || _boardTopology == null) return;
+                if (Turn == 1)
+                {
+                    var tiles = _boardTopology.Tiles.Where(tile => tile != null).ToArray();
+                    if (tiles.Length == 0) return;
+                    var bounds = new Bounds(tiles[0].WorldCenter, Vector3.zero);
+                    foreach (var tile in tiles) bounds.Encapsulate(tile.WorldCenter);
+                    ClearLandingEffectPresentationOnServer();
+                    ClearLandingEffectFeedbackOnServer();
+                    ClearResourceTransferPresentationOnServer();
+                    _forestGhost.Value = new BoardForestGhostSnapshot
+                    {
+                        Active = true, IsIntro = true, Revision = ForestGhost.Revision + 1,
+                        Slot = -1, Position = bounds.center, Facing = Quaternion.identity, StartedAt = now
+                    };
+                    return;
+                }
                 byte eligible = 0;
                 var occupied = new System.Collections.Generic.HashSet<BoardTile>();
                 for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
@@ -63,6 +82,17 @@ namespace MazeParty.Multiplayer
                 return;
             }
             var snapshot = ForestGhost;
+            if (snapshot.IsIntro)
+            {
+                // Three seconds on camera, then the shared top-view transition.
+                // Keep landing resolution pending until that transition completes.
+                if (!snapshot.HasReached(now, BoardForestGhostRules.Duration + BoardCameraCloudTiming.Duration)) return;
+                snapshot.Active = false;
+                _forestGhost.Value = snapshot;
+                _forestGhostComplete = true;
+                FinishGhostPassOnServer();
+                return;
+            }
             if (!snapshot.Applied && snapshot.HasReached(now, BoardForestGhostRules.ApplyAt))
             {
                 if (!ApplyForestGhostOnServer()) return;
@@ -96,7 +126,7 @@ namespace MazeParty.Multiplayer
         private bool ApplyForestGhostOnServer()
         {
             var snapshot = ForestGhost;
-            if (!IsServer || !snapshot.Active || snapshot.Applied) return false;
+            if (!IsServer || !snapshot.Active || snapshot.IsIntro || snapshot.Applied) return false;
             var avatar = snapshot.Slot >= 0 ? GetAvatarForSlot(snapshot.Slot) : null;
             if (snapshot.Slot >= 0 && avatar == null) return false;
             snapshot.Applied = true;

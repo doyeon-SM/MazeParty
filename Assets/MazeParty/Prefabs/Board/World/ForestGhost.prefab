@@ -129,6 +129,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 5761283688450485393}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &452443255645978858
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3515652617395771004}
+  m_Layer: 0
+  m_Name: Ghost Caption Anchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3515652617395771004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 452443255645978858}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4935911598607066068}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &689169964820298373
 GameObject:
   m_ObjectHideFlags: 0
@@ -529,6 +560,7 @@ Transform:
   - {fileID: 2601958740926522867}
   - {fileID: 7760935286684509757}
   - {fileID: 4575513387537122184}
+  - {fileID: 3515652617395771004}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6547811529742475455
@@ -544,6 +576,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardForestGhostView
   model: {fileID: 5353347367300984063}
+  animator: {fileID: 3799263825155585738}
+  head: {fileID: 5761283688450485393}
+  captionAnchor: {fileID: 3515652617395771004}
+  captionHeadOffset: 0.4
   ghostRenderers:
   - {fileID: 2991847143122093511}
   normalMaterial: {fileID: 2100000, guid: dd7e5e3f662bcee4696bf3eb3a77a237, type: 2}
@@ -599,6 +635,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5353347367300984063}
+  - component: {fileID: 3799263825155585738}
   m_Layer: 0
   m_Name: Ghost Model
   m_TagString: Untagged
@@ -623,6 +660,28 @@ Transform:
   - {fileID: 755880184940994800}
   m_Father: {fileID: 4935911598607066068}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &3799263825155585738
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4994204380237568978}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!1 &5445648221151847058
 GameObject:
   m_ObjectHideFlags: 0

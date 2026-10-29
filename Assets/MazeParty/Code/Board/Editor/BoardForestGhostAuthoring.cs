@@ -15,7 +15,9 @@ namespace MazeParty.Editor
                 var contents = PrefabUtility.LoadPrefabContents(PrefabPath);
                 try
                 {
-                    if (EnsureDamageShieldBinding(contents))
+                    var changed = EnsureDamageShieldBinding(contents);
+                    changed |= EnsureAnimationBindings(contents);
+                    if (changed)
                         PrefabUtility.SaveAsPrefabAsset(contents, PrefabPath);
                 }
                 finally { PrefabUtility.UnloadPrefabContents(contents); }
@@ -30,7 +32,6 @@ namespace MazeParty.Editor
                 PrefabUtility.UnpackPrefabInstance(ghost, PrefabUnpackMode.Completely, InteractionMode.AutomatedAction);
                 foreach (var script in ghost.GetComponentsInChildren<MonoBehaviour>(true)) Object.DestroyImmediate(script);
                 foreach (var collider in ghost.GetComponentsInChildren<Collider>(true)) Object.DestroyImmediate(collider);
-                foreach (var animator in ghost.GetComponentsInChildren<Animator>(true)) Object.DestroyImmediate(animator);
                 ghost.name = "Ghost Model";
                 var view = root.AddComponent<BoardForestGhostView>();
                 var serialized = new SerializedObject(view);
@@ -57,10 +58,50 @@ namespace MazeParty.Editor
                 }
                 serialized.ApplyModifiedPropertiesWithoutUndo();
                 EnsureDamageShieldBinding(root);
+                EnsureAnimationBindings(root);
                 foreach (var renderer in renderers) renderer.sharedMaterial = (Material)serialized.FindProperty("normalMaterial").objectReferenceValue;
                 return PrefabUtility.SaveAsPrefabAsset(root, PrefabPath).GetComponent<BoardForestGhostView>();
             }
             finally { Object.DestroyImmediate(root); }
+        }
+
+        private static bool EnsureAnimationBindings(GameObject root)
+        {
+            var data = new SerializedObject(root.GetComponent<BoardForestGhostView>());
+            var model = (Transform)data.FindProperty("model").objectReferenceValue;
+            var animator = model.GetComponent<Animator>();
+            var changed = animator == null;
+            if (animator == null) animator = model.gameObject.AddComponent<Animator>();
+            if (!animator.enabled || animator.runtimeAnimatorController != null || animator.applyRootMotion ||
+                animator.cullingMode != AnimatorCullingMode.AlwaysAnimate) changed = true;
+            // Non-legacy SampleAnimation requires an Animator in a Player build.
+            // The replicated timeline owns sampling; no controller may overwrite it.
+            animator.enabled = true;
+            animator.runtimeAnimatorController = null;
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            var animationField = data.FindProperty("animator");
+            if (animationField.objectReferenceValue != animator)
+            { animationField.objectReferenceValue = animator; changed = true; }
+            var headField = data.FindProperty("head");
+            if (headField.objectReferenceValue == null)
+            {
+                foreach (var bone in model.GetComponentsInChildren<Transform>(true))
+                    if (bone.name == "Head") { headField.objectReferenceValue = bone; break; }
+                if (headField.objectReferenceValue == null)
+                    throw new System.InvalidOperationException("The ghost requires its authored head bone.");
+                changed = true;
+            }
+            var captionField = data.FindProperty("captionAnchor");
+            if (captionField.objectReferenceValue == null)
+            {
+                var caption = new GameObject("Ghost Caption Anchor").transform;
+                caption.SetParent(root.transform, false);
+                captionField.objectReferenceValue = caption;
+                changed = true;
+            }
+            data.ApplyModifiedPropertiesWithoutUndo();
+            return changed;
         }
 
         private static bool EnsureDamageShieldBinding(GameObject root)

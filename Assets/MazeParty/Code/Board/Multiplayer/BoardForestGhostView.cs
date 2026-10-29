@@ -7,6 +7,10 @@ namespace MazeParty.Multiplayer
     public sealed class BoardForestGhostView : MonoBehaviour
     {
         [SerializeField] private Transform model;
+        [SerializeField] private Animator animator;
+        [SerializeField] private Transform head;
+        [SerializeField] private Transform captionAnchor;
+        [SerializeField, Min(0f)] private float captionHeadOffset = 0.4f;
         [SerializeField] private Renderer[] ghostRenderers;
         [SerializeField] private Material normalMaterial, strongMaterial;
         [SerializeField] private AnimationClip idleClip, attackClip, dissolveClip;
@@ -17,7 +21,10 @@ namespace MazeParty.Multiplayer
         private MaterialPropertyBlock _properties;
         private int _revision = -1;
         public Transform Focus => transform;
-        public bool HasRequiredReferences => model != null && ghostRenderers != null && ghostRenderers.Length > 0 &&
+        public Transform Head => head;
+        public Transform CaptionAnchor => captionAnchor;
+        public bool HasRequiredReferences => model != null && animator != null && animator.transform == model &&
+            animator.enabled && head != null && captionAnchor != null && ghostRenderers != null && ghostRenderers.Length > 0 &&
             normalMaterial != null && strongMaterial != null && idleClip != null && attackClip != null &&
             dissolveClip != null && coin != null && key != null && healing != null && damageShield != null;
 
@@ -36,7 +43,8 @@ namespace MazeParty.Multiplayer
             Quaternion cameraRotation;
             if (hasTarget)
             {
-                director.CalculateBoardResourceEventPose(Focus, null, 0f, out _, out cameraRotation, out _);
+                director.CalculateBoardResourceEventPose(Focus, targetVisual != null ? targetVisual.Bindings?.HeadAnchor : null,
+                    0f, out _, out cameraRotation, out _);
                 model.position = snapshot.Position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight +
                     cameraRotation * playerOffset;
                 model.rotation = Quaternion.LookRotation(snapshot.Position + Vector3.up - model.position, Vector3.up);
@@ -45,7 +53,7 @@ namespace MazeParty.Multiplayer
             {
                 cameraRotation = SharedCameraFraming.Rotation;
                 model.position = snapshot.Position + Vector3.up * 0.65f;
-                model.rotation = Quaternion.LookRotation(Vector3.ProjectOnPlane(
+                model.rotation = snapshot.IsIntro ? snapshot.Facing : Quaternion.LookRotation(Vector3.ProjectOnPlane(
                     -(cameraRotation * Vector3.forward), Vector3.up), Vector3.up);
             }
             model.localScale = Vector3.one * (hasTarget ? modelScale : emptyTileScale);
@@ -54,6 +62,7 @@ namespace MazeParty.Multiplayer
             var clip = disappearing ? dissolveClip : attacking ? attackClip : idleClip;
             var animationTime = disappearing ? elapsed - 2.4f : attacking ? elapsed - 0.6f : elapsed;
             clip.SampleAnimation(model.gameObject, clip.isLooping ? animationTime % clip.length : Mathf.Min(animationTime, clip.length));
+            captionAnchor.position = head.position + Vector3.up * captionHeadOffset;
             _properties ??= new MaterialPropertyBlock();
             _properties.SetFloat("_Dissolve", Mathf.Min(Mathf.Clamp01(elapsed / 0.3f), Mathf.Clamp01((3f - elapsed) / 0.6f)));
             foreach (var renderer in ghostRenderers) renderer.SetPropertyBlock(_properties);

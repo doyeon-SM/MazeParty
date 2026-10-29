@@ -271,6 +271,61 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void ForestGhost_FirstTurnIntroPreservesResourcesAndWaitsForTopViewBeforeReady()
+        {
+            var tiles = PrepareGhostBoard();
+            Set(_match, "_turn", 1);
+            var before = _players.Select(player => (player.Gold, player.KeyCount, player.CurrentHealth)).ToArray();
+            Authority(_match, false);
+            Invoke("AdvanceForestGhostOnServer", 100d);
+            Assert.That(_match.ForestGhost.Active, Is.False);
+            Authority(_match, true);
+            Invoke("AdvanceForestGhostOnServer", 100d);
+            var intro = _match.ForestGhost;
+            Assert.That(intro.Active && intro.IsIntro, Is.True);
+            using (var writer = new FastBufferWriter(256, Unity.Collections.Allocator.Temp))
+            {
+                writer.WriteNetworkSerializable(intro);
+                using (var reader = new FastBufferReader(writer, Unity.Collections.Allocator.Temp))
+                {
+                    reader.ReadNetworkSerializable(out BoardForestGhostSnapshot received);
+                    Assert.That(received.Equals(intro), Is.True, "Clients must receive the intro phase.");
+                }
+            }
+            Assert.That(intro.Slot, Is.EqualTo(-1));
+            Assert.That(intro.Position, Is.EqualTo((tiles[0].WorldCenter + tiles[6].WorldCenter) * .5f));
+            Assert.That((bool)typeof(NetworkMatchState).GetMethod("ApplyForestGhostOnServer", Private)
+                .Invoke(_match, null), Is.False);
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Assert.That(_match.ForestGhost.Applied, Is.False);
+            Invoke("PauseForestGhostOnServer", 101.5d);
+            Invoke("AdvanceForestGhostOnServer", 200d);
+            Assert.That(_match.ForestGhost.Elapsed(200d), Is.EqualTo(1.5d));
+            Invoke("ResumeForestGhostOnServer", 201.5d);
+            Invoke("AdvanceForestGhostOnServer", 203d);
+            Assert.That(_match.ForestGhost.Active, Is.True, "Top-view transition still owns two seconds.");
+            Assert.That((bool)typeof(NetworkMatchState).GetMethod("ShouldDeferLandingEffectResolutionOnServer", Private)
+                .Invoke(_match, new object[] { false }), Is.True);
+            Invoke("AdvanceForestGhostOnServer", 204.999999d);
+            Assert.That(_match.ForestGhost.Active, Is.True);
+            Invoke("AdvanceForestGhostOnServer", 205d);
+            Assert.That(_match.ForestGhost.Active, Is.False);
+            Assert.That(_players.Select(player => (player.Gold, player.KeyCount, player.CurrentHealth)), Is.EqualTo(before));
+            Assert.That((bool)typeof(NetworkMatchState).GetMethod("ShouldDeferLandingEffectResolutionOnServer", Private)
+                .Invoke(_match, new object[] { false }), Is.False);
+            Set(_match, "_turn", 2);
+            Set(_match, "_boardEffectSeed", Enumerable.Range(1, 10000).First(seed =>
+                BoardForestGhostRules.Resolve(seed, 2, 14, 2).Slot == 1 &&
+                BoardForestGhostRules.Resolve(seed, 2, 14, 2).Resource == ForestGhostResource.Gold &&
+                BoardForestGhostRules.Resolve(seed, 2, 14, 2).Amount > 0));
+            typeof(NetworkMatchState).GetMethod("ResetForestGhostOnServer", Private).Invoke(_match, null);
+            Invoke("AdvanceForestGhostOnServer", 210d);
+            Assert.That(_match.ForestGhost.IsIntro, Is.False);
+            Invoke("AdvanceForestGhostOnServer", 211.25d);
+            Assert.That(_players[1].Gold, Is.EqualTo(before[1].Gold + 10));
+        }
+
+        [Test]
         public void ForestGhost_ServerAppliesOnceAtBoundaryAndPausePreservesThreeSecondShot()
         {
             PrepareGhostBoard();

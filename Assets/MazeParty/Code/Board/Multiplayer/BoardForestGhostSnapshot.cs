@@ -6,7 +6,7 @@ namespace MazeParty.Multiplayer
 {
     public struct BoardForestGhostSnapshot : INetworkSerializable, IEquatable<BoardForestGhostSnapshot>
     {
-        public bool Active, Strong, Applied, Paused, IsDelivery;
+        public bool Active, Strong, Applied, Paused, IsDelivery, IsIntro;
         // Zero means no commission; slots are encoded as 1..4 for default-value compatibility.
         public byte Beneficiary;
         public int Revision, Slot, Amount, ActualAmount;
@@ -21,6 +21,7 @@ namespace MazeParty.Multiplayer
         { if (!Paused) return; StartedAt += Math.Max(0d, now - PausedAt); Paused = false; PausedAt = 0d; }
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
         {
+            s.SerializeValue(ref IsIntro);
             s.SerializeValue(ref IsDelivery); s.SerializeValue(ref Beneficiary);
             s.SerializeValue(ref Active); s.SerializeValue(ref Strong); s.SerializeValue(ref Applied);
             s.SerializeValue(ref Paused); s.SerializeValue(ref Revision); s.SerializeValue(ref Slot);
@@ -29,7 +30,7 @@ namespace MazeParty.Multiplayer
             s.SerializeValue(ref StartedAt); s.SerializeValue(ref PausedAt);
         }
         public bool Equals(BoardForestGhostSnapshot o) => Active == o.Active && Strong == o.Strong &&
-            IsDelivery == o.IsDelivery && Beneficiary == o.Beneficiary &&
+            IsIntro == o.IsIntro && IsDelivery == o.IsDelivery && Beneficiary == o.Beneficiary &&
             Applied == o.Applied && Paused == o.Paused && Revision == o.Revision && Slot == o.Slot &&
             Amount == o.Amount && ActualAmount == o.ActualAmount && Resource == o.Resource &&
             Position == o.Position && Facing == o.Facing && StartedAt == o.StartedAt && PausedAt == o.PausedAt;

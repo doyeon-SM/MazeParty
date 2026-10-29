@@ -14,15 +14,17 @@ namespace MazeParty.Multiplayer.Tests
         {
             Set(_match, "_boardMapId", new FixedString64Bytes(BoardForestGhostRules.MapId));
             Assert.That(_player.EquipChestItemOnServer(PrototypeItemId.GhostPass), Is.True);
-            foreach (var denied in new[] { "map", "client", "pause", "dead" })
+            foreach (var denied in new[] { "map", "client", "pause", "dead", "first turn" })
             {
                 Set(_match, "_boardMapId", new FixedString64Bytes(denied == "map" ? "maze-graybox" : BoardForestGhostRules.MapId));
+                Set(_match, "_turn", denied == "first turn" ? 1 : 2);
                 Authority(_match, denied != "client");
                 Set(_match, "_playerPauseActive", denied == "pause");
                 Set(_player, "_currentHealth", denied == "dead" ? 0 : 100);
                 Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.False, denied);
                 Assert.That(Get<int>(_player, "_itemCharges"), Is.EqualTo(1));
             }
+            Set(_match, "_turn", 2);
             Authority(_match, true); Set(_match, "_playerPauseActive", false); Set(_player, "_currentHealth", 100);
             LogAssert.Expect(LogType.Error, RpcUnavailable);
             Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.True);
