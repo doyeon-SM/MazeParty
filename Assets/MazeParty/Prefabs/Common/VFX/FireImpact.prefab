@@ -9931,7 +9931,7 @@ ParticleSystem:
   serializedVersion: 8
   lengthInSec: 1
   simulationSpeed: 1
-  stopAction: 2
+  stopAction: 0
   cullingMode: 0
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
@@ -12237,7 +12237,7 @@ Light:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5698688332286867379}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 13
   m_Type: 2
   m_Color: {r: 1, g: 0.45679283, b: 0, a: 1}
@@ -19725,6 +19725,7 @@ MonoBehaviour:
   - {fileID: 3885288339887614255}
   - {fileID: 93518474723241695}
   flashLights:
+  - {fileID: 3415352832132210110}
   - {fileID: 1665281708424210201}
   effectLifetime: 3.5
   flashLightSeconds: 0.08

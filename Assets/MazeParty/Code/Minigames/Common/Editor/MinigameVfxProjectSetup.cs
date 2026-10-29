@@ -249,7 +249,7 @@ namespace MazeParty.Editor
 
                 var tag = root.GetComponentInChildren<
                     TagChaseNetworkView>(true);
-                tag?.ConfigureVfx(hitSpark, aura);
+                tag?.ConfigureVfx(lightningStrike, aura);
 
                 var territory = root.GetComponentInChildren<
                     TerritoryPaintNetworkView>(true);

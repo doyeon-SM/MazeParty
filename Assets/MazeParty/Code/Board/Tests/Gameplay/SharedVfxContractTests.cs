@@ -72,7 +72,8 @@ namespace MazeParty.Gameplay.Tests
                          ExplosionPath,
                          HitSparkPath,
                          FireImpactPath,
-                         LightningStrikePath
+                         LightningStrikePath,
+                        "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/VFX/ArenaCombatHitSpark.prefab"
                      })
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
@@ -130,6 +131,48 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(behaviours.Any(item =>
                         item.GetType().FullName == "Unity.Netcode.NetworkObject"),
                     Is.False, path);
+            }
+        }
+
+        [Test]
+        public void AllPooledPrefabs_KeepAuthoredEmittersReusable()
+        {
+            var prefabs = AssetDatabase.FindAssets("t:Prefab",
+                    new[] { "Assets/MazeParty/Prefabs" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(path => AssetDatabase.LoadAssetAtPath<GameObject>(path))
+                .Select(prefab => prefab.GetComponent<PooledOneShotVfx>())
+                .Where(pooled => pooled != null)
+                .ToArray();
+            Assert.That(prefabs, Is.Not.Empty);
+            foreach (var pooled in prefabs)
+            {
+                var path = AssetDatabase.GetAssetPath(pooled);
+                var systems = pooled.GetComponentsInChildren<ParticleSystem>(true);
+                Assert.That(pooled.ParticleSystems, Is.EquivalentTo(systems), path);
+                Assert.That(pooled.FlashLights.All(light => light != null), Is.True, path);
+                Assert.That(pooled.FlashLights,
+                    Is.EquivalentTo(pooled.GetComponentsInChildren<Light>(true)), path);
+                if (systems.Length == 0)
+                {
+                    var serialized = new SerializedObject(pooled);
+                    Assert.That(serialized.FindProperty("minimumPlaybackSeconds").floatValue,
+                        Is.GreaterThan(0f), path + " needs a non-particle completion boundary.");
+                    continue;
+                }
+                foreach (var particle in systems)
+                {
+                    var context = path + " :: " + particle.name;
+                    Assert.That(particle.main.stopAction, Is.EqualTo(ParticleSystemStopAction.None),
+                        context + " must survive return to the pool and replay.");
+                    Assert.That(particle.main.loop, Is.False, context);
+                    Assert.That(particle.main.playOnAwake, Is.False,
+                        context + " must wait for the pool to assign the impact position.");
+                    var velocity = particle.velocityOverLifetime;
+                    if (!velocity.enabled) continue;
+                    Assert.That(velocity.y.mode, Is.EqualTo(velocity.x.mode), context);
+                    Assert.That(velocity.z.mode, Is.EqualTo(velocity.x.mode), context);
+                }
             }
         }
 

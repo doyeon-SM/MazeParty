@@ -328,6 +328,7 @@ namespace MazeParty.Editor
                     var main = particle.main;
                     main.playOnAwake = false;
                     main.useUnscaledTime = true;
+                    main.stopAction = ParticleSystemStopAction.None;
                 }
 
                 var flashObject = new GameObject("Accessibility Flash Light");
@@ -344,7 +345,7 @@ namespace MazeParty.Editor
                 var pooled = root.AddComponent<PooledOneShotVfx>();
                 pooled.Configure(
                     particles,
-                    new[] { flash },
+                    root.GetComponentsInChildren<Light>(true),
                     lifetime,
                     flashSeconds);
 
@@ -392,6 +393,7 @@ namespace MazeParty.Editor
                     var main = particle.main;
                     main.playOnAwake = false;
                     main.useUnscaledTime = true;
+                    main.stopAction = ParticleSystemStopAction.None;
                 }
 
                 var pooled = root.GetComponent<PooledOneShotVfx>();

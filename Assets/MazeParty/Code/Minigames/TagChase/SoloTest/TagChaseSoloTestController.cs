@@ -226,9 +226,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 var isCaught = _session.IsCaught(slot);
                 if (isCaught && !_wasCaught[slot])
                 {
-                    GameSound.PlayAt(
-                        SoundKeys.Lightning,
-                        _players[slot].position);
+                    _productionView.PresentCatchVfx(
+                        PlayerAvatarVisual.GetFeetPosition(_players[slot]));
                 }
                 _wasCaught[slot] = isCaught;
                 _visuals[slot].SetEliminated(isCaught);

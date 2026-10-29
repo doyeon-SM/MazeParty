@@ -170,6 +170,10 @@ namespace MazeParty.Gameplay
                     continue;
                 }
 
+                // The pool owns completion. Vendor stop actions can destroy or
+                // disable the emitter hierarchy before the next reuse.
+                var main = system.main;
+                main.stopAction = ParticleSystemStopAction.None;
                 var emission = system.emission;
                 var bursts = new ParticleSystem.Burst[emission.burstCount];
                 emission.GetBursts(bursts);
