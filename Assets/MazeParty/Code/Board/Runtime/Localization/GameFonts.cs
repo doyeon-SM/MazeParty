@@ -15,11 +15,11 @@ namespace MazeParty.Gameplay
         public const string ChineseSimplifiedResourcePath = "Font/NotoSansSC-Regular";
         public const string ChineseTraditionalResourcePath = "Font/NotoSansTC-Regular";
         public const string EnglishKoreanAssetPath =
-            "Assets/Ignore/Resources/Font/KCCMurukmuruk.otf";
+            "Assets/MazeParty/Resources/Font/KCCMurukmuruk.otf";
         public const string JapaneseAssetPath =
-            "Assets/Ignore/Resources/Font/NotoSansJP-Regular.ttf";
+            "Assets/MazeParty/Resources/Font/NotoSansJP-Regular.ttf";
         public const string ChineseSimplifiedAssetPath =
-            "Assets/Ignore/Resources/Font/NotoSansSC-Regular.ttf";
+            "Assets/MazeParty/Resources/Font/NotoSansSC-Regular.ttf";
         public const string ChineseTraditionalAssetPath =
             "Assets/MazeParty/Resources/Font/NotoSansTC-Regular.ttf";
 

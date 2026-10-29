@@ -10,7 +10,7 @@
 
 - 권리자: 한국저작권위원회(Korea Copyright Commission).
 - 포함 OTF의 저작권 고지: `© 2019 Korea Copyright Commission. All rights reserved.`
-- 사용 파일: `Assets/Ignore/Resources/Font/KCCMurukmuruk.otf`.
+- 사용 파일: `Assets/MazeParty/Resources/Font/KCCMurukmuruk.otf`.
 - 출처: [한국저작권위원회 공유마당](https://gongu.copyright.or.kr/gongu/wrt/wrt/view.do?wrtSn=13262151&menuNo=200026).
 - 제공 출처 기록의 라이선스: **SIL Open Font License 1.1(OFL)**.
 - [저작권·OFL 원문](ThirdPartyLicenses/KCC-Murukmuruk-OFL.txt), [프로젝트에 보관된 출처 기록](ThirdPartyLicenses/KCC-Murukmuruk-source.txt).
@@ -19,7 +19,7 @@
 
 ### Noto Sans JP / Noto Sans SC / Noto Sans TC
 
-- 사용 파일: `NotoSansJP-Regular.ttf`, `NotoSansSC-Regular.ttf` (`Assets/Ignore/Resources/Font`).
+- 사용 파일: `NotoSansJP-Regular.ttf`, `NotoSansSC-Regular.ttf` (`Assets/MazeParty/Resources/Font`).
 - 실제 파일 및 다운로드 패키지 고지: `Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'`.
 - 라이선스: **SIL Open Font License 1.1**.
 - [JP 패키지의 OFL 원문](ThirdPartyLicenses/Noto-Sans-JP-OFL.txt), [SC 패키지의 OFL 원문](ThirdPartyLicenses/Noto-Sans-SC-OFL.txt).
