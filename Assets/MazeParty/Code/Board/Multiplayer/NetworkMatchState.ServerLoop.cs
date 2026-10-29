@@ -74,6 +74,7 @@ namespace MazeParty.Multiplayer
                 AdvanceLandingEffectResolutionOnServer(now);
             }
             var boardDeathInProgress = HasBoardDeathInProgressOnServer();
+            AdvanceMagicMazeOnServer(now);
             _flow.Tick(
                 now,
                 deferActionTimeout,

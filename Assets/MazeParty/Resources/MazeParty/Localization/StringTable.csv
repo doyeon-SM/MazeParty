@@ -962,3 +962,5 @@ The previous connection could not be cleaned up. Please restart the game before 
 "Maze only. Aim at a two-way passage connected to your tile and click the blue preview to block it for 5 turns including this turn. Cannot seal off rooms or overlap players.","미로 전용. 현재 칸의 양방향 통로를 바라보고 파란 미리보기를 클릭해 벽을 설치합니다. 설치 턴 포함 5턴 유지하며 완전 고립이나 플레이어와 겹치는 설치는 불가합니다.","迷路専用。現在のマスにつながる双方向通路に青いプレビューを合わせてクリックし、設置ターンを含む5ターン封鎖します。完全な孤立やプレイヤーとの重なりは不可。","迷宫专用。瞄准当前格连接的双向通道并点击蓝色预览，封锁5回合（含当前回合）。不可完全隔离区域或与玩家重叠。","迷宮專用。瞄準目前格連接的雙向通道並點擊藍色預覽，封鎖5回合（含目前回合）。不可完全隔離區域或與玩家重疊。"
 "A saved wall location is no longer valid.","저장된 벽 위치가 올바르지 않습니다.","保存された壁の位置が無効です。","保存的墙体位置无效。","儲存的牆體位置無效。"
 STUN,기절시키기,気絶させる,击晕,擊暈
+Magic Maze,마법미로,魔法迷路,魔法迷宫,魔法迷宮
+MAGIC MAZE,마법미로,魔法迷路,魔法迷宫,魔法迷宮

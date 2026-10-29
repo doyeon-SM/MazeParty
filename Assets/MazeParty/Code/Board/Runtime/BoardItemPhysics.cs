@@ -147,7 +147,7 @@ namespace MazeParty.Gameplay
             foreach (var hit in hits)
             {
                 var c = hit.collider;
-                if (c == null || IsBoundary(c) ||
+                if (c == null || IsBoundary(c) || MagicMazeWall.AllowsSightAndAttacks(c) ||
                     (source != null && c.transform.IsChildOf(source.transform))) continue;
                 var player = c.GetComponentInParent<PlayerHitZoneOwner>();
                 if (player != null)

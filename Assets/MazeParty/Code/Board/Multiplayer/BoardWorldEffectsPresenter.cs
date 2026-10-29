@@ -52,7 +52,7 @@ namespace MazeParty.Multiplayer
             if (_director == null) _director = GetComponent<GameplayCameraDirector>();
             var camera = _director != null ? _director.OutputCamera : Camera.main;
             var topology = match.PresentationTopology;
-            if (topology != null && match.FlowState <= BoardFlowState.LandingEffectResolve)
+            if (topology != null && (match.FlowState <= BoardFlowState.LandingEffectResolve || match.IsMagicMazeShuffle))
             {
                 if (!ReferenceEquals(_tiles, topology.Tiles))
                 {

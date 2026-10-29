@@ -183,6 +183,21 @@ namespace MazeParty.Multiplayer.Tests
                     sceneBindings.gameObject,
                     sceneBindings);
 
+                var cameraPresenter = scene.GetRootGameObjects().SelectMany(root =>
+                    root.GetComponentsInChildren<BoardFlowCameraPresenter>(true)).Single();
+                Assert.That(cameraPresenter.MagicMazeCloudPrefab, Is.Not.Null);
+                Assert.That(cameraPresenter.MagicMazeCloudPrefab.HasRequiredReferences, Is.True);
+                Assert.That(AssetDatabase.GetAssetPath(cameraPresenter.MagicMazeCloudPrefab),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Board/UI/MagicMazeCloudCanvas.prefab"));
+                var cloudInstance = (GameObject)PrefabUtility.InstantiatePrefab(cameraPresenter.MagicMazeCloudPrefab.gameObject, scene);
+                try
+                {
+                    Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(cloudInstance),
+                        Is.EqualTo("Assets/MazeParty/Prefabs/Board/UI/MagicMazeCloudCanvas.prefab"));
+                    Assert.That(cloudInstance.GetComponent<BoardCameraCloudView>().HasRequiredReferences, Is.True);
+                }
+                finally { Object.DestroyImmediate(cloudInstance); }
+
                 var world = scene.GetRootGameObjects().SelectMany(root =>
                     root.GetComponentsInChildren<BoardWorldEffectsPresenter>(true)).Single();
                 Assert.That(world.HasRequiredReferences, Is.True);

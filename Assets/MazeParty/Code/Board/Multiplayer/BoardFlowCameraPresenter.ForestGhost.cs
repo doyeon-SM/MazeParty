@@ -32,6 +32,6 @@ namespace MazeParty.Multiplayer
         { if (_forestGhostView != null) _forestGhostView.gameObject.SetActive(false); }
 
         private void OnDestroy()
-        { if (_forestGhostView != null) Destroy(_forestGhostView.gameObject); }
+        { DestroyMagicMazePresentation(); if (_forestGhostView != null) Destroy(_forestGhostView.gameObject); }
     }
 }

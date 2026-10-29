@@ -20,7 +20,8 @@ namespace MazeParty.Gameplay
         MinigameResult,
         MinigameLoading,
         MinigamePlaying,
-        MatchComplete
+        MatchComplete,
+        MagicMazeChange
     }
 
     public enum BoardActionEndReason
@@ -81,16 +82,19 @@ namespace MazeParty.Gameplay
             LandingEffectResolveDurationSeconds;
         private bool _actionTimeoutDeferred;
         private bool _ascendingResolveDeferred;
+        private readonly bool _magicMaze;
 
         public BoardFlowStateMachine(
             GameplayPhaseClock actionClock = null,
-            int totalTurns = DefaultTotalTurns)
+            int totalTurns = DefaultTotalTurns,
+            bool magicMaze = false)
         {
             if (totalTurns < 1)
                 throw new ArgumentOutOfRangeException(nameof(totalTurns));
 
             ActionClock = actionClock ?? new GameplayPhaseClock();
             TotalTurns = totalTurns;
+            _magicMaze = magicMaze;
         }
 
         public event Action<BoardFlowTransition> Transitioned;
@@ -287,10 +291,18 @@ namespace MazeParty.Gameplay
                         if (logicalNow >= boundary && !deferLandingEffectResolve)
                         {
                             // A late frame must not consume the next screen's ready time.
-                            TransitionTo(BoardFlowState.MinigameIntroReady, logicalNow);
-                            keepAdvancing = true;
+                            TransitionTo(_magicMaze && MagicMazeRules.ChangesMap(CurrentTurn, TotalTurns)
+                                ? BoardFlowState.MagicMazeChange : BoardFlowState.MinigameIntroReady, logicalNow);
+                            // Give the authoritative owner a tick to settle map mutations before leaving.
+                            keepAdvancing = false;
                         }
 
+                        break;
+                    }
+                    case BoardFlowState.MagicMazeChange:
+                    {
+                        if (logicalNow >= _stateStartedAt + MagicMazeRules.Duration(CurrentTurn, TotalTurns))
+                            TransitionTo(BoardFlowState.MinigameIntroReady, logicalNow);
                         break;
                     }
                     case BoardFlowState.MinigameResult:
@@ -523,6 +535,8 @@ namespace MazeParty.Gameplay
                         _stateStartedAt,
                         _landingEffectResolveDurationSeconds,
                         logicalNow);
+                case BoardFlowState.MagicMazeChange:
+                    return Remaining(_stateStartedAt, MagicMazeRules.Duration(CurrentTurn, TotalTurns), logicalNow);
                 case BoardFlowState.MinigameIntroReady:
                     return Remaining(_stateStartedAt, MinigameIntroReadyDurationSeconds, logicalNow);
                 case BoardFlowState.MinigameLoading:

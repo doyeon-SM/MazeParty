@@ -200,6 +200,22 @@ namespace MazeParty.Gameplay
             return new BoardLandingEffectLayout(seed, effects, countsByType);
         }
 
+        public BoardLandingEffectLayout WithEffects(IReadOnlyDictionary<Vector2Int, BoardLandingEffectType> effects)
+        {
+            if (effects == null || effects.Count != _effects.Count) throw new ArgumentException("Invalid effect layout.");
+            var counts = new int[_counts.Length];
+            var copy = new Dictionary<Vector2Int, BoardLandingEffectType>();
+            foreach (var pair in effects)
+            {
+                if (!_effects.ContainsKey(pair.Key) || (int)pair.Value < 1 || (int)pair.Value >= counts.Length)
+                    throw new ArgumentException("Invalid effect coordinate or type.");
+                counts[(int)pair.Value]++; copy.Add(pair.Key, pair.Value);
+            }
+            for (var i = 0; i < counts.Length; i++)
+                if (counts[i] != _counts[i]) throw new ArgumentException("Effect counts changed.");
+            return new BoardLandingEffectLayout(Seed, copy, counts);
+        }
+
         public bool TryGetEffect(
             Vector2Int coordinate,
             out BoardLandingEffectType effect)

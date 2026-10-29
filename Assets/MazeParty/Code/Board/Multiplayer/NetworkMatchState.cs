@@ -547,6 +547,7 @@ namespace MazeParty.Multiplayer
             InitializeGameSettings();
             InitializeBoardMapRuntime();
             InitializeBoardWalls();
+            InitializeMagicMazeReplication();
             PrewarmBoardItemVfx();
             if (IsServer)
             {
@@ -565,6 +566,7 @@ namespace MazeParty.Multiplayer
         public override void OnNetworkDespawn()
         {
             _boardWalls.OnListChanged -= OnBoardWallsChanged;
+            _magicMazeEffects.OnListChanged -= OnMagicMazeEffectsChanged;
             ReleaseStatisticsReplication();
             ReleaseGameSettings();
             ClearBoardItemWorld();
@@ -607,6 +609,7 @@ namespace MazeParty.Multiplayer
             }
 
             RefreshBoardWallPresentation();
+            RefreshMagicMazeWalls();
             TickBoardGrenadePresentation();
             TickChestPresentation();
             if (!IsServer)
@@ -944,6 +947,8 @@ namespace MazeParty.Multiplayer
         /// </summary>
         private void SuspendSimulationOnServer(double now)
         {
+            // Commit a due final icon before freezing its presentation deadline.
+            AdvanceMagicMazeOnServer(now);
             PauseForestGhostOnServer(now);
             PauseResourceTransferPresentationOnServer(now);
             if (_flow.State == BoardFlowState.MinigameIntroReady &&
@@ -1198,7 +1203,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _flow = new BoardFlowStateMachine(totalTurns: TotalTurns);
+            _flow = new BoardFlowStateMachine(totalTurns: TotalTurns, magicMaze: IsMagicMaze);
             _flow.Transitioned += OnFlowTransitioned;
         }
 
@@ -1217,6 +1222,9 @@ namespace MazeParty.Multiplayer
             {
                 ClearLandingEffectPresentationOnServer();
             }
+
+            if (transition.Previous == BoardFlowState.MagicMazeChange)
+                CommitMagicMazeShuffleOnServer();
 
             switch (transition.Current)
             {
@@ -1273,6 +1281,9 @@ namespace MazeParty.Multiplayer
                     break;
                 case BoardFlowState.LandingEffectResolve:
                     BeginLandingEffectsOnServer();
+                    break;
+                case BoardFlowState.MagicMazeChange:
+                    BeginMagicMazeChangeOnServer();
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLandingEffectsOnServer();
@@ -1696,10 +1707,12 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            _magicMazeEffects.Clear();
             _boardEffectSeed.Value = UnityEngine.Random.Range(1, int.MaxValue);
             _boardEffectRevision.Value++;
             _cachedBoardEffectRevision = -1;
             EnsureBoardLandingEffectLayout();
+            InitializeMagicMazeOnServer();
         }
 
         private bool EnsureBoardLandingEffectLayout()
@@ -1728,6 +1741,8 @@ namespace MazeParty.Multiplayer
             _boardEffectLayout = BoardLandingEffectLayout.Create(
                 _boardTopology.Tiles,
                 _boardEffectSeed.Value);
+            if (IsMagicMaze && _magicMazeEffects.Count > 0)
+                _boardEffectLayout = _boardEffectLayout.WithEffects(ReadMagicMazeEffects());
             _cachedBoardEffectSeed = _boardEffectSeed.Value;
             _cachedBoardEffectRevision = _boardEffectRevision.Value;
             return true;
@@ -2055,7 +2070,7 @@ namespace MazeParty.Multiplayer
             for (var index = 0; index < hits.Length; index++)
             {
                 var collider = hits[index].collider;
-                if (collider == null || collider.transform == attacker.transform ||
+                if (collider == null || MagicMazeWall.AllowsSightAndAttacks(collider) || collider.transform == attacker.transform ||
                     collider.transform.IsChildOf(attacker.transform))
                 {
                     continue;

@@ -25,7 +25,8 @@ namespace MazeParty.Multiplayer
         public const int LegacyRecoveryVersionWithoutChests = 3;
         public const int LegacyRecoveryVersionWithoutGameSettings = 4;
         public const int LegacyRecoveryVersionWithoutWalls = 5;
-        public const int CurrentRecoveryVersion = 6;
+        public const int LegacyRecoveryVersionWithoutMagicMaze = 6;
+        public const int CurrentRecoveryVersion = 7;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public string originalHostPlayerKey = string.Empty;
@@ -46,6 +47,8 @@ namespace MazeParty.Multiplayer
         public int remainingMinigameSlots;
         public int boardEffectSeed;
         public int boardEffectRevision;
+        public int magicMazeWallGeneration;
+        public MagicMazeEffectSnapshot[] magicMazeEffects = Array.Empty<MagicMazeEffectSnapshot>();
         public string boardMapId = string.Empty;
         public int boardMapContentVersion;
         public MatchRecoveryKeyShopSnapshot keyShop;

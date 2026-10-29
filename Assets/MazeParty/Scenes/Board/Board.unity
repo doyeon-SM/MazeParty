@@ -5696,6 +5696,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardFlowCameraPresenter
   forestGhostPrefab: {fileID: 6547811529742475455, guid: ff6c1d3340dd20b4987bfc2a908257c7, type: 3}
+  magicMazeCloudPrefab: {fileID: 711608704938222956, guid: 478c9cb223e6bfe4aa23f9d49c386002, type: 3}
   cameraDirector: {fileID: 1548230740}
   localPlayerMarker: {fileID: 1434759359}
   eventSplitViewPrefab: {fileID: 6104406375937452250, guid: 229f47fa81a41a241943eec20eb61681, type: 3}

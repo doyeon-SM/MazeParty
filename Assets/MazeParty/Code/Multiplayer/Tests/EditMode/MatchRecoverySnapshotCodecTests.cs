@@ -9,6 +9,35 @@ namespace MazeParty.Multiplayer.Tests
     {
 
         [Test]
+        public void MagicMaze_RoundTripsLayoutAndRejectsCorruptState_AndMigratesPriorFormats()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.boardMapId = MagicMazeRules.MapId; snapshot.boardMapContentVersion = 1;
+            snapshot.magicMazeEffects = new[] { new MagicMazeEffectSnapshot(Vector2Int.zero, BoardLandingEffectType.GoldGain) };
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            Assert.That(restored.magicMazeEffects, Is.EqualTo(snapshot.magicMazeEffects));
+            foreach (var bad in new[] { "missing", "duplicate", "type", "generation", "old-version" })
+            {
+                var broken = JsonUtility.FromJson<MatchRecoverySnapshot>(codec.Encode(snapshot));
+                if (bad == "missing") broken.magicMazeEffects = System.Array.Empty<MagicMazeEffectSnapshot>();
+                if (bad == "duplicate") broken.magicMazeEffects = new[] { snapshot.magicMazeEffects[0], snapshot.magicMazeEffects[0] };
+                if (bad == "type") broken.magicMazeEffects[0].Effect = 255;
+                if (bad == "generation") broken.magicMazeWallGeneration = 1;
+                if (bad == "old-version") broken.recoveryVersion = 6;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(broken), out _), Is.False, bad);
+            }
+            foreach (var version in new[] { 1, 2, 3, 4, 5, 6 })
+            {
+                var legacy = CreateValidSnapshot(); legacy.recoveryVersion = version;
+                if (version == 1) legacy.mines = System.Array.Empty<MatchRecoveryMineSnapshot>();
+                var payload = JsonUtility.ToJson(legacy).Replace("\"magicMazeEffects\":[],", "").Replace("\"magicMazeWallGeneration\":0,", "");
+                Assert.That(codec.TryDecode(payload, out var migrated), Is.True, "version " + version);
+                Assert.That(migrated.recoveryVersion, Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+                Assert.That(migrated.magicMazeEffects, Is.Empty);
+            }
+        }
+        [Test]
         public void SavedTurn_PreservesBothDiceForEverySlotRegardlessOfRollOrderAndGlobalRandom()
         {
             var snapshot = CreateValidSnapshot();

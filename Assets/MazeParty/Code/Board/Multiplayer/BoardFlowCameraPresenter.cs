@@ -160,6 +160,7 @@ namespace MazeParty.Multiplayer
             // first-person hidden-body or board top-view highlight presentation
             // out of the Board scene and into the lobby.
             UnbindCameraEvents();
+            ClearMagicMazePresentation();
             ClearLocalPresentation();
             ClearNameplateOcclusion();
             ClearResourceTransferVisual();
@@ -181,6 +182,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             if (cameraDirector == null || match == null || !match.IsSpawned || !match.GameplayEnabled)
             {
+                ClearMagicMazePresentation();
                 ClearLocalPresentation();
                 ClearNameplateOcclusion();
                 ClearResourceTransferVisual();
@@ -206,6 +208,8 @@ namespace MazeParty.Multiplayer
                     cameraDirector.ActiveMode);
                 return;
             }
+
+            if (RefreshMagicMazePresentation(match)) return;
 
             RefreshCombatSpectatorFocus(match);
             var splitEvent = match.IsCombatRetreatActive
@@ -848,7 +852,7 @@ namespace MazeParty.Multiplayer
             for (var index = 0; index < hitCount; index++)
             {
                 var collider = _nameplateOcclusionHits[index].collider;
-                if (collider == null ||
+                if (collider == null || MagicMazeWall.AllowsSightAndAttacks(collider) ||
                     collider.GetComponentInParent<NetworkPlayerAvatar>() != null)
                 {
                     continue;

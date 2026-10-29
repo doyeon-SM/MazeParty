@@ -22,6 +22,20 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(definition.MapRootPrefab, Is.Not.Null, definition.MapId);
                 var topology = definition.MapRootPrefab.GetComponent<BoardMapRoot>()?.Topology;
                 Assert.That(topology, Is.Not.Null, definition.MapId);
+                Assert.That(definition.MapRootPrefab.GetComponent<BoardMapRoot>().Definition, Is.SameAs(definition));
+                if (definition.MapId == MagicMazeRules.MapId)
+                {
+                    var magic = definition.MapRootPrefab.GetComponent<MagicMazeMap>();
+                    Assert.That(magic, Is.Not.Null);
+                    Assert.That(magic.HasRequiredReferences, Is.True);
+                    var colliders = magic.InteriorWalls.SelectMany(w => w.MovementColliders).ToArray();
+                    Assert.That(colliders.Distinct().Count(), Is.EqualTo(colliders.Length), "A collider belongs to exactly one mutable wall.");
+                    Assert.That(colliders.Any(c => c.name.StartsWith("WallCollider_H00_") || c.name.StartsWith("WallCollider_H08_") ||
+                        c.name.StartsWith("WallCollider_V00_") || c.name.StartsWith("WallCollider_V08_")), Is.False, "Outer walls never change.");
+                    Assert.That(colliders.All(c => c.enabled && !c.isTrigger), Is.True, "Movement blockers stay solid.");
+                    var solids = magic.InteriorWalls.SelectMany(w => w.SolidRenderers).ToArray();
+                    Assert.That(solids.Distinct().Count(), Is.EqualTo(solids.Length));
+                }
                 topology.RebuildIndex();
                 Assert.That(topology.Gates, Is.Not.Empty, definition.MapId);
                 Assert.That(

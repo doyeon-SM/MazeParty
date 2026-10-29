@@ -596,7 +596,7 @@ namespace MazeParty.Multiplayer
 
         private static bool IsSightOccluder(Collider collider)
         {
-            if (collider == null ||
+            if (collider == null || MagicMazeWall.AllowsSightAndAttacks(collider) ||
                 collider.GetComponentInParent<NetworkPlayerAvatar>() != null)
             {
                 return false;

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea3f98323b48cae4eacb0d54f4b82098, type: 3}
+  m_Name: MagicMazeMap
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardMapDefinition
+  mapId: magic-maze
+  displayName: Magic Maze
+  contentVersion: 1
+  mapRootPrefab: {fileID: 8407478761715043676, guid: 552ccc06f8b867c489388cf89cf26861, type: 3}
+  outerRingTravelGuideOnly: 1

@@ -61,6 +61,14 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
+            if (snapshot.recoveryVersion >= 1 && snapshot.recoveryVersion <= MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMagicMaze)
+            {
+                if (snapshot.boardMapId == MagicMazeRules.MapId || snapshot.magicMazeWallGeneration != 0 ||
+                    (snapshot.magicMazeEffects != null && snapshot.magicMazeEffects.Length != 0)) return false;
+                snapshot.magicMazeEffects = Array.Empty<MagicMazeEffectSnapshot>();
+                if (snapshot.recoveryVersion == MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMagicMaze)
+                { snapshot.recoveryVersion = MatchRecoverySnapshot.CurrentRecoveryVersion; return true; }
+            }
             if (snapshot.recoveryVersion >= 1 && snapshot.recoveryVersion <= MatchRecoverySnapshot.LegacyRecoveryVersionWithoutWalls)
             {
                 if (snapshot.walls != null && snapshot.walls.Length != 0) return false;
@@ -160,6 +168,7 @@ namespace MazeParty.Multiplayer
                 snapshot.itemShops == null ||
                 snapshot.itemShops.Length != ItemShopRules.ShopCount ||
                 snapshot.mines == null ||
+                !NetworkMatchState.AreMagicMazeSnapshotsValid(snapshot) ||
                 !NetworkMatchState.AreWallSnapshotsValid(snapshot.walls, snapshot.boardMapId, snapshot.turn, snapshot.checkpoint) ||
                 !NetworkMatchState.AreChestSnapshotsValid(snapshot.chests, snapshot.turn) ||
                 !TryDecodeMinigameSeed(snapshot.currentMinigameSeed, out _))

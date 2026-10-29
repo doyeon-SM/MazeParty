@@ -211,6 +211,7 @@ namespace MazeParty.Multiplayer
             error = string.Empty;
 
             if (snapshot == null || controller == null ||
+                !AreMagicMazeSnapshotsValid(snapshot, _boardTopology) ||
                 !BoardMapSelection.TryCreate(
                     snapshot.boardMapId,
                     snapshot.boardMapContentVersion,
@@ -661,6 +662,8 @@ namespace MazeParty.Multiplayer
                 remainingMinigameSlots = remaining,
                 boardEffectSeed = _boardEffectSeed.Value,
                 boardEffectRevision = _boardEffectRevision.Value,
+                magicMazeWallGeneration = _magicMazeWallGeneration.Value,
+                magicMazeEffects = CaptureMagicMazeEffects(),
                 boardMapId = CurrentBoardMapSelection.MapId,
                 boardMapContentVersion =
                     CurrentBoardMapSelection.ContentVersion,
@@ -769,6 +772,7 @@ namespace MazeParty.Multiplayer
 
         private void RestoreBoardEffects(MatchRecoverySnapshot snapshot)
         {
+            RestoreMagicMaze(snapshot);
             _boardEffectSeed.Value = snapshot.boardEffectSeed;
             _boardEffectRevision.Value = snapshot.boardEffectRevision;
             _cachedBoardEffectRevision = -1;

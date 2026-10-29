@@ -1316,7 +1316,15 @@ PrefabInstance:
       value: Tag Chase Environment
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 46394292866115185, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 6761325903833850738, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 988131818455120371, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 2489721651772604033, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 5386966302159004014, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 8779271525074682602, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 7272618183987008502, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
+    - {fileID: 6885648585691270106, guid: 96c93466834999640aaaa7fc055ac342, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 1139264642842755353, guid: 96c93466834999640aaaa7fc055ac342, type: 3}

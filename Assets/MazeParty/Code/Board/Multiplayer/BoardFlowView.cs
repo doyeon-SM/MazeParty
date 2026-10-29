@@ -153,6 +153,7 @@ namespace MazeParty.Multiplayer
         private ItemShopWorldMarker _itemShopMarker;
         private BoardTopology _topology;
         private int _lastBoardEffectRevision = -1;
+        private int _lastMagicMazePreviewStep = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
         private bool _wired;
@@ -1164,7 +1165,8 @@ namespace MazeParty.Multiplayer
         private void RefreshBoardEffects(NetworkMatchState match)
         {
             if (match.BoardEffectRevision <= 0 ||
-                _lastBoardEffectRevision == match.BoardEffectRevision)
+                (_lastBoardEffectRevision == match.BoardEffectRevision &&
+                 _lastMagicMazePreviewStep == match.MagicMazePreviewStep))
             {
                 return;
             }
@@ -1186,13 +1188,14 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
-                var effect = match.TryGetBoardLandingEffect(tile.Coordinate, out var assigned)
+                var effect = match.TryGetPresentedBoardLandingEffect(tile.Coordinate, out var assigned)
                     ? assigned
                     : BoardLandingEffectType.None;
                 tile.ApplyLandingEffectPresentation(effect);
             }
 
             _lastBoardEffectRevision = match.BoardEffectRevision;
+            _lastMagicMazePreviewStep = match.MagicMazePreviewStep;
         }
 
         private void RefreshKeyShop(NetworkMatchState match)
@@ -2554,6 +2557,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve: return GameText.T("RESOLVING / ASCENDING");
                 case BoardFlowState.CombatResolve: return GameText.T("COMBAT QUEUE");
                 case BoardFlowState.LandingEffectResolve: return GameText.T("LANDING EFFECTS");
+                case BoardFlowState.MagicMazeChange: return GameText.T("MAGIC MAZE");
                 case BoardFlowState.MinigameIntroReady: return GameText.T("MINIGAME READY");
                 case BoardFlowState.MinigameLoading: return GameText.T("LOADING MINIGAME");
                 case BoardFlowState.MinigamePlaying: return GameText.T("MINIGAME");
