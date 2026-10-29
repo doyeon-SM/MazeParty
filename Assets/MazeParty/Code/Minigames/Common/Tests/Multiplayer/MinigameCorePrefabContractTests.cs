@@ -131,7 +131,7 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(RenderSettings.sun, Is.SameAs(night.Moonlight));
                     var grade = new SerializedObject(night).FindProperty("colorGrade").objectReferenceValue;
                     Assert.That(new SerializedObject(grade).FindProperty("sharedProfile").objectReferenceValue,
-                        Is.SameAs(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/MazeParty/Art/Board/BoardNightColor.asset")));
+                        Is.SameAs(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/MazeParty/Art/Board/MinigameNightColor.asset")));
                     foreach (var flight in scene.GetRootGameObjects().SelectMany(root =>
                                  root.GetComponentsInChildren<FlightNetworkView>(true)))
                         Assert.That(new SerializedObject(flight).FindProperty("skyboxMaterial").objectReferenceValue,

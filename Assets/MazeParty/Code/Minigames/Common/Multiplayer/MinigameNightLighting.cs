@@ -15,8 +15,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Material skybox;
         [SerializeField] private Light moonlight;
         [SerializeField] private Volume colorGrade;
-        [SerializeField] private float ambientIntensity = 0.08f;
-        [SerializeField] private float reflectionIntensity = 0.12f;
+        [SerializeField] private float ambientIntensity = 0.16f;
+        [SerializeField] private float reflectionIntensity = 0.22f;
 
         private static MinigameNightLighting _owner;
         private readonly List<Light> _suppressedLights = new List<Light>();

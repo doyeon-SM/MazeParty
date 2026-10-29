@@ -4,7 +4,7 @@
 
 ## 작업 기준과 기록
 
-- Git·Unity 루트: `C:/Unity/MazeParty`. 현재 `development`, HEAD `eb5c71b54718b052e787af15aec96ba5d92e7d41`(Update PROJECT_MEMORY.md). 기획 v0.56·런타임 0.0.56(`Application.version`). 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`.
+- Git·Unity 루트: `C:/Unity/MazeParty`. 현재 `development`, HEAD `3a97738`(26.10.29). 기획 v0.56·런타임 0.0.56(`Application.version`). 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`.
 - [기획 홈](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [분야별 상세](https://app.notion.com/p/406c227fda0381b69cb1ce78dcdc1351) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0) · [변경 기준 C01~C32](https://app.notion.com/p/406c227fda03811b966ff4186e8bfcdb) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026).
 - [10/29 회의록](https://app.notion.com/p/407c227fda0381ce88bce4a82704cfdd)에 외부 디자인·장막·신규 아이템 관련 커밋 7건의 전체 해시·본문·실제 변경·검증을 기록했다. [10/28 회의록](https://app.notion.com/p/406c227fda0381fa9985ce34c54917d7)에는 현지화·사운드와 저작권 표시 커밋을 반영했다.
 - 작업 규칙은 `AGENTS.md`, 실행·배포는 `README.md`·`Docs/STOVE_SETUP.md`·`Docs/STOVE_LAUNCHER_TEST.md`·`Docs/STEAM_SETUP.md`, 구조는 `Docs/REFACTORING_2026-10-21.md`를 따른다. Notion 쓰기는 별도 명시 요청 때만 하며 회의록은 날짜당 하나를 유지한다.
@@ -37,6 +37,8 @@
 - 후퇴 3초/카메라 0.2초 추격·주사위 탄성·수류탄 자해·선두 HUD·핀볼 추가 소환·숲 일반/강한 유령은 구현됐다. 세부 기준은 연결된 기획서와 코드에서 확인한다.
 
 - 격투·번개 VFX(10/29): 보드 격투 명중에도 ArenaCombatHitSpark를 공용 사용하며 서버가 명중 지점·방향을 전달한다. 공용 번개는 이벤트·무궁화꽃 생성점을 발밑에 맞추고 전체 1.4배·줄기 폭 약 2.2배, 청색 외곽·청백색 중심선을 적용했다. 원본 재질은 유지하고 프로젝트 재질 7개를 사용한다. 관련 EditMode 27/27·번개 전후 및 타격 렌더 확인 완료, 실제 4인 미검증.
+
+- 그림자·미니게임 조명(10/29): 이름표·1인칭 전용 손·보호막의 그림자를 제거하고 실제 캐릭터와 주요 조명에 따른 부드러운 그림자를 적용했다. 툰 셰이더의 중복 거리 감쇠를 수정하고, 20종 미니게임에 전용 야간 보정·테마별 높은 조명·기존 장식등 밝기를 보강했다. 숲/미로 주요 조명의 그림자를 활성화했으며 플레이 공간·통로·이동·충돌 판정은 유지한다. 관련 EditMode 24/24, 최종 변경 후 씬·캐릭터 계약 17/17 및 보드 계약 1/1 재검사 통과(중복 합산 제외). 격투·풍선불기·숲 보드 렌더 확인, 실제 4인·성능 검증은 미완료.
 
 ## 플랫폼·출시 유지 기준
 

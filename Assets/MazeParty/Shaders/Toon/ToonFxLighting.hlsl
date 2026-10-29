@@ -7,13 +7,14 @@ half3 MazeToonLight(Light light, half3 normal, half3 view, half3 specularColor,
 {
     float ndl = dot(normal, light.direction);
     float attenuation = light.distanceAttenuation * light.shadowAttenuation;
-    float lit = smoothstep(0.0, max(edge, 0.0001), ndl * attenuation) * 0.75;
+    // Quantize surface orientation only; distance and shadow attenuation are applied once below.
+    float lit = smoothstep(0.0, max(edge, 0.0001), ndl) * 0.75;
     half3 halfVector = SafeNormalize(light.direction + view);
     float specular = pow(saturate(dot(normal, halfVector) * lit), max(glossiness * glossiness, 0.0001));
     float rim = (1.0 - saturate(dot(view, normal))) * pow(saturate(ndl), max(rimThreshold, 0.0001));
-    return (lit * light.color
+    return (lit
         + smoothstep(0.005, 0.01, specular) * specularColor
-        + smoothstep(rimBlend - 0.01, rimBlend + 0.01, rim) * rimColor) * attenuation;
+        + smoothstep(rimBlend - 0.01, rimBlend + 0.01, rim) * rimColor) * light.color * attenuation;
 }
 half3 MazeToonLighting(InputData inputData, half3 albedo, half3 ambient,
     half3 specularColor, float glossiness, half3 rimColor, float rimBlend, float rimThreshold, float edge)

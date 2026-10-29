@@ -43,13 +43,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
   priority: 10
   blendDistance: 0
   weight: 1
-  sharedProfile: {fileID: 11400000, guid: 87148a52797524848b4122821265a053, type: 2}
+  sharedProfile: {fileID: 11400000, guid: f11e5f92998f47d48bc31183849edc3e, type: 2}
 --- !u!114 &2303242797719007904
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -60,10 +60,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d1d8b950c41546f4e9eadabdfa61fdb8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.MinigameNightLighting
   skybox: {fileID: 2100000, guid: ab675e6698bde46fd87143fb0d7580cb, type: 2}
   moonlight: {fileID: 0}
   colorGrade: {fileID: 2204053569277704507}
-  ambientIntensity: 0.08
-  reflectionIntensity: 0.12
+  ambientIntensity: 0.16
+  reflectionIntensity: 0.22

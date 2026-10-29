@@ -942,6 +942,9 @@ namespace MazeParty.Editor
             {
                 nameText.font = font;
             }
+            var nameRenderer = nameText.GetComponent<Renderer>();
+            nameRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            nameRenderer.receiveShadows = false;
             WorldTextOcclusion.Apply(nameText);
 
             var hostIcon = CreateLobbyHostIcon(nameplate);
@@ -1075,6 +1078,9 @@ namespace MazeParty.Editor
             {
                 nameText.font = font;
             }
+            var nameRenderer = nameText.GetComponent<Renderer>();
+            nameRenderer.shadowCastingMode = ShadowCastingMode.Off;
+            nameRenderer.receiveShadows = false;
             WorldTextOcclusion.Apply(nameText);
 
             var highlight = CreateShieldVfx(

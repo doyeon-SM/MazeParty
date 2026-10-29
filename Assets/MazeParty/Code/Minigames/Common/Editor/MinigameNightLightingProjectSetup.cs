@@ -15,7 +15,7 @@ namespace MazeParty.Editor
         public const string PrefabPath = "Assets/MazeParty/Prefabs/Minigames/Common/Environment/MinigameNightLighting.prefab";
         public const string LampPath = "Assets/MazeParty/Prefabs/Minigames/Common/Environment/ForestStreetLamp.prefab";
         public const string SkyboxPath = "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
-        private const string ProfilePath = "Assets/MazeParty/Art/Board/BoardNightColor.asset";
+        private const string ProfilePath = "Assets/MazeParty/Art/Board/MinigameNightColor.asset";
         private const string ForestLampPath = "Assets/MazeParty/Prefabs/Board/World/ForestStreetLamp.prefab";
 
         [MenuItem("MazeParty/Minigames/Apply Shared Night Lighting")]
@@ -73,8 +73,10 @@ namespace MazeParty.Editor
                 if (existing == null)
                 {
                     moon.color = new Color(0.57f, 0.69f, 1f);
-                    moon.intensity = 0.10f;
+                    moon.intensity = 0.18f;
                     moon.shadows = LightShadows.Soft;
+                    moon.shadowStrength = 0.35f;
+                    moon.shadowNormalBias = 0.15f;
                     moon.transform.rotation = Quaternion.Euler(52f, -32f, 0f);
                     moon.lightmapBakeType = LightmapBakeType.Realtime;
                     var root = (GameObject)PrefabUtility.InstantiatePrefab(
