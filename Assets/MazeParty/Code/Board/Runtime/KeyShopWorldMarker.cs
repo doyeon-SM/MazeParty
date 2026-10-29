@@ -41,7 +41,6 @@ namespace MazeParty.Gameplay
 
         private BoardShopVisual _visual;
         private GameObject _markerObject;
-        private bool _topViewHighlightRequested;
         private bool _acquisitionCameraHidden;
         private bool _hasAppliedSnapshot;
         private KeyShopLifecycleState _appliedState = KeyShopLifecycleState.Inactive;
@@ -51,8 +50,6 @@ namespace MazeParty.Gameplay
         private KeyShopLifecycleState _lastRaisedState = KeyShopLifecycleState.Inactive;
         private Vector2Int _lastRaisedCoordinate;
         private int _lastRaisedRevision = -1;
-        private Vector2Int _lastHighlightedCoordinate;
-        private int _lastHighlightedRevision = -1;
 
         public event Action<KeyShopWorldMarkerEvent> StateApplied;
         public event Action<KeyShopWorldMarkerEvent> Preparing;
@@ -73,12 +70,6 @@ namespace MazeParty.Gameplay
                 _markerObject.SetActive(!hidden && _appliedHasLocation &&
                     (_appliedState == KeyShopLifecycleState.Appearing ||
                      _appliedState == KeyShopLifecycleState.Active));
-        }
-
-        public void SetTopViewHighlight(bool highlighted)
-        {
-            _topViewHighlightRequested = highlighted;
-            _visual?.SetTopViewHighlightVisible(highlighted);
         }
 
         /// <summary>
@@ -125,7 +116,7 @@ namespace MazeParty.Gameplay
                 EnsureMarker();
                 _visual.PlaceOnTile(resolvedTile);
                 _markerObject.SetActive(!_acquisitionCameraHidden);
-                PlayLocationHighlightOnce(revision, coordinate);
+
                 locationResolved = true;
             }
             else
@@ -202,24 +193,7 @@ namespace MazeParty.Gameplay
             var visual = Instantiate(worldPrefabs.KeyShop, transform, false);
             _visual = visual;
             _markerObject = visual.gameObject;
-            visual.SetTopViewHighlightVisible(_topViewHighlightRequested);
             _markerObject.SetActive(false);
-        }
-
-        private void PlayLocationHighlightOnce(
-            int revision,
-            Vector2Int coordinate)
-        {
-            if (_visual == null ||
-                (_lastHighlightedRevision == revision &&
-                 _lastHighlightedCoordinate == coordinate))
-            {
-                return;
-            }
-
-            _lastHighlightedRevision = revision;
-            _lastHighlightedCoordinate = coordinate;
-            _visual.PlayLocationHighlight();
         }
 
         private void SetMarkerVisible(bool visible)
@@ -227,8 +201,6 @@ namespace MazeParty.Gameplay
             if (_markerObject == null)
                 return;
 
-            if (!visible)
-                _visual?.StopLocationHighlight();
             if (_markerObject.activeSelf != visible)
                 _markerObject.SetActive(visible);
         }

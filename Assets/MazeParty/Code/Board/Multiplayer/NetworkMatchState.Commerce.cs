@@ -319,6 +319,7 @@ namespace MazeParty.Multiplayer
             {
                 SyncKeyShopSnapshot();
                 _keyShopAppearanceEndsAt = ServerNow + 0.75d;
+                BeginKeyShopRevealOnServer(ServerNow, -1);
             }
         }
 
@@ -359,7 +360,7 @@ namespace MazeParty.Multiplayer
             _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
             PauseCombatAndPersonalProtectionOnServer(now);
             _keyShopBuyerSlot.Value = buyerSlot;
-            _keyShopRelocationPublished = false;
+            _keyShopRelocationPublished = buyerSlot < 0;
             var director = FindAnyObjectByType<GameplayCameraDirector>();
             _keyShopTransitionSeconds.Value = director != null
                 ? director.BoardTransitionBudgetSeconds
@@ -367,7 +368,7 @@ namespace MazeParty.Multiplayer
             _keyShopRevealPausedRemaining.Value = 0d;
             _keyShopRevealActive.Value = true;
             _keyShopRevealEndsAt.Value = now +
-                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value);
+                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0);
             _keyShopRevealRevision.Value++;
             StopAllAvatarInputOnServer();
             SyncFlowSnapshot(now);
@@ -376,10 +377,10 @@ namespace MazeParty.Multiplayer
         private void AdvanceKeyShopRevealOnServer(double now)
         {
             if (!IsServer || !_keyShopRevealActive.Value || IsSimulationSuspended) return;
-            var elapsed = KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value) -
+            var elapsed = KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
                           Math.Max(0d, _keyShopRevealEndsAt.Value - now);
             var phase = KeyPurchasePresentationRules.GetPhase(
-                elapsed, _keyShopTransitionSeconds.Value, out _);
+                elapsed, _keyShopTransitionSeconds.Value, out _, KeyShopBuyerSlot >= 0);
             if (!_keyShopRelocationPublished && phase >= KeyPurchasePresentationPhase.RevealShop)
             {
                 _keyShopRelocationPublished = true;
@@ -401,8 +402,13 @@ namespace MazeParty.Multiplayer
             _keyShopRevealActive.Value = false;
             _keyShopRevealEndsAt.Value = 0d;
             _keyShopRevealPausedRemaining.Value = 0d;
+            // The initial reveal starts at Descending. Its return shot already
+            // consumes the camera part of that phase; do not replay that clock.
+            var completedDescent = KeyShopBuyerSlot < 0 && _flow.State == BoardFlowState.Descending
+                ? Math.Min(_keyShopTransitionSeconds.Value, BoardFlowStateMachine.DescendingDurationSeconds)
+                : 0d;
             _keyShopBuyerSlot.Value = -1;
-            _flow.Resume(now);
+            _flow.Resume(now - completedDescent);
             ResumeCombatAndPersonalProtectionOnServer(now);
             SyncFlowSnapshot(now);
             StopAllAvatarInputOnServer();

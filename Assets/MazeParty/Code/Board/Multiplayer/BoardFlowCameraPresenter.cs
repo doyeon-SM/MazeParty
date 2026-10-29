@@ -98,6 +98,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearLocalPresentation()
         {
+            cameraDirector?.ClearShopReveal();
             ClearForestGhostPresentation();
             ClearEventPresentation();
             if (_localAvatar != null && _localAvatar.AvatarVisual != null)
@@ -165,7 +166,7 @@ namespace MazeParty.Multiplayer
             ClearLandingEffectFeedbackVisual();
             _landingEffectFeedbackInitialized = false;
             _landingEffectFeedbackRevision = -1;
-            BoardFlowView.Instance?.SetTopViewShopHighlights(false);
+
         }
 
         private void Update()
@@ -211,6 +212,7 @@ namespace MazeParty.Multiplayer
                 ? RefreshCombatRetreatPresentation(match)
                 : RefreshSplitEventPresentation(match);
             var purchasePhase = match.KeyPurchasePhase;
+            RefreshShopRevealCamera(match, purchasePhase);
             var resourceTransferPhase = match.IsKeyShopRevealActive
                 ? RefreshKeyPurchasePresentation(match)
                 : RefreshResourceTransferPresentation(match);
@@ -598,6 +600,20 @@ namespace MazeParty.Multiplayer
             return phase;
         }
 
+        private void RefreshShopRevealCamera(NetworkMatchState match, KeyPurchasePresentationPhase phase)
+        {
+            if (phase == KeyPurchasePresentationPhase.RevealShop && match.KeyShopHasLocation)
+            {
+                var topology = BoardMapRuntimeLoader.ActiveTopology ?? FindAnyObjectByType<BoardTopology>();
+                if (topology != null && topology.TryGetTile(match.KeyShopLocation, out var tile))
+                {
+                    cameraDirector.SetShopReveal(tile, match.KeyShopZoomOutProgress);
+                    return;
+                }
+            }
+            cameraDirector.ClearShopReveal();
+        }
+
         private BoardResourceTransferPhase RefreshKeyPurchasePresentation(NetworkMatchState match)
         {
             var phase = match.GetKeyPurchasePhase(out var motion);
@@ -937,8 +953,7 @@ namespace MazeParty.Multiplayer
                         avatar != null ? avatar.Appearance.BodyColor : Color.white);
                 }
             }
-            BoardFlowView.Instance?.SetTopViewShopHighlights(
-                targetMode == GameplayMode.BoardTopDown);
+
         }
 
         private void RefreshCombatSpectatorFocus(NetworkMatchState match)

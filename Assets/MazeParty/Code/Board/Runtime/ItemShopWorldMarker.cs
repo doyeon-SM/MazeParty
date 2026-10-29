@@ -14,19 +14,6 @@ namespace MazeParty.Gameplay
         private readonly GameObject[] _markers = new GameObject[ItemShopRules.ShopCount];
 
         private readonly int[] _revisions = { -1, -1 };
-        private readonly int[] _lastHighlightedRevisions = { -1, -1 };
-        private readonly Vector2Int[] _lastHighlightedCoordinates =
-            new Vector2Int[ItemShopRules.ShopCount];
-        private bool _topViewHighlightRequested;
-
-        public void SetTopViewHighlight(bool highlighted)
-        {
-            _topViewHighlightRequested = highlighted;
-            for (var index = 0; index < _visuals.Length; index++)
-            {
-                _visuals[index]?.SetTopViewHighlightVisible(highlighted);
-            }
-        }
 
         public GameObject GetMarkerObject(int shopIndex)
         {
@@ -58,7 +45,7 @@ namespace MazeParty.Gameplay
             _visuals[shopIndex].PlaceOnTile(tile);
             _visuals[shopIndex].SetItemState(shopIndex, soldOut);
             _markers[shopIndex].SetActive(true);
-            PlayLocationHighlightOnce(shopIndex, revision, coordinate);
+
             return true;
         }
 
@@ -73,27 +60,9 @@ namespace MazeParty.Gameplay
             var visual = Instantiate(worldPrefabs.ItemShop(shopIndex), transform, false);
             var root = visual.gameObject;
             _visuals[shopIndex] = visual;
-            visual.SetTopViewHighlightVisible(_topViewHighlightRequested);
             _markers[shopIndex] = root;
 
             root.SetActive(false);
-        }
-
-        private void PlayLocationHighlightOnce(
-            int shopIndex,
-            int revision,
-            Vector2Int coordinate)
-        {
-            if (_visuals[shopIndex] == null ||
-                (_lastHighlightedRevisions[shopIndex] == revision &&
-                 _lastHighlightedCoordinates[shopIndex] == coordinate))
-            {
-                return;
-            }
-
-            _lastHighlightedRevisions[shopIndex] = revision;
-            _lastHighlightedCoordinates[shopIndex] = coordinate;
-            _visuals[shopIndex].PlayLocationHighlight();
         }
 
         private void SetVisible(int shopIndex, bool visible)
@@ -101,8 +70,6 @@ namespace MazeParty.Gameplay
             if (_markers[shopIndex] == null)
                 return;
 
-            if (!visible)
-                _visuals[shopIndex]?.StopLocationHighlight();
             if (_markers[shopIndex].activeSelf != visible)
             {
                 _markers[shopIndex].SetActive(visible);

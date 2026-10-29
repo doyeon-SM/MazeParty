@@ -36,7 +36,7 @@ namespace MazeParty.Editor
             "CONTROLS", "MOVE", "SCAN", "PRESS SHOWN KEY", "MOVE / STOP",
             "PUSH", "HOLD / RELEASE", "THROW / PUSH", "MOVE / PAINT",
             "TAGGER LOOK", "TAGGER CATCH", "ALTERNATE", "REPEAT",
-            "MOVE SHIELD", "PASS / STUN", "ROLL", "LOOK", "PUNCH"
+            "MOVE SHIELD", "STUN", "ROLL", "LOOK", "PUNCH"
         };
 
         [MenuItem("MazeParty/UI/Clean Board Map Item Ready Copy")]

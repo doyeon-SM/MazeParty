@@ -632,7 +632,7 @@ WASD moves in top view. Stop moving and press RMB to scan nearby mines.,탑뷰�
 "WASD moves. Carry gifts home, throw while carrying, or push while empty-handed. Three gifts drop every 15 seconds.","WASD로 이동합니다. 선물을 기지로 옮기고, 들고 있을 때는 던지고, 빈손일 때는 밀치세요. 15초마다 선물 3개가 떨어집니다.",WASDで移動します。プレゼントを基地へ運び、持っているときは投げ、手ぶらのときは押しましょう。15秒ごとにプレゼントが3個落ちてきます。,用WASD移动。把礼物带回基地，携带时可投掷，空手时可推人。每15秒掉落3个礼物。,用WASD移動。把禮物帶回基地，攜帶時可投擲，空手時可推人。每15秒掉落3個禮物。
 WASD moves. LMB pushes the nearest player in front of you.,WASD로 이동합니다. 좌클릭하면 앞에 있는 가장 가까운 플레이어를 밉니다.,WASDで移動します。左クリックで目の前の一番近いプレイヤーを押します。,用WASD移动。按左键推开你前方最近的玩家。,用WASD移動。按左鍵推開你前方最近的玩家。
 WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS,WASD: 회피\n좌클릭: 밀치기\n포탄 / 레이저 피하기,WASD: 回避\n左クリック: 押す\n砲弾 / レーザーを避ける,WASD: 闪避\n左键: 推人\n躲避炮弹 / 激光,WASD: 閃避\n左鍵: 推人\n躲避炮彈 / 雷射
-WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB,WASD: 이동\n좌클릭: 넘기기 / 기절시키기\n폭탄에서 살아남기,WASD: 移動\n左クリック: パス / スタン\n爆弾から生き残る,WASD: 移动\n左键: 传递 / 眩晕\n躲过炸弹,WASD: 移動\n左鍵: 傳遞 / 眩暈\n躲過炸彈
+WASD: MOVE\nLMB: STUN\nSURVIVE THE BOMB,WASD: 이동\n좌클릭: 기절시키기\n폭탄에서 살아남기,WASD: 移動\n左クリック: スタン\n爆弾から生き残る,WASD: 移动\n左键: 眩晕\n躲过炸弹,WASD: 移動\n左鍵: 眩暈\n躲過炸彈
 WASD: MOVE\nLMB: PUSH\nX  O  □,WASD: 이동\n좌클릭: 밀치기\nX  O  □,WASD: 移動\n左クリック: 押す\nX  O  □,WASD: 移动\n左键: 推人\nX  O  □,WASD: 移動\n左鍵: 推人\nX  O  □
 WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS,WASD: 이동\n좌클릭: 던지기 / 밀치기\n선물 훔치기,WASD: 移動\n左クリック: 投げる / 押す\nプレゼントを奪う,WASD: 移动\n左键: 投掷 / 推人\n偷取礼物,WASD: 移動\n左鍵: 投擲 / 推人\n偷取禮物
 WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH,WASD: 이동\n마우스: 시점\n좌클릭: 펀치,WASD: 移動\nマウス: 視点\n左クリック: パンチ,WASD: 移动\n鼠标: 视角\n左键: 出拳,WASD: 移動\n滑鼠: 視角\n左鍵: 出拳
@@ -761,7 +761,6 @@ TAGGER CATCH,술래 잡기,鬼が捕まえる,追捕者抓捕,追捕者抓捕
 ALTERNATE,번갈아 누르기,交互に押す,交替按键,交替按鍵
 REPEAT,순서대로 누르기,順番どおりに押す,按顺序重复,按順序重複
 MOVE SHIELD,방패 이동,シールド移動,移动护盾,移動護盾
-PASS / STUN,넘기기 / 기절시키기,渡す / 気絶させる,传递 / 击晕,傳遞 / 擊暈
 ROLL,굴리기,転がる,滚动,滾動
 LOOK,시점 조작,視点操作,控制视角,控制視角
 PUNCH,펀치,パンチ,出拳,出拳
@@ -962,3 +961,4 @@ The previous connection could not be cleaned up. Please restart the game before 
 "Wall","벽","壁","墙","牆"
 "Maze only. Aim at a two-way passage connected to your tile and click the blue preview to block it for 5 turns including this turn. Cannot seal off rooms or overlap players.","미로 전용. 현재 칸의 양방향 통로를 바라보고 파란 미리보기를 클릭해 벽을 설치합니다. 설치 턴 포함 5턴 유지하며 완전 고립이나 플레이어와 겹치는 설치는 불가합니다.","迷路専用。現在のマスにつながる双方向通路に青いプレビューを合わせてクリックし、設置ターンを含む5ターン封鎖します。完全な孤立やプレイヤーとの重なりは不可。","迷宫专用。瞄准当前格连接的双向通道并点击蓝色预览，封锁5回合（含当前回合）。不可完全隔离区域或与玩家重叠。","迷宮專用。瞄準目前格連接的雙向通道並點擊藍色預覽，封鎖5回合（含目前回合）。不可完全隔離區域或與玩家重疊。"
 "A saved wall location is no longer valid.","저장된 벽 위치가 올바르지 않습니다.","保存された壁の位置が無効です。","保存的墙体位置无效。","儲存的牆體位置無效。"
+STUN,기절시키기,気絶させる,击晕,擊暈

@@ -541,7 +541,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     ? "STUNNED " +
                       local.StunRemainingSeconds.ToString("0.0") + "s"
                     : bomb.HolderSlot == LocalPlayerSlot
-                        ? "YOU HAVE THE BOMB · CLICK TO PASS"
+                        ? "YOU HAVE THE BOMB · TOUCH ANOTHER PLAYER"
                         : bomb.HolderSlot >= 0
                             ? "CARRIER P" +
                               (bomb.HolderSlot + 1) +
@@ -561,7 +561,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 "SURVIVORS " + _match.SurvivorCount +
                 " / 4 · SEED " + _seed,
                 outcome,
-                "WASD MOVE · LMB PASS / STUN · " +
+                "WASD MOVE · LMB STUN · " +
                 "R RESTART · N NEXT SEED · ESC STOP",
                 feedback,
                 rank == 1

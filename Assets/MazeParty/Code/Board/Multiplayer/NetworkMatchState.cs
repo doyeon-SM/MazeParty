@@ -478,12 +478,12 @@ namespace MazeParty.Multiplayer
             if (IsKeyShopRevealActive)
             {
                 var elapsed = KeyPurchasePresentationRules.TotalDuration(
-                    _keyShopTransitionSeconds.Value) - KeyShopRevealRemaining;
+                    _keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) - KeyShopRevealRemaining;
                 if (KeyPurchasePhase == KeyPurchasePresentationPhase.ToTopView)
                     return Math.Max(0d, elapsed);
                 if (KeyPurchasePhase >= KeyPurchasePresentationPhase.ReturnToFirstPerson)
-                    return Math.Max(0d, elapsed - _keyShopTransitionSeconds.Value -
-                        KeyPurchasePresentationRules.AcquisitionSeconds -
+                    return Math.Max(0d, elapsed - KeyPurchasePresentationRules.RevealStartsAt(
+                        _keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
                         KeyPurchasePresentationRules.ShopRevealSeconds);
                 return double.NaN;
             }
@@ -508,9 +508,14 @@ namespace MazeParty.Multiplayer
             acquisitionMotion = 0f;
             if (!IsKeyShopRevealActive) return KeyPurchasePresentationPhase.None;
             return KeyPurchasePresentationRules.GetPhase(
-                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value) -
-                KeyShopRevealRemaining, _keyShopTransitionSeconds.Value, out acquisitionMotion);
+                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
+                KeyShopRevealRemaining, _keyShopTransitionSeconds.Value, out acquisitionMotion, KeyShopBuyerSlot >= 0);
         }
+
+        public float KeyShopZoomOutProgress => KeyPurchasePresentationRules.ZoomOutProgress(
+            KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
+            KeyShopRevealRemaining - KeyPurchasePresentationRules.RevealStartsAt(
+                _keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0));
 
         public BoardResourceTransferPhase GetResourceTransferPresentationPhase(
             out float phaseProgress,
@@ -1234,10 +1239,10 @@ namespace MazeParty.Multiplayer
                               transition.Turn + 1);
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
                     RefreshItemShopsForTurnOnServer(transition.Turn);
-                    TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
                     RefreshChestsForTurnOnServer(transition.Turn);
                     break;
                 case BoardFlowState.Descending:
+                    TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
                     CaptureOverviewEndPositionsOnServer();
                     break;
                 case BoardFlowState.Action:

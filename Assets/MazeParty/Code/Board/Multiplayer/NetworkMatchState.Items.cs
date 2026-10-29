@@ -280,9 +280,9 @@ namespace MazeParty.Multiplayer
                 for (int slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                 {
                     var target = GetAvatarForSlot(slot);
-                    if (slot == mine.OwnerSlot || target == null || target.CurrentHealth <= 0 ||
+                    if (target == null || target.CurrentHealth <= 0 ||
                         Vector3.Distance(target.transform.position, mine.Position) > mineDefinition.TriggerRadius ||
-                        !BoardItemPhysics.HasBlastLineOfSight(mine.Position + Vector3.up * .15f, target.transform.position)) continue;
+                        !BoardItemPhysics.HasBlastLineOfSight(mine.Position + Vector3.up * .15f, target.transform.position, target.gameObject)) continue;
                     _boardMines.RemoveAt(i);
                     ExplodeBoardItem(mine.Position, mine.OwnerSlot, mineDefinition);
                     minesChanged = true;

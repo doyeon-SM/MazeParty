@@ -56,7 +56,7 @@ namespace MazeParty.Multiplayer
             new[] { "<sprite name=\"a\"><sprite name=\"d\">  ALTERNATE" },
             new[] { "<sprite name=\"a\"><sprite name=\"s\"><sprite name=\"d\">  REPEAT" },
             new[] { "<sprite name=\"a\"><sprite name=\"d\">  MOVE SHIELD" },
-            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PASS / STUN" },
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  STUN" },
             new[] { MoveKeys + "  ROLL" },
             new[]
             {
@@ -157,7 +157,6 @@ namespace MazeParty.Multiplayer
         private float _minigameRevealObservedAt;
         private bool _wired;
         private int _openItemShopIndex = -1;
-        private bool _topViewShopHighlightsVisible;
         private float _boardKillFeedVisibleUntil;
         private VideoClip _activeMinigamePreviewClip;
 
@@ -174,12 +173,7 @@ namespace MazeParty.Multiplayer
         public bool HasRequiredUiReferences =>
             uiBindings != null && uiBindings.HasRequiredReferences;
 
-        public void SetTopViewShopHighlights(bool visible)
-        {
-            _topViewShopHighlightsVisible = visible;
-            _keyShopMarker?.SetTopViewHighlight(visible);
-            _itemShopMarker?.SetTopViewHighlight(visible);
-        }
+
 
         public void Configure(GameplayCameraDirector director)
         {
@@ -1206,8 +1200,6 @@ namespace MazeParty.Multiplayer
             if (_keyShopMarker == null)
             {
                 _keyShopMarker = FindAnyObjectByType<KeyShopWorldMarker>();
-                _keyShopMarker?.SetTopViewHighlight(
-                    _topViewShopHighlightsVisible);
             }
             if (_topology == null)
             {
@@ -1231,8 +1223,6 @@ namespace MazeParty.Multiplayer
             if (_itemShopMarker == null)
             {
                 _itemShopMarker = FindAnyObjectByType<ItemShopWorldMarker>();
-                _itemShopMarker?.SetTopViewHighlight(
-                    _topViewShopHighlightsVisible);
             }
             if (_topology == null)
             {

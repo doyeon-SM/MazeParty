@@ -133,6 +133,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private int _openItemShopIndex = -1;
         private bool _keyShopRevealActive;
         private double _keyShopRevealEndsAt;
+        private double _keyShopRevealStartedAt;
+        private double _keyShopRevealLeadSeconds;
+        private bool _keyShopRevealReturning;
         private GameObject _worldDie;
         private Collider _worldDieCollider;
         private Rigidbody _worldDieBody;
@@ -521,11 +524,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     SetAllActionStates(PlayerBoardActionState.Hidden);
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
                     RefreshLocalItemShops(transition.Turn);
-                    TryPlaceLocalKeyShop(transition.Turn);
                     LogSimulation("Board overview for turn " + transition.Turn + ".");
                     break;
                 case BoardFlowState.Descending:
-                    cameraDirector?.SwitchTo(GameplayMode.FirstPerson);
+                    TryPlaceLocalKeyShop(transition.Turn);
+                    if (!_keyShopRevealActive) cameraDirector?.SwitchTo(GameplayMode.FirstPerson);
                     LogSimulation("Descending through the local overhead bridge.");
                     break;
                 case BoardFlowState.Action:
@@ -2707,8 +2710,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     out _))
             {
                 ApplyLocalKeyShopState();
-                _keyShopState.TryCompleteAppearance();
-                ApplyLocalKeyShopState();
+                if (_flow.Pause(_simulationNow)) BeginLocalKeyShopReveal(true);
                 LogSimulation("A single Key Shop appeared on an unoccupied random room.");
             }
         }
@@ -2889,30 +2891,58 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _gold[0],
                 -PlayerStatRules.KeyShopGoldPrice);
             _keys[0] = PlayerStatRules.AddKeys(_keys[0], 1);
+            BeginLocalKeyShopReveal(false);
+            LogSimulation("Key purchased. Action paused for the shop location view.");
+        }
+
+        private void BeginLocalKeyShopReveal(bool alreadyTopDown)
+        {
+            var transition = cameraDirector != null ? cameraDirector.BoardTransitionBudgetSeconds :
+                KeyPurchasePresentationRules.DefaultTransitionSeconds;
+            _keyShopRevealLeadSeconds = alreadyTopDown ? 0d : transition;
+            _keyShopRevealStartedAt = _simulationNow;
+            _keyShopRevealEndsAt = _simulationNow + _keyShopRevealLeadSeconds +
+                KeyPurchasePresentationRules.TotalDuration(transition, false);
             _keyShopRevealActive = true;
-            _keyShopRevealEndsAt = _simulationNow + 5d;
+            _keyShopRevealReturning = false;
             _editorPointerVisible = false;
             StopLocalWorldDieNudge();
+            _keyShopState.TryCompleteAppearance();
             ApplyLocalKeyShopState();
-            cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
-            LogSimulation("Key purchased. Global action paused for the five-second shop relocation view.");
+            if (topology.TryGetTile(_keyShopState.Location, out var tile))
+                cameraDirector?.SetShopReveal(tile, 0f);
+            if (alreadyTopDown) cameraDirector?.SnapTo(GameplayMode.BoardTopDown);
+            else cameraDirector?.SwitchTo(GameplayMode.BoardTopDown,
+                () => _simulationNow - _keyShopRevealStartedAt);
         }
 
         private void AdvanceLocalKeyShopReveal()
         {
-            if (!_keyShopRevealActive || _simulationNow < _keyShopRevealEndsAt)
+            if (!_keyShopRevealActive) return;
+            var elapsed = _simulationNow - _keyShopRevealStartedAt - _keyShopRevealLeadSeconds;
+            if (elapsed < KeyPurchasePresentationRules.ShopRevealSeconds)
             {
-                return;
+                if (topology.TryGetTile(_keyShopState.Location, out var tile))
+                    cameraDirector?.SetShopReveal(tile, KeyPurchasePresentationRules.ZoomOutProgress(elapsed));
             }
-
-            _keyShopState?.TryCompleteAppearance();
-            ApplyLocalKeyShopState();
+            else if (!_keyShopRevealReturning)
+            {
+                _keyShopRevealReturning = true;
+                cameraDirector?.ClearShopReveal();
+                cameraDirector?.SwitchTo(GameplayMode.FirstPerson,
+                    () => _simulationNow - _keyShopRevealStartedAt - _keyShopRevealLeadSeconds -
+                        KeyPurchasePresentationRules.ShopRevealSeconds);
+            }
+            if (_simulationNow < _keyShopRevealEndsAt) return;
             _keyShopRevealActive = false;
             _keyShopRevealEndsAt = 0d;
-            _flow.Resume(_simulationNow);
-            cameraDirector?.SwitchTo(GameplayMode.FirstPerson);
+            var completedDescent = _keyShopRevealLeadSeconds == 0d && _flow.State == BoardFlowState.Descending
+                ? Math.Min(cameraDirector != null ? cameraDirector.BoardTransitionBudgetSeconds :
+                    KeyPurchasePresentationRules.DefaultTransitionSeconds, BoardFlowStateMachine.DescendingDurationSeconds)
+                : 0d;
+            _flow.Resume(_simulationNow - completedDescent);
             RefreshBoundaryWalls();
-            LogSimulation("Key Shop relocation complete. The exact action state resumed.");
+            LogSimulation("Key Shop location view complete. The paused action state resumed.");
         }
 
         private bool CanAccessLocalItemShop(int shopIndex)

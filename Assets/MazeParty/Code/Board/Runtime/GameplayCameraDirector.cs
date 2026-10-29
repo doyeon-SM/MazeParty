@@ -669,7 +669,36 @@ namespace MazeParty.Gameplay
                 pose.Rotation);
         }
 
-        private void PrepareBoardPose()
+        private BoardTile _shopRevealTile;
+        private float _shopZoomOut;
+
+        public void SetShopReveal(BoardTile tile, float zoomOut)
+        {
+            _shopRevealTile = tile;
+            _shopZoomOut = Mathf.Clamp01(zoomOut);
+            PrepareBoardPose(true);
+        }
+
+        public void ClearShopReveal()
+        {
+            if (_shopRevealTile == null) return;
+            _shopRevealTile = null;
+            PrepareBoardPose(true);
+        }
+
+        public static BoardCameraPose CalculateShopRevealPose(
+            BoardCameraPose overview, BoardTile tile, float aspect, float zoomOut)
+        {
+            var bounds = tile.GetWorldFootprintBounds();
+            var close = new BoardCameraFramingSettings(
+                new Vector2(bounds.size.x, bounds.size.z), 0.3f,
+                overview.FieldOfView, 8f, overview.Rotation.eulerAngles.y).Evaluate(tile.WorldCenter, aspect);
+            var t = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(zoomOut));
+            return new BoardCameraPose(Vector3.Lerp(close.Position, overview.Position, t),
+                overview.Rotation, overview.FieldOfView, Mathf.Lerp(close.Height, overview.Height, t));
+        }
+
+        private void PrepareBoardPose(bool updateOutput = false)
         {
             if (boardTopDownCamera == null)
                 return;
@@ -680,6 +709,9 @@ namespace MazeParty.Gameplay
                     fallbackBoardCenter,
                     GetOutputAspect());
 
+            if (_shopRevealTile != null)
+                pose = CalculateShopRevealPose(pose, _shopRevealTile, GetOutputAspect(), _shopZoomOut);
+
             var lens = boardTopDownCamera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Perspective;
             lens.FieldOfView = pose.FieldOfView;
@@ -687,6 +719,12 @@ namespace MazeParty.Gameplay
             boardTopDownCamera.ForceCameraPosition(
                 pose.Position,
                 pose.Rotation);
+            // The brain may have evaluated earlier this frame; keep both cameras on the same straight zoom.
+            if (updateOutput && !_isTransitioning && activeMode == GameplayMode.BoardTopDown && outputCamera != null)
+            {
+                outputCamera.transform.SetPositionAndRotation(pose.Position, pose.Rotation);
+                outputCamera.fieldOfView = pose.FieldOfView;
+            }
         }
 
         private void PrepareCombatSpectatorPose()

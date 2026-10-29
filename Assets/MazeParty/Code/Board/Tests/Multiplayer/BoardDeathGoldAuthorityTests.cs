@@ -183,6 +183,65 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [TestCase(PrototypeItemId.Mine, false, PartyAchievement.OwnMine)]
+        [TestCase(PrototypeItemId.Mine, true, PartyAchievement.OwnMine)]
+        [TestCase(PrototypeItemId.Grenade, false, PartyAchievement.OwnGrenade)]
+        [TestCase(PrototypeItemId.Grenade, true, PartyAchievement.OwnGrenade)]
+        public void OwnExplosive_ArmsThenCreditsOnlyLethalUnprotectedSelfDamage(
+            PrototypeItemId id, bool protectedOwner, PartyAchievement achievement)
+        {
+            var owner = _players[0];
+            var item = PrototypeItemCatalog.Get(id);
+            var origin = new Vector3(0f, 100f, 0f);
+            owner.transform.position = origin + Vector3.forward;
+            owner.gameObject.AddComponent<CharacterController>();
+            for (var i = 1; i < 4; i++) _players[i].transform.position = origin + Vector3.right * (100f + i * 10f);
+            Set(owner, "_currentHealth", item.Damage);
+            Authority(owner, false);
+            Assert.That(owner.ApplyDamage(new DamageRequest(item.Damage, DamageKind.Item,
+                owner.gameObject, itemId: id)), Is.EqualTo(DamageResult.Ignored));
+            Assert.That(owner.CurrentHealth, Is.EqualTo(item.Damage));
+            Authority(owner, true);
+            if (protectedOwner) Set(owner, "_personalProtectionEndsAt", _match.SynchronizedNow + 1000d);
+            Physics.SyncTransforms();
+
+            var explode = typeof(NetworkMatchState).GetMethod("ExplodeBoardItem", Private);
+            if (id == PrototypeItemId.Mine)
+            {
+                var mineType = typeof(NetworkMatchState).GetNestedType("PlantedMine", BindingFlags.NonPublic);
+                var mine = Activator.CreateInstance(mineType);
+                mineType.GetField("OwnerSlot").SetValue(mine, 0);
+                mineType.GetField("Position").SetValue(mine, origin);
+                mineType.GetField("ArmRemaining").SetValue(mine, item.ArmingDelay);
+                var mines = (System.Collections.IList)typeof(NetworkMatchState).GetField("_boardMines", Private).GetValue(_match);
+                mines.Add(mine);
+                var tick = typeof(NetworkMatchState).GetMethod("TickBoardMines", Private);
+                tick.Invoke(_match, new object[] { 0.875f });
+                Assert.That(mines.Count, Is.EqualTo(1), "The owner is protected before one second.");
+                Assert.That(owner.CurrentHealth, Is.EqualTo(item.Damage));
+                Assert.That(_achievements[0].flags, Is.Zero);
+                ExpectPresentationRpcs(protectedOwner ? 5 : 6);
+                tick.Invoke(_match, new object[] { 0.125f });
+                Assert.That(mines.Count, Is.Zero, "The owner triggers the mine at exactly one second.");
+            }
+            else
+            {
+                ExpectPresentationRpcs(protectedOwner ? 1 : 2);
+                explode.Invoke(_match, new object[] { origin, 0, item });
+            }
+
+            Assert.That(owner.CurrentHealth, Is.EqualTo(protectedOwner ? item.Damage : 0));
+            Assert.That(_achievements[0].flags,
+                Is.EqualTo(protectedOwner ? 0L : PartyAchievements.Bit(achievement)));
+            Assert.That(_achievements.Skip(1).All(progress => progress.flags == 0L), Is.True);
+            Assert.That(_players.Select(player => player.Gold),
+                Is.EqualTo(protectedOwner ? new[] { 10, 10, 10, 10 } : new[] { 4, 12, 12, 12 }));
+            var transfers = _match.DeathGoldTransfers.Count;
+            ExpectPresentationRpcs(1);
+            explode.Invoke(_match, new object[] { origin, 0, item });
+            Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(transfers), "No duplicate death reward.");
+        }
+
         [Test]
         public void ForestGhost_VisitsOnlyForestAndNonRespawnTilesIncludingTheFinalTurn()
         {

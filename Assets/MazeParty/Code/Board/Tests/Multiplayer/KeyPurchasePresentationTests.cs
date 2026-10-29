@@ -165,6 +165,61 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void InitialAppearance_RevealsWithoutBuyerAndResumesThePausedFlow()
+        {
+            _shop.ResetToInactive();
+            Invoke("SyncKeyShopSnapshot");
+            var now = _match.SynchronizedNow;
+            _flow = new BoardFlowStateMachine();
+            _flow.Start(now - BoardFlowStateMachine.TurnOverviewDurationSeconds - 0.25d,
+                KeyShopRuntimeState.InitialPlacementTurn);
+            _flow.Tick(now);
+            Field("_flow").SetValue(_match, _flow);
+            Invoke("SyncFlowSnapshot", now);
+            Invoke("TryBeginInitialKeyShopPlacementOnServer", KeyShopRuntimeState.InitialPlacementTurn);
+            Assert.That(_match.IsKeyShopRevealActive, Is.True);
+            Assert.That(_match.KeyShopBuyerSlot, Is.EqualTo(-1));
+            Assert.That(_match.KeyPurchasePhase, Is.EqualTo(KeyPurchasePresentationPhase.RevealShop));
+            Assert.That(_flow.IsPaused, Is.True);
+            Assert.That(_match.KeyShopHasLocation, Is.True);
+            Assert.That(_buyer.Gold, Is.EqualTo(100));
+            Assert.That(_buyer.KeyCount, Is.Zero);
+            var end = Get<double>(_match, "_keyShopRevealEndsAt");
+            var remaining = _match.StateRemaining;
+            Invoke("AdvanceKeyShopRevealOnServer", end - 0.000001d);
+            Assert.That(_flow.IsPaused, Is.True);
+            Invoke("AdvanceKeyShopRevealOnServer", end);
+            Assert.That(_match.IsKeyShopRevealActive, Is.False);
+            Assert.That(_flow.IsPaused, Is.False);
+            Assert.That(_flow.State, Is.EqualTo(BoardFlowState.Descending));
+            Assert.That(_flow.GetStateRemaining(end), Is.EqualTo(Math.Max(0d, remaining -
+                Get<double>(_match, "_keyShopTransitionSeconds"))).Within(0.000001d),
+                "The completed return shot must not replay the descending camera clock.");
+        }
+
+        [Test]
+        public void ShopReveal_HoldsOneSecondThenZoomsForOneSecondBeforeReturning()
+        {
+            foreach (var hasBuyer in new[] { false, true })
+            {
+                const double transition = 3d;
+                var start = KeyPurchasePresentationRules.RevealStartsAt(transition, hasBuyer);
+                foreach (var elapsed in new[] { 0d, 0.999d, 1d, 1.5d, 1.999d })
+                {
+                    Assert.That(KeyPurchasePresentationRules.GetPhase(start + elapsed, transition, out _, hasBuyer),
+                        Is.EqualTo(KeyPurchasePresentationPhase.RevealShop));
+                    Assert.That(KeyPurchasePresentationRules.ZoomOutProgress(elapsed),
+                        Is.EqualTo(Mathf.Clamp01((float)elapsed - 1f)).Within(0.000001f));
+                }
+                Assert.That(KeyPurchasePresentationRules.ZoomOutProgress(2d), Is.EqualTo(1f));
+                Assert.That(KeyPurchasePresentationRules.GetPhase(start + 2d, transition, out _, hasBuyer),
+                    Is.EqualTo(KeyPurchasePresentationPhase.ReturnToFirstPerson));
+                Assert.That(KeyPurchasePresentationRules.GetPhase(start + 2d + transition, transition, out _, hasBuyer),
+                    Is.EqualTo(KeyPurchasePresentationPhase.Complete));
+            }
+        }
+
         private GameObject Child(string name)
         {
             var child = new GameObject(name);
