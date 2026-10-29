@@ -22,6 +22,24 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject taggerAimRoot;
         [SerializeField] private Text spectatorText;
 
+        [SerializeField] private GameObject spectatorRoot;
+        [SerializeField] private RawImage spectatorSwitchIcon;
+        [SerializeField] private Text spectatorSwitchText;
+        public GameObject SpectatorRoot => spectatorRoot;
+        public RawImage SpectatorSwitchIcon => spectatorSwitchIcon;
+        public Text SpectatorSwitchText => spectatorSwitchText;
+        public bool HasSpectatorControls => spectatorRoot != null && spectatorSwitchIcon != null &&
+            spectatorSwitchIcon.texture != null && spectatorSwitchText != null &&
+            spectatorRoot.transform.IsChildOf(transform) &&
+            spectatorText != null && spectatorText.transform.IsChildOf(spectatorRoot.transform) &&
+            spectatorSwitchIcon.transform.IsChildOf(spectatorRoot.transform) &&
+            spectatorSwitchText.transform.IsChildOf(spectatorRoot.transform);
+
+        public void ConfigureSpectatorControls(GameObject root, RawImage icon, Text label)
+        {
+            spectatorRoot = root; spectatorSwitchIcon = icon; spectatorSwitchText = label;
+        }
+
         public Canvas RootCanvas => rootCanvas;
         public MinigameTimerDial TimerDial => timerDial;
         public Text RoundText => roundText;
@@ -30,7 +48,7 @@ namespace MazeParty.Multiplayer
         public bool HasRequiredReferences =>
             rootCanvas != null && timerDial != null &&
             timerDial.HasRequiredReferences && roundRoot != null &&
-            roundText != null && taggerAimRoot != null &&
+            roundText != null && taggerAimRoot != null && HasSpectatorControls &&
             spectatorText != null &&
             timerDial.transform.IsChildOf(transform) &&
             roundRoot.transform.IsChildOf(transform) &&
@@ -54,6 +72,7 @@ namespace MazeParty.Multiplayer
         {
             HideClock();
             SetTaggerAimVisible(false);
+            if (spectatorRoot != null) spectatorRoot.SetActive(false);
             if (spectatorText != null)
             {
                 spectatorText.gameObject.SetActive(false);
@@ -144,6 +163,7 @@ namespace MazeParty.Multiplayer
 
         private MinefieldNetworkView _minefieldSpectator;
         private RedLightGreenLightNetworkView _redLightSpectator;
+        private Race2NetworkView _race2Spectator;
 
         private void RefreshSpectatorLabel(NetworkMatchState match)
         {
@@ -173,8 +193,22 @@ namespace MazeParty.Multiplayer
                 }
             }
 
+            if (match != null && match.FlowState == BoardFlowState.MinigamePlaying &&
+                match.CurrentMinigame == ScheduledMinigameId.Race2)
+            {
+                if (_race2Spectator == null) _race2Spectator = FindFirstObjectByType<Race2NetworkView>();
+                slot = _race2Spectator != null ? _race2Spectator.SpectatedSlot : -1;
+            }
             var avatar = slot >= 0 ? match.GetAvatarForSlot(slot) : null;
-            var visible = avatar != null;
+            ShowSpectator(avatar != null ? avatar.DisplayName : null,
+                avatar != null ? avatar.Appearance.BodyColor : Color.white);
+        }
+
+        public void ShowSpectator(string displayName, Color bodyColor)
+        {
+            if (!HasSpectatorControls) return;
+            var visible = !string.IsNullOrEmpty(displayName);
+            if (spectatorRoot.activeSelf != visible) spectatorRoot.SetActive(visible);
             if (spectatorText.gameObject.activeSelf != visible)
             {
                 spectatorText.gameObject.SetActive(visible);
@@ -184,12 +218,13 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var safeName = avatar.DisplayName.Replace("<", "‹")
+            var safeName = displayName.Replace("<", "‹")
                 .Replace(">", "›");
             var color = ColorUtility.ToHtmlStringRGB(
-                avatar.Appearance.BodyColor);
+                bodyColor);
             var label = "<color=#" + color + ">" + safeName +
                         "</color> " + GameText.T("SPECTATING");
+            spectatorSwitchText.text = GameText.T("SWITCH");
             if (spectatorText.text != label)
             {
                 spectatorText.text = label;

@@ -1147,8 +1147,8 @@ namespace MazeParty.Multiplayer
                     ? avatar.Gold.ToString()
                     : "--");
                 SetText(_playerHudRows[slot].Rank, avatar != null
-                    ? GameText.F("RANK {0}", ranks[slot])
-                    : GameText.T("RANK --"));
+                    ? BoardHudCanvasBindings.FormatRank(ranks[slot])
+                    : "--");
 
                 var actionState = avatar != null && isPresent && !match.IsGlobalSimulationPaused
                     ? avatar.ActionState

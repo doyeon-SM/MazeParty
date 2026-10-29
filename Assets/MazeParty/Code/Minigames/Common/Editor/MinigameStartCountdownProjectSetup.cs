@@ -75,6 +75,7 @@ namespace MazeParty.Editor
             }
 
             EnsureCommonHudBindings(prefab);
+            EnsureSpectatorControls();
             prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
 
             var view = prefab != null
@@ -200,7 +201,7 @@ namespace MazeParty.Editor
             var existing = prefab.GetComponent<MinigameCommonHudView>();
             if (existing != null)
             {
-                if (existing.HasRequiredReferences)
+                if (HasCommonHudCoreReferences(existing) && existing.TaggerAimRoot != null && existing.SpectatorText != null)
                 {
                     return;
                 }
@@ -379,6 +380,57 @@ namespace MazeParty.Editor
             image.maskable = false;
             aim.SetActive(false);
             return aim;
+        }
+
+        private static void EnsureSpectatorControls()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            if (prefab.GetComponent<MinigameCommonHudView>().HasSpectatorControls) return;
+            var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                var common = root.GetComponent<MinigameCommonHudView>();
+                var label = common.SpectatorText;
+                if (label == null) throw new InvalidOperationException("Spectator label binding is required.");
+                // Only migrate the old label once. A damaged authored row must be repaired in place.
+                if (common.SpectatorRoot != null || common.SpectatorSwitchIcon != null ||
+                    common.SpectatorSwitchText != null || FindDescendant(root.transform, "Spectator Hint") != null)
+                    throw new InvalidOperationException("Repair the spectator hint bindings on its existing prefab.");
+                var sprites = AssetDatabase.LoadAssetAtPath<TMPro.TMP_SpriteAsset>(ItemVisualFeedbackProjectSetup.InputSpritePath);
+                if (sprites == null) throw new InvalidOperationException("Shared input icon asset is required.");
+                var character = sprites.spriteCharacterTable.Find(c => c.name == "ml");
+                if (character == null) throw new InvalidOperationException("Shared left mouse icon is required.");
+                var glyph = character.glyph.glyphRect;
+                var row = new GameObject("Spectator Hint", typeof(RectTransform), typeof(HorizontalLayoutGroup));
+                row.transform.SetParent(root.transform, false);
+                var rect = (RectTransform)row.transform;
+                rect.anchorMin = rect.anchorMax = label.rectTransform.anchorMin;
+                rect.pivot = label.rectTransform.pivot;
+                rect.anchoredPosition = label.rectTransform.anchoredPosition;
+                rect.sizeDelta = new Vector2(1100f, 42f);
+                var layout = row.GetComponent<HorizontalLayoutGroup>();
+                layout.childAlignment = TextAnchor.MiddleCenter;
+                layout.spacing = 12f;
+                layout.childControlWidth = layout.childControlHeight = true;
+                layout.childForceExpandWidth = layout.childForceExpandHeight = false;
+                label.transform.SetParent(row.transform, false);
+                label.rectTransform.sizeDelta = new Vector2(500f, 42f);
+                var icon = new GameObject("Mouse Left Icon", typeof(RectTransform), typeof(RawImage), typeof(LayoutElement)).GetComponent<RawImage>();
+                icon.transform.SetParent(row.transform, false);
+                icon.texture = sprites.spriteSheet; icon.raycastTarget = false;
+                icon.uvRect = new Rect((float)glyph.x / icon.texture.width, (float)glyph.y / icon.texture.height,
+                    (float)glyph.width / icon.texture.width, (float)glyph.height / icon.texture.height);
+                var iconLayout = icon.GetComponent<LayoutElement>();
+                iconLayout.preferredHeight = 38f; iconLayout.preferredWidth = 38f * glyph.width / glyph.height;
+                var change = new GameObject("Switch Text", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+                change.transform.SetParent(row.transform, false); change.font = label.font;
+                change.fontSize = label.fontSize; change.color = label.color;
+                change.alignment = TextAnchor.MiddleCenter; change.raycastTarget = false; change.text = "SWITCH";
+                common.ConfigureSpectatorControls(row, icon, change);
+                row.SetActive(false); SetUiLayer(row);
+                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
         private static Text CreateSpectatorLabel(Transform parent, Font font)

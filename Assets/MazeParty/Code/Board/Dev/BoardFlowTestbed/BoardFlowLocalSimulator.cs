@@ -3225,7 +3225,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 SetText(_playerRows[playerIndex], playerIndex == 0
                     ? "P1  LOCAL"
                     : "P" + (playerIndex + 1) + "  SIMULATED");
-                SetText(_playerRankTexts[playerIndex], "#" + ranks[playerIndex]);
+                SetText(_playerRankTexts[playerIndex], BoardHudCanvasBindings.FormatRank(ranks[playerIndex]));
                 if (_playerRows[playerIndex] != null)
                 {
                     _playerRows[playerIndex].color =

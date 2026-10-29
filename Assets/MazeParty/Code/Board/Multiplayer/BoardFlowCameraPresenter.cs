@@ -436,7 +436,9 @@ namespace MazeParty.Multiplayer
                 var bit = (byte)(1 << snapshot.Slot);
                 if ((_landingEventPlayedMask & bit) == 0 && landingEventLightningPrefab != null)
                 {
-                    OneShotVfxPool.Play(landingEventLightningPrefab, PlayerAvatarVisual.GetFeetPosition(avatar.transform),
+                    var position = PlayerAvatarVisual.GetFeetPosition(avatar.transform);
+                    GameSound.PlayAt(SoundKeys.Lightning, position);
+                    OneShotVfxPool.Play(landingEventLightningPrefab, position,
                         Quaternion.identity, (float)BoardEffectShotTiming.Motion);
                     _landingEventPlayedMask |= bit;
                 }

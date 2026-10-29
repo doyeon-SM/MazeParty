@@ -42,6 +42,12 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(common.SpectatorText.transform.IsChildOf(
                 prefab.transform), Is.True);
             Assert.That(common.SpectatorText.raycastTarget, Is.False);
+            Assert.That(common.HasSpectatorControls, Is.True);
+            Assert.That(common.SpectatorSwitchIcon.raycastTarget, Is.False);
+            Assert.That(common.SpectatorSwitchText.raycastTarget, Is.False);
+            var inputSprites = AssetDatabase.LoadAssetAtPath<TMPro.TMP_SpriteAsset>(
+                "Assets/Ignore/Input Sprites for TextMesh Pro/all input icons same size.asset");
+            Assert.That(common.SpectatorSwitchIcon.texture, Is.SameAs(inputSprites.spriteSheet));
             Assert.That(common.TaggerAimRoot.transform.IsChildOf(
                 prefab.transform), Is.True);
             var aimGraphics = common.TaggerAimRoot
