@@ -43,7 +43,7 @@ namespace MazeParty.Multiplayer
                     _forestGhost.Value = new BoardForestGhostSnapshot
                     {
                         Active = true, IsIntro = true, Revision = ForestGhost.Revision + 1,
-                        Slot = -1, Position = bounds.center, Facing = Quaternion.identity, StartedAt = now
+                        Slot = -1, Position = IntroPositionAboveTerrain(bounds.center), Facing = Quaternion.identity, StartedAt = now
                     };
                     return;
                 }
@@ -121,6 +121,18 @@ namespace MazeParty.Multiplayer
             _forestGhost.Value = snapshot;
             _forestGhostComplete = true;
             FinishGhostPassOnServer();
+        }
+
+        private static Vector3 IntroPositionAboveTerrain(Vector3 center)
+        {
+            foreach (var terrain in Terrain.activeTerrains)
+            {
+                var local = center - terrain.transform.position;
+                var size = terrain.terrainData.size;
+                if (local.x < 0f || local.z < 0f || local.x > size.x || local.z > size.z) continue;
+                center.y = Mathf.Max(center.y, terrain.SampleHeight(center) + terrain.transform.position.y);
+            }
+            return center + Vector3.up * 5f;
         }
 
         private bool ApplyForestGhostOnServer()

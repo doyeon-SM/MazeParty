@@ -64,7 +64,7 @@ namespace MazeParty.Multiplayer.Tests
                     BoardFlowState.LandingEffectResolve, false, seed, 11d, out _), Is.False);
                 first.Reset();
                 Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
-                    BoardFlowState.LandingEffectResolve, false, seed, 11.5d, out _), Is.False);
+                    BoardFlowState.LandingEffectResolve, false, seed, 12d, out _), Is.False);
             }
             Assert.That(choices, Is.EquivalentTo(new[] { 0, 1, 2 }));
             var playback = new BoardDamageImpactPlayback();
@@ -132,11 +132,11 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 13d), Is.EqualTo(mask));
                 Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.499d), Is.False);
                 Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.5d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.499d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.5d), Is.False);
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 14.999d), Is.EqualTo(mask));
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15d), Is.Zero);
-                Assert.That(BoardLandingEffectFeedbackRules.GetDurationSeconds(snapshot), Is.EqualTo(5d));
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.999d), Is.True);
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 15d), Is.False);
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15.499d), Is.EqualTo(mask));
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15.5d), Is.Zero);
+                Assert.That(BoardLandingEffectFeedbackRules.GetDurationSeconds(snapshot), Is.EqualTo(5.5d));
             }
         }
 

@@ -212,6 +212,47 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void Sonar_RepeatedRequestsWaitForCompletionAndCancelWhenRoundEnds()
+        {
+            var root = new GameObject("Queued sonar authority");
+            var warning = typeof(NetworkVariableBase).GetField("IgnoreInitializeWarning", BindingFlags.Static | BindingFlags.NonPublic);
+            var previous = warning.GetValue(null);
+            warning.SetValue(null, true);
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            try
+            {
+                var state = root.AddComponent<NetworkMinefieldState>();
+                typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(state, true);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_matchActive", true);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phase", (byte)NetworkMinefieldPhase.Running);
+                var now = Time.unscaledTimeAsDouble;
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phaseEndsAt", now + 100d);
+                var request = typeof(NetworkMinefieldState).GetMethod("QueueOrBeginSonarOnServer", flags);
+                var update = typeof(NetworkMinefieldState).GetMethod("UpdateSonarOnServer", flags);
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                request.Invoke(state, new object[] { 0, now });
+                for (var i = 1; i <= 4; i++) request.Invoke(state, new object[] { 0, now + i * .2d });
+                var deadline = now + NetworkMinefieldState.SonarDetectionSeconds;
+                update.Invoke(state, new object[] { deadline - .000001d });
+                Assert.That(state.GetSonarWave(0).StartedAt, Is.EqualTo(now), "Clicks must not restart the active scan.");
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                update.Invoke(state, new object[] { deadline });
+                Assert.That(state.IsSonarActive(0), Is.True);
+                Assert.That(state.GetSonarWave(0).StartedAt, Is.EqualTo(deadline));
+                update.Invoke(state, new object[] { deadline + NetworkMinefieldState.SonarDetectionSeconds });
+                Assert.That(state.IsSonarActive(0), Is.False, "Repeated clicks queue exactly one follow-up.");
+
+                UnityEngine.TestTools.LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                request.Invoke(state, new object[] { 0, now + 4d });
+                request.Invoke(state, new object[] { 0, now + 4.1d });
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phaseEndsAt", now + 5d);
+                update.Invoke(state, new object[] { now + 5.25d });
+                Assert.That(state.IsSonarActive(0), Is.False, "Queued scans cannot start after the round deadline.");
+            }
+            finally { Object.DestroyImmediate(root); warning.SetValue(null, previous); }
+        }
+
+        [Test]
         public void SonarWaveSnapshot_RetainsOriginAndPausedProgressAcrossSerialization()
         {
             var original = new MinefieldSonarWaveSnapshot

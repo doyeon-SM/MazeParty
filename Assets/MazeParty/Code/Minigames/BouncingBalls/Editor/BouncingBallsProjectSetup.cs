@@ -41,7 +41,7 @@ namespace MazeParty.Editor
         private const int BallCount = BouncingBallsRules.BallCount;
         private const float Boundary = 8f;
         private const float GoalHalfWidth = 3.1f;
-        private const float ShieldRail = 7.5f;
+        private const float ShieldRail = (float)BouncingBallsRules.ShieldRailDistance;
 
         private static readonly Color[] PlayerColors =
         {
@@ -200,10 +200,10 @@ namespace MazeParty.Editor
             };
             var goalPositions = new[]
             {
-                new Vector3(0f, -8.28f, 0.58f),
-                new Vector3(8.28f, 0f, 0.58f),
-                new Vector3(0f, 8.28f, 0.58f),
-                new Vector3(-8.28f, 0f, 0.58f)
+                new Vector3(0f, -(float)BouncingBallsRules.GoalLineDistance, 0.58f),
+                new Vector3((float)BouncingBallsRules.GoalLineDistance, 0f, 0.58f),
+                new Vector3(0f, (float)BouncingBallsRules.GoalLineDistance, 0.58f),
+                new Vector3(-(float)BouncingBallsRules.GoalLineDistance, 0f, 0.58f)
             };
             var shields = new Transform[PlayerCount];
             var shieldRenderers = new Renderer[PlayerCount];
@@ -295,6 +295,25 @@ namespace MazeParty.Editor
                     wallRoot, new Vector3(Boundary, side * segmentCenter, 0.32f),
                     Quaternion.identity, new Vector3(0.26f, segmentHalf * 2f, 0.6f),
                     materials.Wall);
+            }
+            var pocketDepth = (float)BouncingBallsRules.GoalLineDistance - Boundary;
+            var pocketCenter = Boundary + pocketDepth * 0.5f;
+            for (var side = -1; side <= 1; side += 2)
+            {
+                for (var edge = -1; edge <= 1; edge += 2)
+                {
+                    var tangent = edge * (GoalHalfWidth + 0.13f);
+                    CreatePrimitive("Vertical Goal Pocket " + side + " " + edge,
+                        PrimitiveType.Cube, wallRoot,
+                        new Vector3(tangent, side * pocketCenter, 0.32f),
+                        Quaternion.identity, new Vector3(0.26f, pocketDepth + 0.26f, 0.6f),
+                        materials.Wall);
+                    CreatePrimitive("Horizontal Goal Pocket " + side + " " + edge,
+                        PrimitiveType.Cube, wallRoot,
+                        new Vector3(side * pocketCenter, tangent, 0.32f),
+                        Quaternion.identity, new Vector3(pocketDepth + 0.26f, 0.26f, 0.6f),
+                        materials.Wall);
+                }
             }
             MinigameCorePrefabUtility.StripColliders(environment);
             return environment;

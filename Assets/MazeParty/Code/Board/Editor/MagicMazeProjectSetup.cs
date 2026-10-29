@@ -74,7 +74,7 @@ namespace MazeParty.Editor
                     var holder = new GameObject("Magic " + group.Key);
                     holder.transform.SetParent(instance.transform, false);
                     var outline = new GameObject("Purple Outline"); outline.transform.SetParent(holder.transform, false);
-                    foreach (var box in boxes) CreateOutline(outline.transform, box, material);
+                    foreach (var box in colliders.OfType<BoxCollider>()) CreateOutline(outline.transform, box, material);
                     var wall = holder.AddComponent<MagicMazeWall>();
                     wall.Configure(colliders, solids, outline); walls.Add(wall);
                 }
@@ -115,14 +115,14 @@ namespace MazeParty.Editor
             var shader = Shader.Find("Universal Render Pipeline/Unlit");
             if (shader == null) throw new InvalidOperationException("URP Unlit shader missing.");
             material = new Material(shader) {name = "MagicMazeOutline"};
-            material.SetColor("_BaseColor", new Color(.67f, .16f, 1f, 1f));
+            material.SetColor("_BaseColor", new Color(.4f, .05f, .95f, 1f));
             AssetDatabase.CreateAsset(material, path); return material;
         }
         private static void CreateOutline(Transform parent, BoxCollider box, Material material)
         {
             var go = new GameObject(box.name + " Outline"); go.transform.SetParent(parent, false);
             var line = go.AddComponent<LineRenderer>(); line.useWorldSpace = false; line.sharedMaterial = material;
-            line.widthMultiplier = .065f; line.numCornerVertices = 2;
+            line.widthMultiplier = .14f; line.numCornerVertices = 4; line.numCapVertices = 4;
             line.shadowCastingMode = ShadowCastingMode.Off; line.receiveShadows = false;
             var corners = new Vector3[8]; var h = box.size * .5f;
             for (var i=0;i<8;i++)

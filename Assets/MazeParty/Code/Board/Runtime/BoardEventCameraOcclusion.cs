@@ -12,6 +12,7 @@ namespace MazeParty.Gameplay
         private readonly HashSet<Camera> _isolatedPlayers = new HashSet<Camera>();
         private readonly List<Renderer> _hidden = new List<Renderer>();
         private readonly List<TerrainState> _terrainChanges = new List<TerrainState>();
+        private readonly Dictionary<Terrain, TerrainState> _treeViews = new Dictionary<Terrain, TerrainState>();
         private readonly Vector3[] _targets = new Vector3[7];
         private Renderer[] _scenery;
         private Terrain[] _terrains;
@@ -87,7 +88,8 @@ namespace MazeParty.Gameplay
                     continue;
                 }
                 if (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer)) continue;
-                if (renderer.transform.IsChildOf(player) || renderer.GetComponent<TextMesh>() != null) continue;
+                if (renderer.transform.IsChildOf(player) || renderer.GetComponent<TextMesh>() != null ||
+                    renderer.GetComponentInParent<BoardBoundaryWallVisual>() != null) continue;
                 var bounds = renderer.bounds;
                 if (bounds.max.y < player.position.y - 0.65f) continue;
                 bounds.Expand(0.16f);
@@ -101,15 +103,14 @@ namespace MazeParty.Gameplay
             {
                 if (terrain == null || !terrain.enabled || !terrain.gameObject.activeInHierarchy ||
                     terrain.terrainData == null || (camera.cullingMask & (1 << terrain.gameObject.layer)) == 0) continue;
-                var size = terrain.terrainData.size;
-                var footprint = new Bounds(terrain.transform.position + size * 0.5f,
-                    new Vector3(size.x, 20000f, size.z));
-                if (!BlocksPortrait(footprint, origin)) continue;
-                // Terrain vegetation is batched internally and has no Renderer to
-                // hide individually. Suppress it only in this close-up camera.
-                _terrainChanges.Add(new TerrainState(terrain));
-                terrain.drawTreesAndFoliage = false;
-                if (TerrainBlocksPortrait(terrain, origin)) terrain.drawHeightmap = false;
+                if (terrain.terrainData.treeInstanceCount == 0) continue;
+                if (!_treeViews.TryGetValue(terrain, out var state))
+                {
+                    state = new TerrainState(terrain);
+                    _treeViews.Add(terrain, state);
+                }
+                if (state.HideBlockingTrees(bounds => BlocksPortrait(bounds, origin)))
+                    _terrainChanges.Add(state);
             }
         }
 
@@ -119,26 +120,24 @@ namespace MazeParty.Gameplay
             return false;
         }
 
-        private bool TerrainBlocksPortrait(Terrain terrain, Vector3 origin)
+        // Raise the camera, never the player or an entire terrain tile.
+        public static Vector3 ClearTerrainSightLine(Vector3 camera, Vector3 target)
         {
-            var collider = terrain.GetComponent<TerrainCollider>();
-            var basePosition = terrain.transform.position;
-            var size = terrain.terrainData.size;
-            foreach (var target in _targets)
+            foreach (var terrain in Terrain.activeTerrains)
             {
-                var offset = target - origin;
-                if (collider != null && collider.enabled && offset.sqrMagnitude > 0.0001f &&
-                    collider.Raycast(new Ray(origin, offset.normalized), out _, Mathf.Max(0f, offset.magnitude - 0.05f))) return true;
-                // Raycasts cannot detect a camera already inside the hillside.
-                // Height samples also cover authored Terrain without a collider.
-                for (var step = 0; step < 16; step++)
+                if (terrain == null || !terrain.enabled || terrain.terrainData == null) continue;
+                var size = terrain.terrainData.size;
+                for (var step = 0; step < 15; step++)
                 {
-                    var point = Vector3.Lerp(origin, target, step / 16f) - basePosition;
-                    if (point.x < 0f || point.z < 0f || point.x > size.x || point.z > size.z) continue;
-                    if (point.y < terrain.terrainData.GetInterpolatedHeight(point.x / size.x, point.z / size.z)) return true;
+                    var t = step / 16f;
+                    var point = Vector3.Lerp(camera, target, t);
+                    var local = point - terrain.transform.position;
+                    if (local.x < 0f || local.z < 0f || local.x > size.x || local.z > size.z) continue;
+                    var minimum = terrain.SampleHeight(point) + terrain.transform.position.y + .3f;
+                    if (point.y < minimum) camera.y += (minimum - point.y) / (1f - t);
                 }
             }
-            return false;
+            return camera;
         }
 
         private static bool Blocks(Bounds bounds, Vector3 origin, Vector3 target)
@@ -176,23 +175,89 @@ namespace MazeParty.Gameplay
             _isolatedPlayers.Clear();
             _scenery = null;
             _terrains = null;
+            foreach (var state in _treeViews.Values) state.Dispose();
+            _treeViews.Clear();
         }
 
-        private readonly struct TerrainState
+        private sealed class TerrainState : IDisposable
         {
             private readonly Terrain _terrain;
-            private readonly bool _heightmap, _foliage;
+            private readonly TerrainData _original;
+            private readonly TreeInstance[] _trees;
+            private readonly Bounds[] _bounds;
+            private readonly bool[] _hidden;
+            private TerrainData _view;
             public TerrainState(Terrain terrain)
             {
                 _terrain = terrain;
-                _heightmap = terrain.drawHeightmap;
-                _foliage = terrain.drawTreesAndFoliage;
+                _original = terrain.terrainData;
+                _trees = _original.treeInstances;
+                _bounds = new Bounds[_trees.Length];
+                _hidden = new bool[_trees.Length];
+                var prototypes = _original.treePrototypes;
+                for (var i = 0; i < _trees.Length; i++)
+                {
+                    var tree = _trees[i];
+                    var prefab = prototypes[tree.prototypeIndex].prefab;
+                    var matrix = Matrix4x4.TRS(terrain.transform.position + Vector3.Scale(tree.position, _original.size),
+                        Quaternion.Euler(0f, tree.rotation * Mathf.Rad2Deg, 0f),
+                        new Vector3(tree.widthScale, tree.heightScale, tree.widthScale));
+                    var first = true;
+                    foreach (var renderer in prefab.GetComponentsInChildren<Renderer>(true))
+                    {
+                        var box = renderer.localBounds;
+                        var relative = prefab.transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
+                        for (var corner = 0; corner < 8; corner++)
+                        {
+                            var point = box.center + Vector3.Scale(box.extents, new Vector3(
+                                (corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f));
+                            point = matrix.MultiplyPoint3x4(relative.MultiplyPoint3x4(point));
+                            if (first) { _bounds[i] = new Bounds(point, Vector3.zero); first = false; }
+                            else _bounds[i].Encapsulate(point);
+                        }
+                    }
+                }
+            }
+            public bool HideBlockingTrees(Func<Bounds, bool> blocks)
+            {
+                var changed = false;
+                var any = false;
+                for (var i = 0; i < _trees.Length; i++)
+                {
+                    var hide = blocks(_bounds[i]);
+                    changed |= hide != _hidden[i];
+                    _hidden[i] = hide;
+                    any |= hide;
+                }
+                if (!any) return false;
+                if (_view == null)
+                {
+                    _view = UnityEngine.Object.Instantiate(_original);
+                    _view.hideFlags = HideFlags.HideAndDontSave;
+                    changed = true;
+                }
+                if (changed)
+                {
+                    var trees = (TreeInstance[])_trees.Clone();
+                    for (var i = 0; i < trees.Length; i++)
+                        if (_hidden[i]) { trees[i].widthScale = 0f; trees[i].heightScale = 0f; }
+                    _view.SetTreeInstances(trees, false);
+                }
+                // Only this render uses the temporary tree view. TerrainCollider and
+                // the authored asset keep their original data and all background trees.
+                _terrain.terrainData = _view;
+                return true;
             }
             public void Restore()
             {
-                if (_terrain == null) return;
-                _terrain.drawHeightmap = _heightmap;
-                _terrain.drawTreesAndFoliage = _foliage;
+                if (_terrain != null && _terrain.terrainData == _view) _terrain.terrainData = _original;
+            }
+            public void Dispose()
+            {
+                Restore();
+                if (_view == null) return;
+                if (Application.isPlaying) UnityEngine.Object.Destroy(_view);
+                else UnityEngine.Object.DestroyImmediate(_view);
             }
         }
     }

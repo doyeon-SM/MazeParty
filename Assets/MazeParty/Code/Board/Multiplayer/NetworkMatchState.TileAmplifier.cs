@@ -12,8 +12,14 @@ namespace MazeParty.Multiplayer
 
         private bool HasTileAmplifierForTurn(int turn) => IsMagicMaze &&
             _tileAmplifierTurn.Value == turn && _tileAmplifierUsers.Value != 0;
-        private int LandingEffectMultiplier => HasTileAmplifierForTurn(Turn)
-            ? TileAmplifierRules.Multiplier(_tileAmplifierUsers.Value) : 1;
+        // Derive the periodic bonus from the authoritative turn. It survives
+        // reconnects/checkpoint restores without an extra saved flag or item user.
+        private int LandingEffectMultiplier => IsMagicMaze
+            ? TileAmplifierRules.Multiplier(
+                HasTileAmplifierForTurn(Turn) ? _tileAmplifierUsers.Value : (byte)0,
+                TileAmplifierRules.IsAutomaticTurn(Turn)) : 1;
+        public int TileAmplifierPresentationMultiplier => GameplayEnabled &&
+            FlowState <= BoardFlowState.LandingEffectResolve ? LandingEffectMultiplier : 1;
         public bool HasUsedTileAmplifier(int slot) => slot >= 0 && slot < MultiplayerConstants.MaxPlayers &&
             HasTileAmplifierForTurn(Turn) && (_tileAmplifierUsers.Value & (1 << slot)) != 0;
         public bool ShowTileAmplifierOutline(int slot) => GameplayEnabled &&

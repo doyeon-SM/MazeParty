@@ -111,8 +111,9 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var itemId = LocalEquippedItem;
             if (!IsOwner || !IsSpawned || match == null || !match.CanAcceptActionInput ||
-                CurrentHealth <= 0 || LocalChoiceResolution != ItemChoiceResolution.ItemSelected ||
-                LocalItemCharges <= 0 || IsSwapping || !BoardItemPresentationRules.IsFirearm(itemId))
+                // Chest weapons are usable even after choosing "Do not use" for the turn.
+                CurrentHealth <= 0 || LocalItemCharges <= 0 || IsSwapping ||
+                !BoardItemPresentationRules.IsFirearm(itemId))
             {
                 return false;
             }

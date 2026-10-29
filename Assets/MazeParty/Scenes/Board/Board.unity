@@ -5660,7 +5660,7 @@ MonoBehaviour:
   combatSpectatorFieldOfView: 55
   boardResourceEventDistance: 3.4
   boardResourceEventHeightOffset: -0.15
-  boardResourceEventFieldOfView: 60
+  boardResourceEventFieldOfView: 90
   boardResourceEventTextClearance: 1.1
 --- !u!4 &1548230741
 Transform:

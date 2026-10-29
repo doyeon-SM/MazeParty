@@ -39,12 +39,24 @@ namespace MazeParty.Multiplayer
                         out var position,
                         out var rotation);
                     TeleportController(position, rotation);
+                    _serverYaw = rotation.eulerAngles.y;
+                    _serverPitch = 0f;
+                    ApplyBoardStartFacingRpc(_serverYaw);
                 }
             }
 
             _boardPositionInitialized = true;
             EnsureTraversalInitialized();
             RefreshBoundaryWallsOnServer();
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void ApplyBoardStartFacingRpc(float yaw)
+        {
+            // The lobby look direction must not survive the authored board spawn pose.
+            _localYaw = yaw;
+            _localPitch = 0f;
+            ApplyLocalEyeRotation();
         }
 
         public void PrepareForOverviewOnServer()

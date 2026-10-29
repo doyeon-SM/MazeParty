@@ -197,7 +197,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void GoalRespawnsOnlyScoredBallAtConcedingCurrentShieldCenter()
+        public void GoalRespawnsOnlyScoredBallNearConcedingShieldWithinPocket()
         {
             var match = new BouncingBallsMatchState(3127);
             for (var slot = 0; slot < BouncingBallsRules.PlayerCount; slot++)
@@ -230,6 +230,8 @@ namespace MazeParty.Gameplay.Tests
                 var goal = match.LastGoal.Value;
                 var respawned = match.GetBall(goal.BallId);
                 var shield = match.GetShield(goal.DefenderSlot);
+                var pocketHalfWidth = BouncingBallsRules.GoalHalfWidth - BouncingBallsRules.BallRadius;
+                var spawnTangent = Math.Max(-pocketHalfWidth, Math.Min(pocketHalfWidth, shield.Center));
                 Assert.That(goal.Sequence, Is.EqualTo(match.GoalSequence));
                 Assert.That(goal.RoundNumber, Is.EqualTo(1));
                 Assert.That(respawned.OwnerSlot,
@@ -255,7 +257,7 @@ namespace MazeParty.Gameplay.Tests
                 switch (goal.DefenderSlot)
                 {
                     case 0:
-                        Assert.That(respawned.X, Is.EqualTo(shield.Center));
+                        Assert.That(respawned.X, Is.EqualTo(spawnTangent));
                         Assert.That(respawned.Y,
                             Is.EqualTo(-BouncingBallsRules.ShieldRailDistance));
                         Assert.That(respawned.VelocityY,
@@ -264,12 +266,12 @@ namespace MazeParty.Gameplay.Tests
                     case 1:
                         Assert.That(respawned.X,
                             Is.EqualTo(BouncingBallsRules.ShieldRailDistance));
-                        Assert.That(respawned.Y, Is.EqualTo(shield.Center));
+                        Assert.That(respawned.Y, Is.EqualTo(spawnTangent));
                         Assert.That(respawned.VelocityX,
                             Is.LessThan(0d));
                         break;
                     case 2:
-                        Assert.That(respawned.X, Is.EqualTo(shield.Center));
+                        Assert.That(respawned.X, Is.EqualTo(spawnTangent));
                         Assert.That(respawned.Y,
                             Is.EqualTo(BouncingBallsRules.ShieldRailDistance));
                         Assert.That(respawned.VelocityY,
@@ -278,7 +280,7 @@ namespace MazeParty.Gameplay.Tests
                     default:
                         Assert.That(respawned.X,
                             Is.EqualTo(-BouncingBallsRules.ShieldRailDistance));
-                        Assert.That(respawned.Y, Is.EqualTo(shield.Center));
+                        Assert.That(respawned.Y, Is.EqualTo(spawnTangent));
                         Assert.That(respawned.VelocityX,
                             Is.GreaterThan(0d));
                         break;
@@ -361,6 +363,87 @@ namespace MazeParty.Gameplay.Tests
                 BouncingBallsRanking.BuildRanksBySlot(
                     new[] { 1, 2 },
                     new[] { 1, 2 }));
+        }
+
+        [Test]
+        public void RecessedGoals_BlockSideEntriesReflectAtShieldAndScoreOnlyAtBackLine()
+        {
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            for (var side = 0; side < 4; side++)
+            {
+                var match = new BouncingBallsMatchState(1701);
+                var balls = (Array)typeof(BouncingBallsMatchState).GetField("_balls", flags).GetValue(match);
+                var ball = balls.GetValue(0);
+                var type = ball.GetType();
+                var resolve = typeof(BouncingBallsMatchState).GetMethod("ResolveSide", flags);
+                Func<double, double, (double x, double y)> point = (r, t) => side == 0 ? (t, -r) :
+                    side == 1 ? (r, t) : side == 2 ? (t, r) : (-r, t);
+                Action<double, double, double, double> place = (r, t, vr, vt) =>
+                {
+                    var p = point(r, t); var v = point(vr, vt);
+                    type.GetProperty("X").SetValue(ball, p.x); type.GetProperty("Y").SetValue(ball, p.y);
+                    type.GetProperty("VelocityX").SetValue(ball, v.x); type.GetProperty("VelocityY").SetValue(ball, v.y);
+                };
+                Func<double, double, bool> step = (r, t) =>
+                {
+                    var old = point(r, t);
+                    return (bool)resolve.Invoke(match, new object[] { ball, side, old.x, old.y });
+                };
+                Func<BouncingBallsBallSnapshot, double> radialSpeed = b =>
+                    side == 0 ? -b.VelocityY : side == 1 ? b.VelocityX : side == 2 ? b.VelocityY : -b.VelocityX;
+
+                place(8.1d, 2.7d, 9d, -4d);
+                Assert.That(step(7.6d, 3.5d), Is.False);
+                Assert.That(radialSpeed(match.GetBall(0)), Is.LessThan(0), "Side entries must hit the arena wall.");
+
+                ((double[])typeof(BouncingBallsMatchState).GetField("_shieldCenters", flags).GetValue(match))[side] = 2.7d;
+                place(8.1d, 2.7d, 9d, 0d);
+                Assert.That(step(7.95d, 2.7d), Is.False);
+                Assert.That(radialSpeed(match.GetBall(0)), Is.LessThan(0));
+                Assert.That(match.GetBall(0).OwnerSlot, Is.EqualTo(side));
+
+                foreach (var direction in new[] { -1d, 1d })
+                {
+                    place(9d + direction * .05d, 2.96d, direction * 4d, 5d);
+                    Assert.That(step(9d, 2.8d), Is.False);
+                    var b = match.GetBall(0);
+                    Assert.That(side == 0 || side == 2 ? b.VelocityX : b.VelocityY, Is.LessThan(0),
+                        "Pocket rails also contain balls travelling back toward the field.");
+                }
+                place(BouncingBallsRules.GoalLineDistance + BouncingBallsRules.BallRadius - .001d, 0, 9, 0);
+                Assert.That(step(9.8d, 0), Is.False);
+                Assert.That(match.GoalSequence, Is.Zero);
+                place(BouncingBallsRules.GoalLineDistance + BouncingBallsRules.BallRadius, 0, 9, 0);
+                Assert.That(step(10.2d, 0), Is.True);
+                Assert.That(match.GoalSequence, Is.EqualTo(1));
+            }
+        }
+
+        [Test]
+        public void RecessedGoals_KeepRespawnedAndCollidingBallsInsidePlayableArea()
+        {
+            const int seed = 20;
+            var match = new BouncingBallsMatchState(seed);
+            var wallFace = BouncingBallsRules.ArenaHalfExtent - BouncingBallsRules.BallRadius;
+            var pocketWidth = BouncingBallsRules.GoalHalfWidth - BouncingBallsRules.BallRadius;
+            var goalLine = BouncingBallsRules.GoalLineDistance + BouncingBallsRules.BallRadius;
+            for (var tick = 1; tick <= 3600; tick++)
+            {
+                for (var slot = 0; slot < 4; slot++)
+                    match.SetShieldInput(slot, ((tick / 73 + slot + seed) % 3) - 1);
+                match.AdvanceTo(tick * BouncingBallsRules.SimulationStepSeconds);
+                for (var id = 0; id < match.ActiveBallCount; id++)
+                {
+                    var ball = match.GetBall(id);
+                    var x = Math.Abs(ball.X);
+                    var y = Math.Abs(ball.Y);
+                    var insideField = x <= wallFace + 0.00001d && y <= wallFace + 0.00001d;
+                    var insidePocket = (x <= pocketWidth + 0.00001d && y <= goalLine) ||
+                                       (y <= pocketWidth + 0.00001d && x <= goalLine);
+                    Assert.That(insideField || insidePocket, Is.True,
+                        $"Ball {id} escaped at tick {tick}: ({ball.X}, {ball.Y}).");
+                }
+            }
         }
 
         private static void AssertSameSimulation(

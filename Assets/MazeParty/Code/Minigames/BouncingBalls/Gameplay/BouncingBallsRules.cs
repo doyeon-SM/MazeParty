@@ -23,7 +23,8 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 
         public const double ArenaHalfExtent = 8d;
         public const double GoalHalfWidth = 3.1d;
-        public const double ShieldRailDistance = 7.5d;
+        public const double GoalLineDistance = 10d;
+        public const double ShieldRailDistance = 8.28d;
         public const double ShieldHalfWidth = 1.1d;
         public const double ShieldMaximumOffset = GoalHalfWidth;
         public const double ShieldSpeed = 5.4d;

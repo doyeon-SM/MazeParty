@@ -108,14 +108,14 @@ namespace MazeParty.Editor
             var bindings = root.GetComponent<BoardHudCanvasBindings>();
             if (bindings.HasGhostPassReferences) return false;
             var data = new SerializedObject(bindings);
-            var sliders = data.FindProperty("references.PlayerHealthSliders");
+            var cards = data.FindProperty("references.PlayerCards");
             var outlines = data.FindProperty("ghostPassOutlines");
             outlines.arraySize = MultiplayerConstants.MaxPlayers;
             for (var slot = 0; slot < outlines.arraySize; slot++)
             {
                 if (outlines.GetArrayElementAtIndex(slot).objectReferenceValue != null) continue;
-                var slider = (Slider)sliders.GetArrayElementAtIndex(slot).objectReferenceValue;
-                var outline = slider.gameObject.AddComponent<Outline>();
+                var card = (Image)cards.GetArrayElementAtIndex(slot).objectReferenceValue;
+                var outline = card.gameObject.AddComponent<Outline>();
                 outline.effectColor = new Color(.68f, .2f, 1f, 1f);
                 outline.effectDistance = new Vector2(4f, -4f);
                 outline.useGraphicAlpha = true;

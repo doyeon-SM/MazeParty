@@ -26,7 +26,7 @@ namespace MazeParty.Multiplayer
             RefreshForestGhostFeedback(match.ForestGhost, match.SynchronizedNow,
                 match.ForestGhost.IsIntro ? _forestGhostView.CaptionAnchor : head);
             if (match.ForestGhost.IsIntro || match.ForestGhost.Slot >= 0)
-                cameraDirector.SetBoardResourceEventFocus(_forestGhostView.Focus, head, 0f);
+                cameraDirector.SetBoardResourceEventFocus(_forestGhostView.Focus, head, 0f, match.ForestGhost.IsIntro);
             else
                 cameraDirector.SetCombatSpectatorFocus(match.ForestGhost.Position + Vector3.up * 1.45f);
             return true;

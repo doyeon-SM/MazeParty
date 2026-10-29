@@ -134,11 +134,11 @@ namespace MazeParty.Multiplayer.Tests
                     Is.Not.Null);
                 for (var runner = 0; runner < 3; runner++)
                 {
-                    Assert.That(
-                        FindDescendant(
-                            state.transform,
-                            "Runner Start " + (runner + 1)),
-                        Is.Not.Null);
+                    var marker = FindDescendant(state.transform, "Runner Start " + (runner + 1));
+                    Assert.That(marker, Is.Not.Null);
+                    Assert.That(Vector2.Distance(new Vector2(marker.position.x, marker.position.z),
+                        NetworkTagChaseState.GetRoundStartPosition(0, runner + 1)), Is.LessThan(.001f),
+                        "Authored runner markers must match server/practice spawn positions.");
                 }
 
                 var cameras = state

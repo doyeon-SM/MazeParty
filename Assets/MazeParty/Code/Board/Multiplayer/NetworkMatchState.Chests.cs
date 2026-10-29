@@ -93,7 +93,8 @@ namespace MazeParty.Multiplayer
             {
                 var visual = _chestVisuals[index];
                 var visible = visual != null && visual.gameObject.activeInHierarchy &&
-                    BoardMapView.IsPointDirectlyVisible(camera, visual.ObservationPoint, hits);
+                    (BoardMapView.IsPointDirectlyVisible(camera, visual.ObservationPoint, hits) ||
+                     visual.TryGetObservationBounds(out var bounds) && BoardMapView.IsBoundsDirectlyVisible(camera, bounds, hits));
                 _localChestKnowledge.ShouldShow(index, GetChestSnapshot(index), visible);
             }
         }

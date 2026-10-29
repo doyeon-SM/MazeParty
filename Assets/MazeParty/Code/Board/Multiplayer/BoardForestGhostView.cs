@@ -40,6 +40,11 @@ namespace MazeParty.Multiplayer
             }
             var resource = (ForestGhostResource)snapshot.Resource;
             var hasTarget = snapshot.Slot >= 0;
+            var disappearing = elapsed >= 2.4f;
+            var attacking = hasTarget && resource == ForestGhostResource.Health && snapshot.Amount < 0 && elapsed >= 0.6f;
+            var clip = disappearing ? dissolveClip : attacking ? attackClip : idleClip;
+            var animationTime = disappearing ? elapsed - 2.4f : attacking ? elapsed - 0.6f : elapsed;
+            clip.SampleAnimation(model.gameObject, clip.isLooping ? animationTime % clip.length : Mathf.Min(animationTime, clip.length));
             Quaternion cameraRotation;
             if (hasTarget)
             {
@@ -57,11 +62,6 @@ namespace MazeParty.Multiplayer
                     -(cameraRotation * Vector3.forward), Vector3.up), Vector3.up);
             }
             model.localScale = Vector3.one * (hasTarget ? modelScale : emptyTileScale);
-            var disappearing = elapsed >= 2.4f;
-            var attacking = hasTarget && resource == ForestGhostResource.Health && snapshot.Amount < 0 && elapsed >= 0.6f;
-            var clip = disappearing ? dissolveClip : attacking ? attackClip : idleClip;
-            var animationTime = disappearing ? elapsed - 2.4f : attacking ? elapsed - 0.6f : elapsed;
-            clip.SampleAnimation(model.gameObject, clip.isLooping ? animationTime % clip.length : Mathf.Min(animationTime, clip.length));
             captionAnchor.position = head.position + Vector3.up * captionHeadOffset;
             _properties ??= new MaterialPropertyBlock();
             _properties.SetFloat("_Dissolve", Mathf.Min(Mathf.Clamp01(elapsed / 0.3f), Mathf.Clamp01((3f - elapsed) / 0.6f)));

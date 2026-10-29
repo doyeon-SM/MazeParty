@@ -50,7 +50,7 @@ namespace MazeParty.Multiplayer
         public const int GridSize = 7;
         public const int CellCount = GridSize * GridSize;
         internal const double PlayerObservationIntervalSeconds = 1d;
-        private const int VisionSampleCount = 33;
+        private const int VisionSampleCount = 65;
         private const int FullMapSortingOrder = 50;
 
         [SerializeField] private GameObject minimapPanel;
@@ -126,6 +126,9 @@ namespace MazeParty.Multiplayer
             // so the map and minimap stay closed.
             var mapAvailable = action && _cameraDirector != null &&
                                IsMapUiAllowed(_cameraDirector.ActiveMode);
+            _bindings?.PresentTileAmplifier(
+                mapAvailable ? match.TileAmplifierPresentationMultiplier : 1,
+                Time.unscaledTimeAsDouble);
             var keyboard = Keyboard.current;
             var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             var typing = selected != null && selected.TryGetComponent<InputField>(out var input) && input.isFocused;
@@ -369,7 +372,7 @@ namespace MazeParty.Multiplayer
             }
             SeedInitialPlayerPositions();
 
-            if (_fullMapOpen || localAvatar == null)
+            if (localAvatar == null)
             {
                 SuspendPlayerObservation();
                 return;
@@ -403,7 +406,7 @@ namespace MazeParty.Multiplayer
             }
 
             var outputCamera = _cameraDirector.OutputCamera;
-            RefreshVisionMask(outputCamera);
+            RefreshVisionMask(outputCamera, localAvatar.transform.position.y - PlayerAvatarVisual.StandingControllerHeight * .5f);
             match.ObserveChestsOnLocalMap(outputCamera, _playerSightHits);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
@@ -468,13 +471,34 @@ namespace MazeParty.Multiplayer
                 : target.EyePivot != null
                     ? target.EyePivot.position
                     : target.transform.position + Vector3.up * 0.75f;
-            return IsPointDirectlyVisible(
-                outputCamera,
-                targetPoint,
-                _playerSightHits);
+            if (IsPointDirectlyVisible(outputCamera, targetPoint, _playerSightHits)) return true;
+            if (bindings == null) return false;
+            // A window lintel can cover the head while the body or a hand is visible.
+            return IsHitRegionVisible(outputCamera, bindings.HeadHitbox) ||
+                   IsHitRegionVisible(outputCamera, bindings.BodyHitbox) ||
+                   IsHitRegionVisible(outputCamera, bindings.LeftHandHitbox) ||
+                   IsHitRegionVisible(outputCamera, bindings.RightHandHitbox);
         }
 
-        private void RefreshVisionMask(Camera outputCamera)
+        private bool IsHitRegionVisible(Camera camera, Collider region) =>
+            region != null && region.enabled && region.gameObject.activeInHierarchy &&
+            IsBoundsDirectlyVisible(camera, region.bounds, _playerSightHits);
+
+        internal static bool IsBoundsDirectlyVisible(Camera camera, Bounds bounds, RaycastHit[] hits)
+        {
+            if (IsPointDirectlyVisible(camera, bounds.center, hits)) return true;
+            // Sample inside the visual volume; no ray is allowed through an opaque frame.
+            for (var axis = 0; axis < 3; axis++)
+            {
+                var offset = Vector3.zero;
+                offset[axis] = bounds.extents[axis] * .75f;
+                if (IsPointDirectlyVisible(camera, bounds.center + offset, hits) ||
+                    IsPointDirectlyVisible(camera, bounds.center - offset, hits)) return true;
+            }
+            return false;
+        }
+
+        private void RefreshVisionMask(Camera outputCamera, float floorHeight)
         {
             var forward = Vector3.ProjectOnPlane(
                 outputCamera.transform.forward,
@@ -507,18 +531,41 @@ namespace MazeParty.Multiplayer
             var origin = outputCamera.transform.position;
             for (var index = 0; index < VisionSampleCount; index++)
             {
-                var viewportX = index / (VisionSampleCount - 1f);
-                var direction = Vector3.ProjectOnPlane(
-                    outputCamera.ViewportPointToRay(
-                        new Vector3(viewportX, 0.5f, 0f)).direction,
-                    Vector3.up);
-                _visionClearFractions[index] =
-                    direction.sqrMagnitude > 0.0001f
-                        ? GetVisionClearFraction(
-                            origin,
-                            direction.normalized,
-                            maximumDistance)
-                        : 0f;
+                // The overlay interpolates angles, not screen X coordinates.
+                var angle = Mathf.Lerp(-halfAngle, halfAngle, index / (VisionSampleCount - 1f));
+                var horizontal = Quaternion.AngleAxis(angle, Vector3.up) * forward;
+                var visible = 0f;
+                for (var height = 0; height < 18; height++)
+                {
+                    var direction = horizontal;
+                    if (height > 0 && height <= 8)
+                    {
+                        // Shallow rays through a sill can remain visible much farther
+                        // than evenly spaced screen-height samples would suggest.
+                        var upper = height <= 4;
+                        var distanceStep = (height - 1) % 4;
+                        var distance = maximumDistance / (1 << distanceStep);
+                        var targetHeight = floorHeight + (upper ? PlayerAvatarVisual.StandingControllerHeight : .15f);
+                        direction = (horizontal * distance + Vector3.up * (targetHeight - origin.y)).normalized;
+                    }
+                    else if (height > 8)
+                    {
+                        var viewportY = .05f + .9f * (height - 9) / 8f;
+                        var slope = (viewportY * 2f - 1f) * Mathf.Tan(outputCamera.fieldOfView * Mathf.Deg2Rad * .5f);
+                        var denominator = Vector3.Dot(Vector3.up, outputCamera.transform.up) -
+                                          slope * Vector3.Dot(Vector3.up, outputCamera.transform.forward);
+                        if (Mathf.Abs(denominator) < .0001f) continue;
+                        var vertical = (slope * Vector3.Dot(horizontal, outputCamera.transform.forward) -
+                                        Vector3.Dot(horizontal, outputCamera.transform.up)) / denominator;
+                        direction = (horizontal + Vector3.up * vertical).normalized;
+                    }
+                    var viewport = outputCamera.WorldToViewportPoint(origin + direction * 10f);
+                    if (viewport.z <= 0f || viewport.x < 0f || viewport.x > 1f || viewport.y < 0f || viewport.y > 1f) continue;
+                    visible = Mathf.Max(visible, GetVisionClearFraction(origin, direction, maximumDistance,
+                        floorHeight + .15f, floorHeight + PlayerAvatarVisual.StandingControllerHeight, _visionSightHits));
+                    if (visible >= 1f) break;
+                }
+                _visionClearFractions[index] = visible;
             }
 
             liveMinimap.PresentVision(
@@ -526,30 +573,36 @@ namespace MazeParty.Multiplayer
                 _visionClearFractions);
         }
 
-        private float GetVisionClearFraction(
-            Vector3 origin,
-            Vector3 direction,
-            float maximumDistance)
+        internal static float GetVisionClearFraction(Vector3 origin, Vector3 direction,
+            float maximumDistance, float minimumHeight, float maximumHeight, RaycastHit[] sightHits)
         {
+            var planar = Vector3.ProjectOnPlane(direction, Vector3.up).magnitude;
+            if (maximumDistance <= 0f || planar <= .0001f) return 0f;
+            var rayDistance = maximumDistance / planar;
+            // Do not reveal areas simply because a ray sees sky above a solid wall.
+            // Keep the sampled volume at chest/player height above the local floor.
+            if (direction.y > .0001f) rayDistance = Mathf.Min(rayDistance, (maximumHeight - origin.y) / direction.y);
+            else if (direction.y < -.0001f) rayDistance = Mathf.Min(rayDistance, (minimumHeight - origin.y) / direction.y);
+            else if (origin.y < minimumHeight || origin.y > maximumHeight) return 0f;
+            if (rayDistance <= 0f) return 0f;
             var hitCount = Physics.RaycastNonAlloc(
                 origin,
                 direction,
-                _visionSightHits,
-                maximumDistance,
+                sightHits,
+                rayDistance,
                 Physics.DefaultRaycastLayers,
                 QueryTriggerInteraction.Ignore);
-            var closest = maximumDistance;
+            if (hitCount == sightHits.Length) return 0f;
+            var closest = rayDistance;
             for (var index = 0; index < hitCount; index++)
             {
-                var hit = _visionSightHits[index];
+                var hit = sightHits[index];
                 if (!IsSightOccluder(hit.collider))
                     continue;
                 closest = Mathf.Min(closest, hit.distance);
             }
 
-            return maximumDistance > 0f
-                ? Mathf.Clamp01(closest / maximumDistance)
-                : 0f;
+            return Mathf.Clamp01(closest * planar / maximumDistance);
         }
 
         internal static bool IsPointDirectlyVisible(
@@ -604,7 +657,7 @@ namespace MazeParty.Multiplayer
 
             var boundaryWall =
                 collider.GetComponentInParent<BoardBoundaryWallVisual>();
-            return boundaryWall == null || boundaryWall.IsVisible;
+            return boundaryWall == null; // Movement smoke never blocks the vision refresh.
         }
 
         private static void SetActive(GameObject target, bool active)

@@ -120,6 +120,14 @@ namespace MazeParty.Multiplayer.Tests
             var map = root.GetComponent<BoardMapView>();
             Assert.That(binding, Is.Not.Null);
             Assert.That(binding.HasRequiredReferences, Is.True);
+            var amplifier = new SerializedObject(binding).FindProperty("amplifierOutline")
+                .objectReferenceValue as BoardMinimapAmplifierOutline;
+            Assert.That(amplifier, Is.Not.Null);
+            var minimapPanel = (GameObject)new SerializedObject(map).FindProperty("minimapPanel").objectReferenceValue;
+            Assert.That(amplifier.transform.IsChildOf(minimapPanel.transform), Is.True);
+            Assert.That(amplifier.GetComponentInParent<UnityEngine.UI.Mask>(), Is.Null,
+                "The outer ring must be authored outside the circular clipping mask.");
+            Assert.That(root.GetComponentsInChildren<BoardMinimapAmplifierOutline>(true), Has.Length.EqualTo(1));
             var bombardment = new SerializedObject(binding);
             foreach (var name in new[] { "bombardmentHintRoot", "bombardmentHintIcon", "bombardmentHintText", "bombardmentProgressText" })
             {

@@ -64,9 +64,10 @@ namespace MazeParty.Gameplay
         [SerializeField, Min(0.5f)] private float boardResourceEventDistance = 3.4f;
         [SerializeField] private float boardResourceEventHeightOffset = 0.15f;
         [SerializeField, Range(10f, 120f)]
-        private float boardResourceEventFieldOfView = 60f;
+        private float boardResourceEventFieldOfView = 90f;
 
         [SerializeField, Min(0f)] private float boardResourceEventTextClearance = 1.1f;
+        private bool _boardResourceEventShowMap;
         private readonly System.Collections.Generic.Dictionary<Transform, float> _eventShotFieldsOfView =
             new System.Collections.Generic.Dictionary<Transform, float>();
         private readonly System.Collections.Generic.Dictionary<Transform, Vector3> _eventShotHeadOffsets = new();
@@ -174,8 +175,9 @@ namespace MazeParty.Gameplay
         public void SetBoardResourceEventFocus(
             Transform facing,
             Transform head,
-            float focusHeight)
+            float focusHeight, bool showMap = false)
         {
+            _boardResourceEventShowMap = showMap;
             if (facing == null) { _eventShotFieldsOfView.Clear(); _eventShotHeadOffsets.Clear(); }
             _boardResourceEventFacing = facing;
             _boardResourceEventHead = head;
@@ -295,6 +297,7 @@ namespace MazeParty.Gameplay
 
         public void SetUiPointerVisible(bool visible)
         {
+            if (_uiPointerVisible == visible) return;
             _uiPointerVisible = visible;
             ApplyCursorPolicy();
         }
@@ -755,7 +758,7 @@ namespace MazeParty.Gameplay
             }
 
             CalculateBoardResourceEventPose(_boardResourceEventFacing, _boardResourceEventHead,
-                _boardResourceEventFocusHeight, out var position, out var rotation, out var fieldOfView);
+                _boardResourceEventFocusHeight, out var position, out var rotation, out var fieldOfView, _boardResourceEventShowMap);
             var lens = boardResourceEventCamera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Perspective;
             lens.FieldOfView = fieldOfView;
@@ -764,7 +767,7 @@ namespace MazeParty.Gameplay
         }
 
         public void CalculateBoardResourceEventPose(Transform facing, Transform head, float focusHeight,
-            out Vector3 position, out Quaternion rotation, out float fieldOfView)
+            out Vector3 position, out Quaternion rotation, out float fieldOfView, bool showMap = false)
         {
             // Stable frontal shot: animated head bob and reward travel
             // height must never move the spectator camera up and down.
@@ -796,34 +799,17 @@ namespace MazeParty.Gameplay
                 lookAt = facing.TransformPoint(offset);
             }
             position.y = Mathf.Max(focus.y, lookAt.y) + Mathf.Max(0f, boardResourceEventHeightOffset);
+            if (showMap)
+            {
+                position = lookAt + forward.normalized * 9f + Vector3.up * 4.5f;
+            }
+            position = BoardEventCameraOcclusion.ClearTerrainSightLine(position, lookAt);
             var direction = lookAt - position;
             rotation = direction.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
                 : Quaternion.identity;
-            if (!_eventShotFieldsOfView.TryGetValue(shotKey, out fieldOfView))
-            {
-                fieldOfView = Mathf.Clamp(boardResourceEventFieldOfView, 10f, 120f);
-                var visual = head != null ? head.GetComponentInParent<PlayerAvatarVisual>() : facing.GetComponent<PlayerAvatarVisual>();
-                if (visual != null && visual.TryGetHeadBounds(out var headBounds))
-                {
-                    // Wide hats project higher at their nearest corner. Include all
-                    // four top corners and leave room for the complete caption.
-                    var inverseRotation = Quaternion.Inverse(rotation);
-                    for (var corner = 0; corner < 4; corner++)
-                    {
-                        var upperPoint = headBounds.center + new Vector3(
-                            (corner & 1) == 0 ? -headBounds.extents.x : headBounds.extents.x,
-                            headBounds.extents.y + boardResourceEventTextClearance,
-                            (corner & 2) == 0 ? -headBounds.extents.z : headBounds.extents.z);
-                        var inView = inverseRotation * (upperPoint - position);
-                        var requiredField = 2f * Mathf.Atan2(Mathf.Max(0f, inView.y) / .9f,
-                            Mathf.Max(.1f, inView.z)) * Mathf.Rad2Deg;
-                        fieldOfView = Mathf.Clamp(Mathf.Max(fieldOfView, requiredField), 10f, 120f);
-                    }
-                    // Hold framing only after the body becomes visible on entry to the shot.
-                    _eventShotFieldsOfView[shotKey] = fieldOfView;
-                }
-            }
+            // One authored lens for every hat. HeadAnchor is independent of costume bounds.
+            fieldOfView = Mathf.Clamp(showMap ? 60f : boardResourceEventFieldOfView, 10f, 120f);
         }
 
         private float GetOutputAspect()

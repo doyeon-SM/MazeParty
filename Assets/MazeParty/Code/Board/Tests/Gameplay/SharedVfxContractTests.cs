@@ -82,6 +82,9 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(pooled.ParticleSystems, Is.Not.Empty, path);
                 Assert.That(pooled.ParticleSystems.All(item => item != null),
                     Is.True, path);
+                Assert.That(pooled.ParticleSystems,
+                    Is.EquivalentTo(prefab.GetComponentsInChildren<ParticleSystem>(true)),
+                    path + " must bind every authored particle for replay and accessibility.");
                 Assert.That(pooled.FlashLights, Is.Not.Empty, path);
                 Assert.That(pooled.FlashLights.All(item => item != null),
                     Is.True, path);

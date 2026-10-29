@@ -26,6 +26,7 @@ namespace MazeParty.Multiplayer
     /// Runtime uGUI/Canvas presentation for the online board flow. All visible copy
     /// intentionally remains English until the project's Korean font is installed.
     /// </summary>
+    [DefaultExecutionOrder(1100)] // After owner eye pose and the rendered camera.
     public sealed class BoardFlowView : MonoBehaviour
     {
         internal const float BoardKillFeedEntrySeconds = 2f;
@@ -343,6 +344,7 @@ namespace MazeParty.Multiplayer
 
         private void LateUpdate()
         {
+            RefreshReticleColor(_reticle != null && _reticle.activeInHierarchy);
             if (cameraDirector == null)
                 cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
             uiBindings?.Item?.SetInventoryVisible(cameraDirector != null &&
@@ -670,7 +672,7 @@ namespace MazeParty.Multiplayer
                   match.IsCombatAlive(_localAvatar.AssignedSlot))) &&
                 !match.IsGlobalSimulationPaused;
             SetActive(_reticle, showReticle);
-            RefreshReticleColor(showReticle);
+            if (!showReticle) RefreshReticleColor(false);
 
             RefreshMinefieldPanelContent(match, showMinefieldReady);
 
@@ -1301,6 +1303,9 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCursor(NetworkMatchState match)
         {
+            // Each minigame owns its camera/pointer policy while it is visible.
+            if (match.FlowState == BoardFlowState.MinigamePlaying ||
+                match.FlowState == BoardFlowState.MinigameResult) return;
             if (cameraDirector == null)
             {
                 cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();

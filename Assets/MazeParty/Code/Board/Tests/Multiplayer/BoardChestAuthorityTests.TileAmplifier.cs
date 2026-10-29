@@ -74,10 +74,12 @@ namespace MazeParty.Multiplayer.Tests
             var effects = (BoardLandingEffectType[])typeof(NetworkMatchState).GetField("_landingEffectPlan", Private).GetValue(_match);
             var tiles = (BoardTile[])typeof(NetworkMatchState).GetField("_landingEffectTiles", Private).GetValue(_match);
             tiles[0] = _topology.Tiles.First(t => t.TileType == BoardTileType.Normal);
-            Set(_match, "_tileAmplifierTurn", 2);
+            foreach (var turn in new[] { 2, 3 })
             foreach (var users in new byte[] { 0, 1, 3, 7, 15 })
             foreach (var occupied in new byte[] { 0, 1, 5, 7 })
             {
+                Set(_match, "_turn", turn);
+                Set(_match, "_tileAmplifierTurn", turn);
                 Set(_match, "_tileAmplifierUsers", users);
                 Set(_player, "_occupiedItemMask", occupied);
                 Set(_player, "_itemSlot0", (byte)PrototypeItemId.Mine);
@@ -87,7 +89,7 @@ namespace MazeParty.Multiplayer.Tests
                 effects[0] = BoardLandingEffectType.ItemReward;
                 var seed = (int)typeof(NetworkMatchState).GetMethod("GetLandingItemRewardSeed", Private).Invoke(_match, new object[] { 0 });
                 var random = new System.Random(seed);
-                var remaining = Math.Min(3, TileAmplifierRules.Multiplier(users));
+                var remaining = Math.Min(3, TileAmplifierRules.Multiplier(users, turn == 3));
                 var expected = new byte[] { (byte)PrototypeItemId.Mine, (byte)PrototypeItemId.Pistol, (byte)PrototypeItemId.Sniper };
                 var expectedMask = occupied;
                 for (var index = 0; index < 3 && remaining > 0; index++)
@@ -135,6 +137,45 @@ namespace MazeParty.Multiplayer.Tests
                 Invoke("CommitMagicMazeShuffleOnServer");
                 Assert.That(_match.BoardEffectRevision, Is.EqualTo(revision + 1));
                 Assert.That((MagicMazeEffectSnapshot[])typeof(NetworkMatchState).GetMethod("CaptureMagicMazeEffects", Private).Invoke(_match, null), Is.EqualTo(saved.magicMazeEffects));
+            }
+        }
+
+        [Test]
+        public void TileAmplifier_AutomaticTurnsComposeWithRestoredUsersAndExpireAfterSettlement()
+        {
+            foreach (var row in new (int turn, int automatic)[] { (1, 1), (2, 1), (3, 2), (4, 1),
+                         (6, 2), (7, 1), (9, 2), (12, 2), (15, 2), (16, 1) })
+            {
+                AmplifierAction(row.turn, 20);
+                var saved = new MatchRecoverySnapshot { boardMapId = MagicMazeRules.MapId,
+                    turn = row.turn, scheduleTurnCount = 20, checkpoint = MatchRecoveryCheckpoint.TurnOverview,
+                    players = Enumerable.Range(0, 4).Select(i => new MatchRecoveryPlayerSnapshot
+                        { playerKey = "player-" + i }).ToArray() };
+                Invoke("RestoreTileAmplifier", saved, saved.players);
+                Assert.That(_match.TileAmplifierPresentationMultiplier, Is.EqualTo(row.automatic));
+                Assert.That(_match.HasUsedTileAmplifier(0), Is.False,
+                    "An automatic bonus must not consume any player's per-turn item use.");
+                for (var slot = 0; slot < 4; slot++)
+                {
+                    Invoke("RegisterTileAmplifierOnServer", slot);
+                    Assert.That(_match.TileAmplifierPresentationMultiplier, Is.EqualTo(row.automatic + slot + 1));
+                }
+                saved.tileAmplifierTurn = row.turn;
+                foreach (var player in saved.players) player.usedTileAmplifier = true;
+                Invoke("RestoreTileAmplifier", saved, saved.players.Reverse().ToArray());
+                Assert.That(_match.TileAmplifierPresentationMultiplier, Is.EqualTo(row.automatic + 4));
+                foreach (var phase in new[] { BoardFlowState.MagicMazeChange, BoardFlowState.MinigameIntroReady,
+                             BoardFlowState.MinigameResult, BoardFlowState.MatchComplete })
+                {
+                    Set(_match, "_flowState", (byte)phase);
+                    Assert.That(_match.TileAmplifierPresentationMultiplier, Is.EqualTo(1));
+                }
+                Set(_match, "_flowState", (byte)BoardFlowState.Action);
+                Set(_match, "_turn", row.turn + 1);
+                Assert.That(_match.TileAmplifierPresentationMultiplier,
+                    Is.EqualTo((row.turn + 1) % 3 == 0 ? 2 : 1), "Item stacks must not leak to the next turn.");
+                Set(_match, "_boardMapId", new FixedString64Bytes("maze-graybox"));
+                Assert.That(_match.TileAmplifierPresentationMultiplier, Is.EqualTo(1));
             }
         }
 

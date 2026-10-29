@@ -13,7 +13,11 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private GraphicRaycaster rootRaycaster;
         [SerializeField] private BoardMapView mapView;
+        [SerializeField] private BoardMinimapAmplifierOutline amplifierOutline;
         [SerializeField] private Text movesText;
+
+        public void PresentTileAmplifier(int multiplier, double now) =>
+            amplifierOutline.Present(multiplier, now);
         [SerializeField] private Text itemUsesText;
         [SerializeField] private GameObject bombardmentHintRoot;
         [SerializeField] private RawImage bombardmentHintIcon;
@@ -71,6 +75,7 @@ namespace MazeParty.Multiplayer
             bombardmentHintRoot != null && bombardmentHintIcon != null &&
             bombardmentHintIcon.texture != null && bombardmentHintText != null &&
             bombardmentProgressText != null &&
+            amplifierOutline != null && amplifierOutline.transform.IsChildOf(transform) &&
             rootCanvas != null &&
             rootRaycaster != null &&
             mapView != null &&

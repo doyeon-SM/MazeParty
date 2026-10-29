@@ -679,7 +679,7 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
-                _resourceTransferVisual = Instantiate(prefab);
+                _resourceTransferVisual = Instantiate(prefab, avatarRoot);
                 _resourceTransferVisualPrefab = prefab;
                 _resourceTransferVisual.name =
                     "Board Resource Transfer " + snapshot.ResourceKind;
@@ -706,7 +706,11 @@ namespace MazeParty.Multiplayer
             var visualTransform = visual.transform;
             visualTransform.position = headPosition +
                                        Vector3.up *
-                                       (resourceTransferHeadOffset + height);
+                                       height;
+            // Leave the caption column clear while both ends still meet the head.
+            var right = cameraDirector != null && cameraDirector.OutputCamera != null
+                ? cameraDirector.OutputCamera.transform.right : avatarRoot.right;
+            visualTransform.position += right * (.9f * Mathf.Sin(motionProgress * Mathf.PI));
             visualTransform.rotation = Quaternion.Euler(
                 0f,
                 eased * 240f,
@@ -715,7 +719,7 @@ namespace MazeParty.Multiplayer
                 ? Mathf.InverseLerp(0.72f, 1f, motionProgress)
                 : Mathf.InverseLerp(0.82f, 1f, motionProgress);
             visualTransform.localScale = Vector3.one *
-                                         Mathf.Lerp(1f, 0.2f, disappear);
+                                         1.2f * Mathf.Lerp(1f, 0.2f, disappear);
         }
 
         private void ClearResourceTransferVisual()
@@ -865,11 +869,9 @@ namespace MazeParty.Multiplayer
 
                 var boundaryWall =
                     collider.GetComponentInParent<BoardBoundaryWallVisual>();
-                if (boundaryWall != null && !boundaryWall.IsVisible)
+                if (boundaryWall != null)
                 {
-                    // Remote players' private movement walls keep their
-                    // colliders active for simulation but are not visible to
-                    // this client, so they must not mask a nickname.
+                    // Red movement barriers do not block sight or nicknames.
                     continue;
                 }
 

@@ -481,8 +481,13 @@ namespace MazeParty.Multiplayer
 
         private void SetTaggerAimVisible(bool visible)
         {
-            _commonHud ??= FindAnyObjectByType<MinigameCommonHudView>(
-                FindObjectsInactive.Include);
+            if (_commonHud == null || !_commonHud.isActiveAndEnabled)
+            {
+                _commonHud = null;
+                foreach (var hud in FindObjectsByType<MinigameCommonHudView>(FindObjectsSortMode.None))
+                    if (hud.isActiveAndEnabled && hud.RootCanvas != null && hud.RootCanvas.enabled)
+                    { _commonHud = hud; break; }
+            }
             _commonHud?.SetTaggerAimVisible(visible);
         }
 

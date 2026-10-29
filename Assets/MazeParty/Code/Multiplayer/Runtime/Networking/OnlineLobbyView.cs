@@ -386,7 +386,8 @@ namespace MazeParty.Multiplayer
             }
 
             boardSettingsButton.gameObject.SetActive(
-                isLobby);
+                isLobby && snapshot.IsHost);
+            if (!snapshot.IsHost) SetBoardSettingsOpen(false);
             boardSettingsPanel.SetActive(
                 isLobby && _boardSettingsOpen);
             RefreshBoardMapSelection(

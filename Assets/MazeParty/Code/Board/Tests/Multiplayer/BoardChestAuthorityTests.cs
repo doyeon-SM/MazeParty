@@ -424,6 +424,9 @@ namespace MazeParty.Multiplayer.Tests
             Set(victim, "_slot", 1);
             Set(victim, "_maxHealth", 100);
             Set(_match, "_shieldEndsAt", 0d);
+            Set(_match, "_flowState", (byte)BoardFlowState.Action);
+            Set(_match, "_actionEndsAt", _match.SynchronizedNow + 100d);
+            typeof(NetworkBehaviour).GetProperty("IsOwner").SetValue(_player, true);
             _player.transform.position = new Vector3(1000f, 1000f, 1000f);
             _player.EyePivot.position = _player.transform.position + Vector3.up * 0.75f;
             _player.EyePivot.rotation = Quaternion.identity;
@@ -452,6 +455,8 @@ namespace MazeParty.Multiplayer.Tests
                         Assert.That(_player.EquipChestItemOnServer(weapon), Is.True);
                         typeof(NetworkPlayerAvatar).GetField("_itemCooldownRemaining", Private).SetValue(_player, 0d);
                         Physics.SyncTransforms();
+                        Assert.That(_player.HasLocalDamageableFirearmTarget(), Is.EqualTo(condition == "hit"),
+                            $"Reticle must match the actual damage path: {weapon}, {region}, {condition}");
                         Authority(_match, false);
                         Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.False);
                         Authority(_match, true);

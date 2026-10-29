@@ -99,10 +99,10 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(7));
                 var expectedShieldPositions = new[]
                 {
-                    new Vector3(0f, -7.5f, 0.38f),
-                    new Vector3(7.5f, 0f, 0.38f),
-                    new Vector3(0f, 7.5f, 0.38f),
-                    new Vector3(-7.5f, 0f, 0.38f)
+                    new Vector3(0f, -(float)BouncingBallsRules.ShieldRailDistance, 0.38f),
+                    new Vector3((float)BouncingBallsRules.ShieldRailDistance, 0f, 0.38f),
+                    new Vector3(0f, (float)BouncingBallsRules.ShieldRailDistance, 0.38f),
+                    new Vector3(-(float)BouncingBallsRules.ShieldRailDistance, 0f, 0.38f)
                 };
                 for (var slot = 0; slot < expectedShieldPositions.Length; slot++)
                 {
@@ -111,6 +111,10 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(shield, Is.Not.Null);
                     Assert.That(shield.localPosition,
                         Is.EqualTo(expectedShieldPositions[slot]));
+                    var goal = FindDescendant(arena, "Goal " + (slot + 1));
+                    var radial = slot == 0 || slot == 2 ? goal.localPosition.y : goal.localPosition.x;
+                    Assert.That(Mathf.Abs(radial), Is.EqualTo((float)BouncingBallsRules.GoalLineDistance),
+                        "Visible goals must agree with the authoritative scoring plane.");
                 }
                 Assert.That(FindDescendant(state.transform,
                     "Art Replacement Anchors"), Is.Not.Null);

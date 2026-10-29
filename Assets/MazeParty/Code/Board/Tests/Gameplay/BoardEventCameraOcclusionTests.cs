@@ -9,7 +9,7 @@ namespace MazeParty.Gameplay.Tests
     public sealed class BoardEventCameraOcclusionTests
     {
         [Test]
-        public void EventTerrain_InsideHillAndBatchedFoliageRestoreForEveryCameraAndCancellation()
+        public void EventTerrain_CameraClearsHillWithoutHidingGroundOrBackgroundVegetation()
         {
             var root = new GameObject("Terrain camera contract");
             var data = new TerrainData { heightmapResolution = 33, size = new Vector3(8, 4, 8) };
@@ -39,8 +39,11 @@ namespace MazeParty.Gameplay.Tests
                 {
                     terrain.drawHeightmap = true; terrain.drawTreesAndFoliage = foliage;
                     occlusion.SetFocus(camera, player); Render("Begin", camera);
-                    Assert.That(terrain.drawHeightmap, Is.False);
-                    Assert.That(terrain.drawTreesAndFoliage, Is.False);
+                    Assert.That(terrain.drawHeightmap, Is.True);
+                    Assert.That(terrain.drawTreesAndFoliage, Is.EqualTo(foliage));
+                    var cleared = BoardEventCameraOcclusion.ClearTerrainSightLine(camera.transform.position, player.position);
+                    Assert.That(cleared.y, Is.GreaterThan(terrainObject.transform.position.y + 2f));
+                    Assert.That(terrain.terrainData, Is.SameAs(data));
                     Assert.That(terrainObject.GetComponent<TerrainCollider>().enabled, Is.True);
                     if (finish == "End") Render("End", camera);
                     else if (finish == "Cancel") occlusion.SetFocus(camera, null);

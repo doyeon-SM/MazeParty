@@ -107,19 +107,8 @@ namespace MazeParty.Editor
                     if (group == null) group = label.gameObject.AddComponent<CanvasGroup>();
                     group.blocksRaycasts = false;
                     group.interactable = false;
-                    var iconObject = new GameObject("Delta Icon", typeof(RectTransform), typeof(RawImage), typeof(Outline));
-                    iconObject.layer = label.gameObject.layer;
-                    var icon = iconObject.GetComponent<RawImage>();
-                    icon.transform.SetParent(rect, false);
-                    icon.rectTransform.anchorMin = icon.rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
-                    icon.rectTransform.sizeDelta = Vector2.one * label.fontSize;
-                    icon.rectTransform.anchoredPosition = new Vector2(-label.fontSize * 1.8f, 0f);
-                    icon.texture = textures[kind];
-                    icon.raycastTarget = false;
-                    iconObject.GetComponent<Outline>().effectColor = Color.black;
-                    iconObject.GetComponent<Outline>().effectDistance = new Vector2(1f, -1f);
                     deltas[kind] = new BoardHudStatFeedbackView.Delta
-                        { Label = label, Icon = icon, Group = group, Value = number,
+                        { Label = label, Group = group, Value = number,
                             ValueIcon = kind == 1 ? hud.PlayerKeyIcons[slot] :
                                 kind == 2 ? hud.PlayerGoldIcons[slot] : null };
                     label.gameObject.SetActive(false);
