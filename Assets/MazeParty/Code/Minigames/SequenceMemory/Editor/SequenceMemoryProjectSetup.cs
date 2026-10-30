@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay;
 using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Multiplayer;
@@ -304,6 +305,9 @@ namespace MazeParty.Editor
             presenter.transform.localPosition = new Vector3(0f, 1.3f, 0f);
             presenter.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             presenter.transform.localScale = Vector3.one;
+            var visual = presenter.AddComponent<PlayerAvatarVisual>();
+            visual.ConfigurePresentationBindings(presenter.GetComponent<PlayerAvatarPresentationBindings>());
+            npcAnchor.gameObject.AddComponent<SequenceMemoryNpcPresentation>().Configure(visual);
 
             for (var childIndex = 0;
                  childIndex < presenter.transform.childCount;

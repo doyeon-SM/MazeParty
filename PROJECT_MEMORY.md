@@ -4,7 +4,7 @@
 
 ## 작업 기준·대표 문서
 
-- 실제 Git·Unity 루트: `C:/Unity/MazeParty`. 브랜치 `development`, HEAD `05e867360f02aa60a5bb02677c08901c0e20a20e`(`26.10.30`). 기획 v0.56·런타임 0.0.56 유지. 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`.
+- 실제 Git·Unity 루트: `C:/Unity/MazeParty`. 브랜치 `development`, HEAD `a96c6db87dad3c1f6f2c13287046c4aae2bee2ad`(`26.10.30`). 기획 v0.56·런타임 0.0.56 유지. 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`.
 - [기획 홈](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [분야별 상세](https://app.notion.com/p/406c227fda0381b69cb1ce78dcdc1351) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0).
 - [변경 색인 C01~C50](https://app.notion.com/p/406c227fda03811b966ff4186e8bfcdb) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026) · [10/30 회의록](https://app.notion.com/p/408c227fda0381be9f06e697e86a1354). 10/30 성공 커밋 4건의 원문·실제 변경·검증을 누적했고 C48 피드백/C49 자동 증폭/C50 창문 시야를 최신화했다.
 - `AGENTS.md`의 Canvas 프리팹·직렬화 바인딩·기존 디자인 보존·핵심 테스트 기준을 따른다. 전체 EditMode와 Notion 쓰기는 별도 명시 요청 때만 진행한다. 회의록은 날짜당 하나에 누적한다. 실행·배포는 `README.md`·`Docs/STOVE_SETUP.md`·`STOVE_LAUNCHER_TEST.md`·`STEAM_SETUP.md`를 따른다.
@@ -19,6 +19,8 @@
 - GPU Resident Drawer OFF·Frame Timing OFF·Standalone IL2CPP·출시 Engine Diagnostics Disabled 유지. 검증 없이 크래시 우회를 해제하지 않는다.
 
 ## 최신 구현 기준
+
+- 순서 외우기 NPC(10/30): 플레이어 공용 외형의 모자·머리·표정·몸통·손을 사용하고 카메라 정면을 바라본다. NPC 문제음 A/도는 몸통 아래, S/미는 몸통, D/솔은 머리 옆으로 양손을 움직인다. 플레이어 입력에는 반응하지 않으며 입력 대기 시 기본 자세로 복귀한다.
 
 - 미니게임 프리뷰(10/30): 핀볼 포함 20종을 최신 운영 씬·카메라·HUD로 재촬영했다. 각 20초·1280×720·30fps·H.264·무음, 기존 `Assets/MazeParty/Media/MinigamePreviews` 경로와 GUID 유지. 로컬 NGO의 4슬롯 제어 촬영이며 외부 실계정 4인 촬영은 아니다.
 
@@ -58,6 +60,8 @@
 - EULA/개인정보 v1.0·2026-12-11 시행 예정/공개 전, 서비스 14세 이상·예상 12세 등급 심의 대기·약 7,000원·12/11 출시·양 플랫폼 가능 국가 판매. 문의는 Gmail만 보관·완료 후 30일 내 삭제(법정 예외), 소유 확인 없는 관리자 삭제 금지·UGS 삭제 뒤 재생성 동의 대기. Unity 처리 국가/이전 근거/보존·Gmail 2단계 인증 확인 중, Unity 사전 문의 생략 유지. 환불은 플랫폼, 약관 변경 7/30일·종료 90일 전 공지/종료 후 30일 지원.
 
 ## 최근 검증·근거 위치
+
+- 순서 외우기 NPC(10/30): 공용 플레이어 외형·모자·정면 시선과 도/미/솔 양손 높이를 로컬 NGO 실제 문제음으로 확인했다. 연습 모드 카메라 연결·문제음 동작·입력 대기 초기화 및 씬 계약 EditMode 1/1 통과. 해당 프리뷰도 새 모습으로 재촬영(20초·720p·30fps, 600프레임 디코딩 오류 0·GUID 유지). 근거는 보조 폴더 `output/sequence-memory-npc-2026-10-30/REPORT.md`·3종 캡처·검증 JSON. 새 Player/원격 참가자 검증은 미실행.
 
 - 프리뷰 재촬영(10/30): 20종/12,000프레임 디코딩 오류 0, Unity 준비 화면 20/20 재생·프레임 진행·영상 표시 확인, 반복 재생/화면 이탈 정지 통과. 관련 프리팹·씬 계약 EditMode 1/1 통과. 임시 촬영 코드는 제거하고 게임 규칙·디자인 원본은 보존했다. 보조 폴더 `output/minigame-previews-2026-10-30/REPORT.md`·영상·화면 모음·검증 JSON 참조. 새 Player 빌드/원격 참가자 검증은 미실행.
 

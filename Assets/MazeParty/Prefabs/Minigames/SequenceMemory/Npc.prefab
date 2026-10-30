@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8239754578704752654}
   - component: {fileID: 9075402783956124411}
+  - component: {fileID: 2089460544964847704}
   m_Layer: 0
   m_Name: Npc
   m_TagString: Untagged
@@ -46,6 +47,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
   m_Name:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
+--- !u!114 &2089460544964847704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5772565929491317410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c4f6a9c98beb67345b8c205a46d38d77, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.SequenceMemoryNpcPresentation
+  visual: {fileID: 4496515263201242753}
+  bodyColor: {r: 0.95, g: 0.25, b: 0.25, a: 1}
+  hatId: 1
+  expressionId: 0
+  lowHandPosition: {x: 0.7, y: -0.7, z: 0.25}
+  middleHandPosition: {x: 0.7, y: -0.12, z: 0.35}
+  highHandPosition: {x: 0.7, y: 0.8, z: 0.15}
+  gestureSeconds: 0.55
 --- !u!1 &7578768529588390836
 GameObject:
   m_ObjectHideFlags: 0
@@ -220,10 +241,42 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5900126037354093323, guid: ec442d25f4f82c744908ab3d3c82dc5f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4496515263201242753}
   m_SourcePrefab: {fileID: 100100000, guid: ec442d25f4f82c744908ab3d3c82dc5f, type: 3}
+--- !u!114 &5572869360767699681 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8334713507667692283, guid: ec442d25f4f82c744908ab3d3c82dc5f, type: 3}
+  m_PrefabInstance: {fileID: 4538527739918499866}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8006665320227887889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 709750dba532d70499ff13dddc643864, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarPresentationBindings
 --- !u!4 &5934003162496258608 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7828881785306681898, guid: ec442d25f4f82c744908ab3d3c82dc5f, type: 3}
   m_PrefabInstance: {fileID: 4538527739918499866}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &8006665320227887889 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5900126037354093323, guid: ec442d25f4f82c744908ab3d3c82dc5f, type: 3}
+  m_PrefabInstance: {fileID: 4538527739918499866}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &4496515263201242753
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8006665320227887889}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd347e9a63562dd4081c2e0fae6fe98e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarVisual
+  bindings: {fileID: 5572869360767699681}

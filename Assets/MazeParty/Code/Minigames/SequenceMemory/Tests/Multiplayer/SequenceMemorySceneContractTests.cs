@@ -128,6 +128,10 @@ namespace MazeParty.Multiplayer.Tests
                 var npcPresentation = npcAnchor.Find(
                     "NPC Player Presentation");
                 Assert.That(npcPresentation, Is.Not.Null);
+                var npc = npcAnchor.GetComponent<SequenceMemoryNpcPresentation>();
+                Assert.That(npc, Is.Not.Null);
+                Assert.That(npc.HasRequiredReferences, Is.True);
+                Assert.That(npc.Visual, Is.SameAs(npcPresentation.GetComponent<PlayerAvatarVisual>()));
                 Assert.That(
                     npcPresentation.GetComponent<
                         PlayerAvatarPresentationBindings>(),
