@@ -109,13 +109,14 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(steps, Is.Not.Empty, lanePath);
                 foreach (var step in steps)
                 {
-                    var visual = step.Find("Toy Block Visual");
+                    // Art can be replaced without changing this gameplay collision contract.
                     Assert.That(
-                        visual,
-                        Is.Not.Null,
-                        lanePath + " :: " + step.name);
+                        step.GetComponentsInChildren<Renderer>(true)
+                            .Where(renderer => renderer.enabled && renderer.gameObject.activeSelf),
+                        Is.Not.Empty,
+                        lanePath + " :: " + step.name + " requires a visible renderer.");
                     Assert.That(
-                        visual.GetComponentsInChildren<Collider>(true)
+                        step.GetComponentsInChildren<Collider>(true)
                             .Where(collider => collider.enabled),
                         Is.Empty,
                         lanePath + " :: " + step.name +

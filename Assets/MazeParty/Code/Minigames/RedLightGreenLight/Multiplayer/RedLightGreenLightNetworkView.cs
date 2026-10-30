@@ -400,7 +400,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var position = runner.Root.position;
+            var position = PlayerAvatarVisual.GetFeetPosition(runner.Root);
             if (penaltyVfxPrefab != null)
             {
                 OneShotVfxPool.Play(
@@ -433,12 +433,18 @@ namespace MazeParty.Multiplayer
                 {
                     var playerState = state.GetPlayerState(slot);
                     _watchable[slot] = slot != _localSlot &&
+                        NetworkMatchState.Instance.GetAvatarForSlot(slot) != null &&
                         (playerState == RedLightGreenLightPlayerState.Healthy ||
                          playerState == RedLightGreenLightPlayerState.Warned);
                     _progress[slot] = state.GetForwardProgress(slot);
                 }
+                // Do not consume the elimination click as an immediate switch.
+                var wasSpectating = _spectatedSlot >= 0 && _watchable[_spectatedSlot];
                 _spectatedSlot = MinigameSpectatorSelection.ChooseTarget(
                     _spectatedSlot, _watchable, _progress);
+                if (wasSpectating && !state.IsPaused &&
+                    MinigameSpectatorInput.SwitchPressed(NetworkMatchState.Instance))
+                    _spectatedSlot = MinigameSpectatorSelection.NextTarget(_spectatedSlot, _watchable);
             }
             else
             {

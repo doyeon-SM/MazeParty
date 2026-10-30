@@ -41,6 +41,8 @@ namespace MazeParty.Multiplayer
             new PlayerView[SequenceMemoryRules.PlayerCount];
         private readonly List<SoundHandle> _toneHandles =
             new List<SoundHandle>();
+        private SequenceMemoryNpcPresentation _npcPresentation;
+        public SequenceMemoryNpcPresentation NpcPresentation => _npcPresentation;
         private GameplayCameraDirector _cameraDirector;
         private NetworkSequenceMemoryState _subscribedState;
         private bool _cameraRegistered;
@@ -90,6 +92,12 @@ namespace MazeParty.Multiplayer
             ResolveReferences();
             EnsureToneSubscription();
             EnsurePlayers();
+            if (_npcPresentation != null)
+            {
+                _npcPresentation.SetPaused(state != null && state.IsPaused);
+                if (state == null || state.Phase != NetworkSequenceMemoryPhase.PresentingProblem)
+                    _npcPresentation.ClearTone();
+            }
 
             var match = NetworkMatchState.Instance;
             var selected = match != null && match.IsSequenceMemoryPhase;
@@ -118,8 +126,12 @@ namespace MazeParty.Multiplayer
         private void ResolveReferences()
         {
             state ??= GetComponent<NetworkSequenceMemoryState>();
+            if (_npcPresentation == null && npcAnchor != null)
+                _npcPresentation = npcAnchor.GetComponent<SequenceMemoryNpcPresentation>();
             sharedCamera ??=
                 GetComponentInChildren<CinemachineCamera>(true);
+            if (_npcPresentation != null && sharedCamera != null)
+                _npcPresentation.SetCamera(sharedCamera.transform);
             if (playerRoot == null)
             {
                 playerRoot = FindDescendant(transform, "Runtime Players");
@@ -321,6 +333,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (fromNpc) _npcPresentation?.PresentTone(input);
             var handle = GameSound.PlayPitched(
                 SoundKeys.MinigameSequenceMemoryTone,
                 GetTonePitchScale(input));

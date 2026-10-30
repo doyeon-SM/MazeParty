@@ -37,8 +37,8 @@ namespace MazeParty.Gameplay.Tests
             var cases = new[]
             {
                 (Region: PlayerHitRegion.Body, Expected: 20),
-                (Region: PlayerHitRegion.Head, Expected: 26),
-                (Region: PlayerHitRegion.Hand, Expected: 14)
+                (Region: PlayerHitRegion.Head, Expected: 24),
+                (Region: PlayerHitRegion.Hand, Expected: 20)
             };
 
             foreach (var testCase in cases)
@@ -77,9 +77,9 @@ namespace MazeParty.Gameplay.Tests
 
                 Assert.That(report.Hit, Is.True);
                 Assert.That(report.Region, Is.EqualTo(PlayerHitRegion.Head));
-                Assert.That(report.Damage, Is.EqualTo(26));
+                Assert.That(report.Damage, Is.EqualTo(24));
                 Assert.That(report.DamageResult, Is.EqualTo(DamageResult.Applied));
-                Assert.That(health.CurrentHealth, Is.EqualTo(74));
+                Assert.That(health.CurrentHealth, Is.EqualTo(76));
             }
             finally
             {

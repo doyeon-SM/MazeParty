@@ -49,6 +49,7 @@ namespace MazeParty.Multiplayer
         [Header("Selected Board Map Preview")]
         [SerializeField] private GameObject boardMapPreviewRoot;
         [SerializeField] private Text boardMapPreviewNameText;
+        [SerializeField] private Text boardMapPreviewTurnsText;
         [SerializeField] private BoardMapTopologyGraphic boardMapPreviewGraphic;
 
         [Header("Feedback")]
@@ -132,7 +133,7 @@ namespace MazeParty.Multiplayer
             nextBoardMapButton != null &&
             boardMapNameText != null &&
             boardMapPreviewRoot != null &&
-            boardMapPreviewNameText != null &&
+            boardMapPreviewNameText != null && boardMapPreviewTurnsText != null &&
             boardMapPreviewGraphic != null &&
             startHint != null &&
             runningMessage != null &&
@@ -215,6 +216,8 @@ namespace MazeParty.Multiplayer
             boardSettingsButton = configuredBoardSettingsButton;
             closeBoardSettingsButton = configuredCloseBoardSettingsButton;
         }
+
+        public void ConfigureBoardMapTurns(Text turns) => boardMapPreviewTurnsText = turns;
 
         public void ConfigureBoardMapPreview(
             GameObject configuredRoot,
@@ -372,6 +375,8 @@ namespace MazeParty.Multiplayer
                     snapshot,
                     out selectableMapCount);
             }
+            boardMapPreviewTurnsText.text = "Turn: " +
+                (snapshot.GameSettings != null ? snapshot.GameSettings.Turns : 0).ToString("00", System.Globalization.CultureInfo.InvariantCulture);
             RefreshBoardMapPreview(selectedMapDefinition, isLobby);
             sessionActionsRoot.SetActive(isLobby);
             if (!isLobby)
@@ -381,7 +386,8 @@ namespace MazeParty.Multiplayer
             }
 
             boardSettingsButton.gameObject.SetActive(
-                isLobby);
+                isLobby && snapshot.IsHost);
+            if (!snapshot.IsHost) SetBoardSettingsOpen(false);
             boardSettingsPanel.SetActive(
                 isLobby && _boardSettingsOpen);
             RefreshBoardMapSelection(

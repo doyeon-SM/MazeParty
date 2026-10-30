@@ -137,7 +137,8 @@ namespace MazeParty.Gameplay
 
         // Board barriers constrain movement only. Other solid geometry blocks items.
         public static bool Cast(Vector3 origin, Vector3 direction, float distance,
-            GameObject source, out RaycastHit result, float radius = 0f, bool ignorePlayers = false)
+            GameObject source, out RaycastHit result, float radius = 0f, bool ignorePlayers = false,
+            bool hitZonesOnly = false, Predicate<Collider> playerFilter = null)
         {
             var hits = radius > 0f
                 ? Physics.SphereCastAll(origin, radius, direction, distance, ~0, QueryTriggerInteraction.Collide)
@@ -146,12 +147,16 @@ namespace MazeParty.Gameplay
             foreach (var hit in hits)
             {
                 var c = hit.collider;
-                if (c == null || IsBoundary(c) ||
+                if (c == null || IsBoundary(c) || MagicMazeWall.AllowsSightAndAttacks(c) ||
                     (source != null && c.transform.IsChildOf(source.transform))) continue;
                 var player = c.GetComponentInParent<PlayerHitZoneOwner>();
                 if (player != null)
                 {
                     if (ignorePlayers) continue;
+                    // Movement capsules must not hide the authored head/body/hand triggers.
+                    // Blast and projectile sweeps keep their existing collider policy.
+                    if (hitZonesOnly && c.GetComponent<PlayerHitZone>() == null) continue;
+                    if (playerFilter != null && !playerFilter(c)) continue;
                     result = hit;
                     return true;
                 }
@@ -163,11 +168,13 @@ namespace MazeParty.Gameplay
             return false;
         }
 
-        public static bool HasBlastLineOfSight(Vector3 origin, Vector3 target)
+        public static bool HasBlastLineOfSight(Vector3 origin, Vector3 target, GameObject targetRoot = null)
         {
             var delta = target - origin;
             return delta.sqrMagnitude < .0001f ||
-                !Cast(origin, delta.normalized, delta.magnitude, null, out _, 0f, true);
+                // The victim's own movement collider is not blast cover, including
+                // when the victim threw the grenade.
+                !Cast(origin, delta.normalized, delta.magnitude, targetRoot, out _, 0f, true);
         }
     }
 }

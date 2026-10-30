@@ -6,6 +6,42 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardLandingEffectFeedbackTests
     {
         [Test]
+        public void ForestGhostFeedback_UsesAppliedAmountAndPauseAwareWindowForIntroAndBothTransferLegs()
+        {
+            var snapshot = new BoardForestGhostSnapshot { Active = true, IsIntro = true, Slot = -1, StartedAt = 10d };
+            Assert.That(BoardLandingEffectFeedbackRules.TryGetForestGhostContent(snapshot, 10d,
+                out _, out var intro, out var remaining), Is.True);
+            Assert.That(intro, Is.EqualTo(GameText.T("LET THE MISCHIEF BEGIN!")));
+            Assert.That(remaining, Is.EqualTo(3f));
+            Assert.That(BoardLandingEffectFeedbackRules.TryGetForestGhostContent(snapshot, 13d,
+                out _, out _, out _), Is.False);
+            snapshot.IsIntro = false; snapshot.Slot = 1;
+            foreach (var resource in new[] { ForestGhostResource.Gold, ForestGhostResource.Key, ForestGhostResource.Health })
+            foreach (var actual in new[] { -10, 0, 5 })
+            foreach (var delivery in new[] { false, true })
+            {
+                snapshot.Resource = (byte)resource; snapshot.IsDelivery = delivery;
+                snapshot.Amount = 50; snapshot.ActualAmount = actual; snapshot.Applied = false;
+                Assert.That(BoardLandingEffectFeedbackRules.TryGetForestGhostContent(snapshot, 11.25d,
+                    out _, out _, out _), Is.False);
+                snapshot.Applied = true;
+                Assert.That(BoardLandingEffectFeedbackRules.TryGetForestGhostContent(snapshot, 11.25d,
+                    out _, out var label, out remaining), Is.True);
+                Assert.That(label, Is.EqualTo(actual > 0 ? "+5" : actual == 0 ? "0" : "-10"));
+                Assert.That(remaining, Is.EqualTo(1.75f));
+                snapshot.Pause(11.25d);
+                Assert.That(BoardLandingEffectFeedbackRules.TryGetForestGhostContent(snapshot, 100d,
+                    out _, out _, out remaining), Is.True);
+                Assert.That(remaining, Is.EqualTo(1.75f));
+                snapshot.Resume(11.25d);
+                snapshot.Slot = -1;
+                Assert.That(BoardLandingEffectFeedbackRules.TryGetForestGhostContent(snapshot, 11.25d,
+                    out _, out _, out _), Is.False);
+                snapshot.Slot = 1;
+            }
+        }
+
+        [Test]
         public void DamageImpact_UsesSharedSeedAndPlaysOnceInsideTheUnpausedDamageWindow()
         {
             var snapshot = new BoardLandingEffectFeedbackSnapshot { Active = true, Revision = 4,
@@ -28,7 +64,7 @@ namespace MazeParty.Multiplayer.Tests
                     BoardFlowState.LandingEffectResolve, false, seed, 11d, out _), Is.False);
                 first.Reset();
                 Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
-                    BoardFlowState.LandingEffectResolve, false, seed, 11.5d, out _), Is.False);
+                    BoardFlowState.LandingEffectResolve, false, seed, 12d, out _), Is.False);
             }
             Assert.That(choices, Is.EquivalentTo(new[] { 0, 1, 2 }));
             var playback = new BoardDamageImpactPlayback();
@@ -96,11 +132,11 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 13d), Is.EqualTo(mask));
                 Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.499d), Is.False);
                 Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.5d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.499d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.5d), Is.False);
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 14.999d), Is.EqualTo(mask));
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15d), Is.Zero);
-                Assert.That(BoardLandingEffectFeedbackRules.GetDurationSeconds(snapshot), Is.EqualTo(5d));
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.999d), Is.True);
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 15d), Is.False);
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15.499d), Is.EqualTo(mask));
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15.5d), Is.Zero);
+                Assert.That(BoardLandingEffectFeedbackRules.GetDurationSeconds(snapshot), Is.EqualTo(5.5d));
             }
         }
 

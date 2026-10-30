@@ -118,6 +118,31 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(player.transform.position.y, Is.GreaterThan(.5f),
                     "Walking off the podium must retain floor collision.");
 
+                // Walk the real controller across each outer lane of the prison.
+                // The old stage and the lobby's small fallback floor did not cover this area.
+                foreach (var route in new[] {
+                    (new Vector3(0, 1, -4), Vector2.left),
+                    (new Vector3(0, 1, -4), Vector2.right),
+                    (new Vector3(10, 1, 0), Vector2.up),
+                    (new Vector3(10, 1, 0), Vector2.down) })
+                {
+                    var start = stage.transform.TransformPoint(route.Item1);
+                    player.PrepareForAwardCeremonyOnServer(start, Quaternion.identity);
+                    Physics.SyncTransforms();
+                    for (var frame = 0; frame < 240; frame++)
+                    {
+                        cadence.GetType().GetMethod("Reset").Invoke(cadence, null);
+                        typeof(NetworkPlayerAvatar).GetField("_serverInput", Private).SetValue(player, route.Item2);
+                        typeof(NetworkPlayerAvatar).GetMethod("SimulateAwardCeremonyOnServer", Private).Invoke(player, null);
+                    }
+                    var position = player.transform.position;
+                    Assert.That(Vector2.Distance(new Vector2(start.x, start.z),
+                        new Vector2(position.x, position.z)), Is.GreaterThan(3f));
+                    Assert.That(position.y, Is.GreaterThan(.5f), "Every outer lane needs solid floor collision.");
+                    Assert.That(Vector3.Distance(stage.ClampPosition(position, playerObject.GetComponent<CharacterController>().radius), position), Is.LessThan(.02f),
+                        "Movement must remain inside the prison room.");
+                }
+
                 var clamped = stage.ClampPosition(target + new Vector3(100,0,100), .5f);
                 Assert.That(stage.StageFloor.bounds.Contains(new Vector3(clamped.x,
                     stage.StageFloor.bounds.center.y, clamped.z)), Is.True);

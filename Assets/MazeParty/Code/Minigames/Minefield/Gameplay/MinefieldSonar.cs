@@ -93,6 +93,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         private int _lastResolvedPulseId;
         private float _pulseStartedAt = float.NegativeInfinity;
         private Vector3 _pulseOrigin;
+        private bool _pulseQueued;
 
         public event Action<MinefieldSonar, int> PulseRequested;
         public event Action<MinefieldSonar, MinefieldSonarResult> PulseResolved;
@@ -112,6 +113,11 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         {
             ResolveReferences();
             RevealReachedMines(Time.unscaledTime - _pulseStartedAt);
+            if (_pulseQueued && Time.unscaledTime - _pulseStartedAt >= revealSeconds)
+            {
+                _pulseQueued = false;
+                TryRequestPulse();
+            }
             if (motor != null &&
                 IsStationaryForPulse(
                     motor.PlanarSpeed,
@@ -130,6 +136,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         private void OnDisable()
         {
             _stationarySeconds = 0f;
+            _pulseQueued = false;
             _detectedMines.Clear();
         }
 
@@ -162,6 +169,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             if (!enabled)
             {
                 _stationarySeconds = 0f;
+                _pulseQueued = false;
                 _detectedMines.Clear();
             }
         }
@@ -186,6 +194,11 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                 return false;
             }
 
+            if (Time.unscaledTime - _pulseStartedAt < revealSeconds)
+            {
+                _pulseQueued = true;
+                return true;
+            }
             var pulseId = ++_nextPulseId;
             _nextPulseTime = Time.unscaledTime + cooldownSeconds;
             PulseRequested?.Invoke(this, pulseId);

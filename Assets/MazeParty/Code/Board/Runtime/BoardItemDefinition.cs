@@ -14,6 +14,10 @@ namespace MazeParty.Gameplay
         public PrototypeItemId Id;
         public BoardItemUseTiming UseTiming;
         public string DisplayName;
+        [Tooltip("Empty for common items; otherwise the only board map that can grant or use this item.")]
+        public string RequiredMapId;
+        public bool IsAvailableOnMap(string mapId) =>
+            string.IsNullOrEmpty(RequiredMapId) || RequiredMapId == mapId;
         [TextArea] public string Description;
         [Min(0)] public int Price;
         [Min(0)] public int SpawnWeight = 1;
@@ -33,6 +37,7 @@ namespace MazeParty.Gameplay
         public Sprite Icon;
         public GameObject HeldPrefab;
         public GameObject WorldPrefab;
+        public GameObject PlacementPreviewPrefab;
         public GameObject ExplosionPrefab;
         [Min(0.01f)] public float ExplosionScaleMultiplier = 1f;
         public GameObject ImpactPrefab;

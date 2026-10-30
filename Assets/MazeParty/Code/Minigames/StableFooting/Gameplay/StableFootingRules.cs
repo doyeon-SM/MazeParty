@@ -74,7 +74,8 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
 
         public static bool CanPushDuring(StableFootingCyclePhase phase)
         {
-            return phase == StableFootingCyclePhase.Move;
+            return phase == StableFootingCyclePhase.ShuffleReveal ||
+                   phase == StableFootingCyclePhase.Move;
         }
 
         internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)

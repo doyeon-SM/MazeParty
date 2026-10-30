@@ -122,7 +122,9 @@ namespace MazeParty.Multiplayer
                         return false;
                     }
                 }
+                RestoreTileAmplifier(snapshot, playerSnapshots);
                 RestoreBoardMines(snapshot.mines, mineOwnerSlots);
+                RestoreBoardWalls(snapshot.walls);
                 RestoreAchievements(snapshot, playerSnapshots);
                 RestoreStatistics(snapshot, playerSnapshots);
 
@@ -210,6 +212,8 @@ namespace MazeParty.Multiplayer
             error = string.Empty;
 
             if (snapshot == null || controller == null ||
+                !AreMagicMazeSnapshotsValid(snapshot, _boardTopology) ||
+                !AreTileAmplifierSnapshotsValid(snapshot) ||
                 !BoardMapSelection.TryCreate(
                     snapshot.boardMapId,
                     snapshot.boardMapContentVersion,
@@ -270,9 +274,19 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            if (!ValidateRecoveryItemMaps(snapshot))
+            {
+                error = GameText.T("The saved items are not valid for this map.");
+                return false;
+            }
             if (!ValidateRecoveryShopCoordinates(snapshot))
             {
                 error = GameText.T("A saved shop location is no longer available.");
+                return false;
+            }
+            if (!ValidateRecoveryWalls(snapshot))
+            {
+                error = GameText.T("A saved wall location is no longer valid.");
                 return false;
             }
             if (!ValidateRecoveryMines(snapshot))
@@ -370,6 +384,31 @@ namespace MazeParty.Multiplayer
                 }
             }
 
+            return true;
+        }
+
+        // Validate before ResetTransientMatchStateForRecovery so rejected saves never mutate a live match.
+        private bool ValidateRecoveryItemMaps(MatchRecoverySnapshot snapshot)
+        {
+            if (snapshot.itemShops == null || snapshot.players == null) return false;
+            foreach (var shop in snapshot.itemShops)
+            {
+                if (!shop.active) continue;
+                if (shop.offers == null) return false;
+                foreach (var value in shop.offers)
+                    if (value < 0 || value > byte.MaxValue ||
+                        !PrototypeItemCatalog.IsValid((PrototypeItemId)value) ||
+                        !PrototypeItemCatalog.Get((PrototypeItemId)value).IsAvailableOnMap(snapshot.boardMapId)) return false;
+            }
+            foreach (var player in snapshot.players)
+            {
+                if (player == null) return false;
+                var items = new[] { player.itemSlot0, player.itemSlot1, player.itemSlot2 };
+                for (var slot = 0; slot < items.Length; slot++)
+                    if ((player.occupiedItemMask & (1 << slot)) != 0 &&
+                        (!PrototypeItemCatalog.IsValid((PrototypeItemId)items[slot]) ||
+                         !PrototypeItemCatalog.Get((PrototypeItemId)items[slot]).IsAvailableOnMap(snapshot.boardMapId))) return false;
+            }
             return true;
         }
 
@@ -537,6 +576,7 @@ namespace MazeParty.Multiplayer
                     MatchRecoveryFingerprint.CreatePlayerKey(playerId));
                 if (players[slot] != null)
                 {
+                    players[slot].usedTileAmplifier = HasUsedTileAmplifier(slot);
                     players[slot].achievementProgress = string.IsNullOrEmpty(_achievementMatchId)
                         ? string.Empty : JsonUtility.ToJson(_achievementPlayers[slot]);
                     foreach (var member in controller.CurrentSession.Players)
@@ -625,6 +665,10 @@ namespace MazeParty.Multiplayer
                 remainingMinigameSlots = remaining,
                 boardEffectSeed = _boardEffectSeed.Value,
                 boardEffectRevision = _boardEffectRevision.Value,
+                magicMazeWallGeneration = _magicMazeWallGeneration.Value,
+                magicMazeShuffledTurn = _magicMazeShuffledTurn,
+                tileAmplifierTurn = HasTileAmplifierForTurn(Turn) ? Turn : 0,
+                magicMazeEffects = CaptureMagicMazeEffects(),
                 boardMapId = CurrentBoardMapSelection.MapId,
                 boardMapContentVersion =
                     CurrentBoardMapSelection.ContentVersion,
@@ -643,6 +687,7 @@ namespace MazeParty.Multiplayer
                 itemShops = itemShops,
                 chests = CaptureChests(),
                 mines = mines,
+                walls = CaptureBoardWalls(checkpoint),
                 players = players
             };
         }
@@ -732,6 +777,7 @@ namespace MazeParty.Multiplayer
 
         private void RestoreBoardEffects(MatchRecoverySnapshot snapshot)
         {
+            RestoreMagicMaze(snapshot);
             _boardEffectSeed.Value = snapshot.boardEffectSeed;
             _boardEffectRevision.Value = snapshot.boardEffectRevision;
             _cachedBoardEffectRevision = -1;
@@ -782,7 +828,7 @@ namespace MazeParty.Multiplayer
                     offers[offer] = (PrototypeItemId)snapshot.offers[offer];
                 }
 
-                var stock = ItemShopStock.Restore(offers, snapshot.soldMask);
+                var stock = ItemShopStock.Restore(offers, snapshot.soldMask, mapId: BoardMapId);
                 _itemShopStocks[index] = stock;
                 SetItemShopSnapshot(
                     index,

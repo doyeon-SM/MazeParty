@@ -396,7 +396,7 @@ namespace MazeParty.Editor
                 references.ExplosionFlashLight == references.BombLight ||
                 view.ExplosionVfxPrefab == null ||
                 view.ExplosionVfxPrefab.GetComponent<PooledOneShotVfx>() == null ||
-                FindDescendant(root.transform, "Boundary Walls")?.childCount != 4 ||
+                !HasValidBoundaryVisuals(root.transform) ||
                 FindDescendant(root.transform, "Player Spawn Markers")?.childCount != 4 ||
                 root.GetComponentsInChildren<CinemachineCamera>(true).Length != 1 ||
                 root.GetComponentsInChildren<Camera>(true).Length != 0 ||
@@ -406,6 +406,35 @@ namespace MazeParty.Editor
                 throw new InvalidOperationException(
                     "Generated Bomb Passing scene failed its network, arena, camera, or no-HUD contract.");
             }
+        }
+
+        private static bool HasValidBoundaryVisuals(Transform root)
+        {
+            var walls = FindDescendant(root, "Boundary Walls");
+            if (walls == null)
+            {
+                return false;
+            }
+            // Keep the four authored boundaries while allowing decorative children.
+            foreach (var wallName in new[]
+                     {
+                         "North Wall", "South Wall", "West Wall", "East Wall"
+                     })
+            {
+                var wall = walls.Find(wallName);
+                if (wall == null || wall.GetComponentsInChildren<Renderer>(true).Length == 0)
+                {
+                    return false;
+                }
+            }
+            foreach (var collider in walls.GetComponentsInChildren<Collider>(true))
+            {
+                if (collider.enabled)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static Transform FindDescendant(Transform root, string name)

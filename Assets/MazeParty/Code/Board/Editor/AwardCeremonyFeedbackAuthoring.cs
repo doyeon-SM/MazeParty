@@ -11,6 +11,18 @@ namespace MazeParty.Editor
     /// <summary>Explicit one-time migration; normal setup preserves authored designs.</summary>
     public static class AwardCeremonyFeedbackAuthoring
     {
+        private const string LobbyPrefabPath =
+            "Assets/MazeParty/Prefabs/Multiplayer/World/LobbyArena.prefab";
+
+        [MenuItem("MazeParty/Gameplay/Apply Ceremony Lobby Design")]
+        public static void ApplyLobbyDesign()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException("Ceremony authoring requires Edit Mode.");
+            Upgrade(AwardCeremonyProjectSetup.StagePrefabPath, AttachLobbyEnvironment);
+            AssetDatabase.SaveAssets();
+        }
+
         [MenuItem("MazeParty/Gameplay/Apply Ceremony Feedback")]
         public static void Apply()
         {
@@ -77,7 +89,55 @@ namespace MazeParty.Editor
             var camera = new GameObject("CM_AwardCeremonyShared", typeof(CinemachineCamera));
             camera.transform.SetParent(root.transform, false);
             UpgradeStage(root);
+            AttachLobbyEnvironment(root);
             return root;
+        }
+
+        private static bool AttachLobbyEnvironment(GameObject root)
+        {
+            var b = root.GetComponent<AwardCeremonyStageBindings>();
+            if (b == null || !b.HasRequiredReferences)
+                throw new InvalidOperationException("Complete ceremony bindings are required before replacing the room.");
+            var presentation = b.PresentationRoot.transform;
+            if (presentation.GetComponentInChildren<LobbyArenaBindings>(true) != null)
+                return false; // Re-running setup must preserve the authored room and camera.
+            var lobbyPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(LobbyPrefabPath);
+            if (lobbyPrefab == null || !lobbyPrefab.GetComponent<LobbyArenaBindings>().HasRequiredReferences)
+                throw new InvalidOperationException("The authored LobbyArena prefab is required for the ceremony.");
+
+            var room = (GameObject)PrefabUtility.InstantiatePrefab(lobbyPrefab, presentation);
+            room.name = "Ceremony Prison Room";
+            room.transform.localPosition = Vector3.zero;
+            room.transform.localRotation = Quaternion.identity;
+            room.transform.localScale = Vector3.one;
+            // Retain the nested design link without registering a second live lobby.
+            UnityEngine.Object.DestroyImmediate(room.GetComponent<LobbyArena>());
+            var lobby = room.GetComponent<LobbyArenaBindings>();
+            var floor = lobby.PresentationRoot.transform.Find("Authored Collision Floor")
+                .GetComponent<BoxCollider>();
+            var bounds = lobby.HorizontalBounds;
+            floor.transform.SetPositionAndRotation(bounds.transform.position, bounds.transform.rotation);
+            floor.transform.localScale = bounds.transform.localScale;
+            // The visual tiles have a top surface at -0.02. Cover the entire room,
+            // including the outer walking lanes, with one continuous solid floor.
+            floor.size = new Vector3(bounds.size.x, .4f, bounds.size.z);
+            floor.center = new Vector3(bounds.center.x, -.22f, bounds.center.z);
+            floor.enabled = true;
+            floor.isTrigger = false;
+            PrefabUtility.RecordPrefabInstancePropertyModifications(room.transform);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(floor.transform);
+            PrefabUtility.RecordPrefabInstancePropertyModifications(floor);
+            Remove(presentation.Find("Stage Floor"));
+            Remove(presentation.Find("Stage Backdrop"));
+            Remove(presentation.Find("Stage Fill Light"));
+            b.Configure(b.PresentationRoot, b.PodiumRoots, b.PlayerAnchors, b.RankLabels,
+                b.KeyLabels, b.WinnerSpotlights, b.SharedCamera, floor);
+            b.SharedCamera.transform.localPosition = new Vector3(0f, 15.5f, -17f);
+            b.SharedCamera.transform.localRotation = Quaternion.Euler(40f, 0f, 0f);
+            var lens = b.SharedCamera.Lens;
+            lens.FieldOfView = 50f;
+            b.SharedCamera.Lens = lens;
+            return true;
         }
 
         private static bool UpgradeStage(GameObject root)

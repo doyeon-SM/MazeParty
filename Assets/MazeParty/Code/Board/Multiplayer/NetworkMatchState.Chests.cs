@@ -45,14 +45,14 @@ namespace MazeParty.Multiplayer
         {
             if (!IsServer || index < 0 || index >= BoardChestRules.Count ||
                 !CanProcessAvatarRequest(avatar) || FlowState != BoardFlowState.Action ||
-                ActionRemaining <= 0d || avatar.IsBoardDeathInProgressOnServer ||
+                ActionRemaining <= 0d || avatar.IsBoardDeathInProgressOnServer || avatar.IsSettingBombardment ||
                 !avatar.HasResolvedItemChoice || avatar.CurrentHealth <= 0) return false;
             var state = GetChestSnapshot(index);
             if (!state.Active || state.Consumed || state.Revision != expectedRevision ||
                 !CanAccessCoordinateOnServer(avatar, state.Location) ||
                 !avatar.IsAimingAtChestOnServer(index)) return false;
             var id = BoardChestRules.DrawItem(PrototypeItemCatalog.All,
-                unchecked(_boardEffectSeed.Value * 397 ^ state.AppearedTurn * 31 ^ index));
+                unchecked(_boardEffectSeed.Value * 397 ^ state.AppearedTurn * 31 ^ index), BoardMapId);
             if (!avatar.EquipChestItemOnServer(id)) return false;
             state.Consumed = true;
             state.Revision++;
@@ -93,7 +93,8 @@ namespace MazeParty.Multiplayer
             {
                 var visual = _chestVisuals[index];
                 var visible = visual != null && visual.gameObject.activeInHierarchy &&
-                    BoardMapView.IsPointDirectlyVisible(camera, visual.ObservationPoint, hits);
+                    (BoardMapView.IsPointDirectlyVisible(camera, visual.ObservationPoint, hits) ||
+                     visual.TryGetObservationBounds(out var bounds) && BoardMapView.IsBoundsDirectlyVisible(camera, bounds, hits));
                 _localChestKnowledge.ShouldShow(index, GetChestSnapshot(index), visible);
             }
         }

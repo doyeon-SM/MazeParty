@@ -75,9 +75,10 @@ namespace MazeParty.Multiplayer
 
         private static readonly Vector2[] RunnerStartOffsets =
         {
-            new Vector2(-7.5f, -6.5f),
-            new Vector2(8.5f, -7.5f),
-            new Vector2(0f, 7.2f)
+            // Final positions authored by the designer in TagChase.unity.
+            new Vector2(-7.97f, -6.8f),
+            new Vector2(8.2f, -7.07f),
+            new Vector2(-9f, 7f)
         };
 
         private readonly NetworkVariable<bool> _matchActive =

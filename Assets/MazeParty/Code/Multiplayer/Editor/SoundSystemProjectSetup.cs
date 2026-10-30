@@ -29,14 +29,15 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Resources/" + SoundSystem.ResourcePath + ".prefab";
         public const string PrefabSearchRoot = "Assets/MazeParty/Prefabs";
         public const int VoiceCount = 24;
+        private const string SourceClipRoot = "Assets/Ignore/Resources/Sound";
         private const string BalloonDefaultClipPath =
-            "Assets/Resources/sound/balloon.mp3";
+            SourceClipRoot + "/balloon.mp3";
         private const string LightningDefaultClipPath =
-            "Assets/Resources/sound/lightning.mp3";
+            SourceClipRoot + "/lightning.mp3";
         private const string MinefieldExplosionDefaultClipPath =
-            "Assets/Resources/sound/explosion.mp3";
+            SourceClipRoot + "/explosion.mp3";
         private const string MinefieldScanDefaultClipPath =
-            "Assets/Resources/sound/mine.mp3";
+            SourceClipRoot + "/mine.mp3";
 
         [MenuItem("MazeParty/Audio/Install Sound System")]
         public static void Install()
@@ -159,29 +160,29 @@ namespace MazeParty.Editor
             EnsureDefaultClip(
                 SoundKeys.MinigameMinefieldScan,
                 MinefieldScanDefaultClipPath);
-            EnsureDefaultClips(SoundKeys.MinigameFlightFlap, "Assets/Resources/sound/punchswing1.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameFlightExplosion, "Assets/Resources/sound/explosion.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameShellShuffle, "Assets/Resources/sound/punchswing1.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameShellSelect, "Assets/Resources/sound/clickandhover.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameShellCorrect, "Assets/Resources/sound/minigamefinish.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameShellWrong, "Assets/Resources/sound/errorandnotice.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameRace2Lane, "Assets/Resources/sound/clickandhover.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameOddOneOutToggle, "Assets/Resources/sound/clickandhover.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameCoinPickup, "Assets/Resources/sound/goldgain.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameMoneyPickup, "Assets/Resources/sound/shopbuy.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameCoinBomb, "Assets/Resources/sound/explosion.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameBombExplosion, "Assets/Resources/sound/explosion.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameGiftPickup, "Assets/Resources/sound/goldgain.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameGiftDeposit, "Assets/Resources/sound/shopbuy.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameGiftThrow, "Assets/Resources/sound/grenade.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameGiftHit, "Assets/Resources/sound/hitbody1.mp3", "Assets/Resources/sound/hitbody2.mp3", "Assets/Resources/sound/hitbody3.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameBallReflect, "Assets/Resources/sound/- Bell 7.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameBallGoal, "Assets/Resources/sound/- Bell 7.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameBallLoss, "Assets/Resources/sound/- Bell 7.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameGreenSignal, "Assets/Resources/sound/countdowngo.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameWrongWayCorrect, "Assets/Resources/sound/confirmandpopupopen.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameWrongWayIncorrect, "Assets/Resources/sound/errorandnotice.mp3");
-            EnsureDefaultClips(SoundKeys.BoardChestAcquire, "Assets/Resources/sound/keybuy 1.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameFlightFlap, SourceClipRoot + "/punchswing1.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameFlightExplosion, SourceClipRoot + "/explosion.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellShuffle, SourceClipRoot + "/punchswing1.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellSelect, SourceClipRoot + "/clickandhover.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellCorrect, SourceClipRoot + "/minigamefinish.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellWrong, SourceClipRoot + "/errorandnotice.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameRace2Lane, SourceClipRoot + "/clickandhover.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameOddOneOutToggle, SourceClipRoot + "/clickandhover.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameCoinPickup, SourceClipRoot + "/goldgain.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameMoneyPickup, SourceClipRoot + "/shopbuy.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameCoinBomb, SourceClipRoot + "/explosion.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBombExplosion, SourceClipRoot + "/explosion.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameGiftPickup, SourceClipRoot + "/goldgain.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameGiftDeposit, SourceClipRoot + "/shopbuy.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameGiftThrow, SourceClipRoot + "/grenade.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameGiftHit, SourceClipRoot + "/hitbody1.mp3", SourceClipRoot + "/hitbody2.mp3", SourceClipRoot + "/hitbody3.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBallReflect, SourceClipRoot + "/- Bell 7.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBallGoal, SourceClipRoot + "/- Bell 7.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBallLoss, SourceClipRoot + "/- Bell 7.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameGreenSignal, SourceClipRoot + "/countdowngo.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameWrongWayCorrect, SourceClipRoot + "/confirmandpopupopen.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameWrongWayIncorrect, SourceClipRoot + "/errorandnotice.mp3");
+            EnsureDefaultClips(SoundKeys.BoardChestAcquire, SourceClipRoot + "/keybuy 1.mp3");
             return created;
         }
 

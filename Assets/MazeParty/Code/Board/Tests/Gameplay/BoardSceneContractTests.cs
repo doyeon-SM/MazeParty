@@ -17,8 +17,6 @@ namespace MazeParty.Gameplay.Tests
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
         private const string ForestTerrainDataPath =
             "Assets/MazeParty/Art/Board/Forest/ForestGroundTerrain.asset";
-        private const string BoundaryBlueFirePath =
-            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Blue Fire.prefab";
         private const string BoundaryRedFirePath =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Real Fire.prefab";
 
@@ -133,6 +131,32 @@ namespace MazeParty.Gameplay.Tests
                         BoardMapRuntimeLoader.CatalogResourcesPath),
                     Is.Not.Null,
                     "The production runtime map catalog must stay at its stable Resources path.");
+                var presenter = scene.GetRootGameObjects()
+                    .SelectMany(go => go.GetComponentsInChildren<MonoBehaviour>(true))
+                    .Single(c => c != null && c.GetType().FullName == "MazeParty.Multiplayer.BoardFlowCameraPresenter");
+                var hitSpark = new SerializedObject(presenter).FindProperty("combatHitSparkVfxPrefab").objectReferenceValue;
+                Assert.That(hitSpark, Is.SameAs(AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/VFX/ArenaCombatHitSpark.prefab")),
+                    "Board combat must keep the same authored hit VFX as ArenaCombat.");
+                var ghost = (Component)new SerializedObject(presenter).FindProperty("forestGhostPrefab").objectReferenceValue;
+                Assert.That(ghost, Is.Not.Null);
+                Assert.That(AssetDatabase.GetAssetPath(ghost),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Board/World/ForestGhost.prefab"));
+                Assert.That(ghost.GetType().GetProperty("HasRequiredReferences").GetValue(ghost), Is.EqualTo(true));
+                var ghostData = new SerializedObject(ghost);
+                var ghostModel = (Transform)ghostData.FindProperty("model").objectReferenceValue;
+                var ghostAnimator = (Animator)ghostData.FindProperty("animator").objectReferenceValue;
+                Assert.That(ghostAnimator, Is.Not.Null,
+                    "Non-legacy ghost clips require an Animator in Player builds.");
+                Assert.That(ghostAnimator.transform, Is.SameAs(ghostModel));
+                Assert.That(ghostAnimator.enabled, Is.True);
+                Assert.That(ghostAnimator.runtimeAnimatorController, Is.Null,
+                    "Only the replicated ghost timeline may sample the animation.");
+                Assert.That(ghostData.FindProperty("head").objectReferenceValue, Is.Not.Null);
+                Assert.That(ghostData.FindProperty("captionAnchor").objectReferenceValue, Is.Not.Null);
+                Assert.That(ghost.GetComponentsInChildren<MonoBehaviour>(true)
+                    .Any(c => c != null && c.GetType().FullName == "Sample.GhostScript"), Is.False,
+                    "The ghost presentation must not run the asset demo's keyboard/UI controller.");
                 var deathGoldView = topology.GetComponents<MonoBehaviour>()
                     .SingleOrDefault(component => component != null &&
                         component.GetType().FullName == "MazeParty.Multiplayer.BoardKillGoldWorldView");
@@ -164,11 +188,6 @@ namespace MazeParty.Gameplay.Tests
                     "Decorative wall children must not bypass owner-only collision isolation.");
                 Assert.That(wall.BlockingCollider.isTrigger, Is.False);
                 Assert.That(wall.HasRequiredReferences, Is.True);
-                Assert.That(
-                    AssetDatabase.GetAssetPath(
-                        PrefabUtility.GetCorrespondingObjectFromSource(
-                            wall.PassableFlameRoot)),
-                    Is.EqualTo(BoundaryBlueFirePath));
                 Assert.That(
                     AssetDatabase.GetAssetPath(
                         PrefabUtility.GetCorrespondingObjectFromSource(

@@ -1,4 +1,4 @@
-using Arikan;
+﻿using Arikan;
 using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
@@ -468,6 +468,67 @@ namespace MazeParty.Multiplayer.Tests
             bool expected)
         {
             Assert.That(BoardMapView.IsMapUiAllowed(mode), Is.EqualTo(expected));
+        }
+
+        [TestCase("MazeGrayboxMapRoot")]
+        [TestCase("MagicMazeMapRoot")]
+        public void AuthoredWindows_RevealThroughOpenings_AndKeepOpaqueFramesBlocking(string prefab)
+        {
+            var map = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Resources/MazeParty/Board/Maps/" + prefab + ".prefab"));
+            var cameraObject = new GameObject("Window sight contract");
+            var ui = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"));
+            try
+            {
+                map.transform.position = new Vector3(10000f, 10000f, 10000f);
+                var camera = cameraObject.AddComponent<Camera>();
+                camera.enabled = false; camera.fieldOfView = 90f; camera.aspect = 1f;
+                var hits = new RaycastHit[32];
+                var view = ui.GetComponent<BoardMapView>();
+                var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+                var minimap = (BoardMinimapView)typeof(BoardMapView).GetField("liveMinimap", flags).GetValue(view);
+                var topology = map.GetComponent<BoardMapRoot>().Topology;
+                topology.RebuildIndex();
+                minimap.PrepareMap(topology, Vector2Int.zero, 0, null);
+                Physics.SyncTransforms();
+                var count = 0;
+                foreach (var window in map.GetComponentsInChildren<Transform>())
+                {
+                    if (!window.name.StartsWith("Wall_Window") || window.GetComponents<BoxCollider>().Length != 3) continue;
+                    count++;
+                    var center = window.TransformPoint(new Vector3(-1.5f, 2f, 0f));
+                    var normal = window.forward;
+                    camera.transform.SetPositionAndRotation(center - normal * 3f, Quaternion.LookRotation(normal));
+                    var target = center + normal * 3f;
+                    Assert.That(BoardMapView.IsPointDirectlyVisible(camera, target, hits), Is.True, window.name);
+                    Assert.That(BoardMapView.IsPointDirectlyVisible(camera, target + Vector3.up * 3f, hits), Is.False,
+                        "The lintel still blocks a head above the opening.");
+                    Assert.That(BoardMapView.IsBoundsDirectlyVisible(camera, new Bounds(target, new Vector3(.6f, 1.6f, .6f)), hits), Is.True,
+                        "A visible body must be observed even when its head is covered by the lintel.");
+                    var floor = center.y - 2f;
+                    var crouched = center - normal * 3f - Vector3.up;
+                    var raised = (normal * 6f + Vector3.up).normalized;
+                    var flat = BoardMapView.GetVisionClearFraction(crouched, normal, 6f, floor + .15f, floor + 2f, hits);
+                    var through = BoardMapView.GetVisionClearFraction(crouched, raised, 6f, floor + .15f, floor + 2f, hits);
+                    Assert.That(flat, Is.LessThan(.6f), "The sill blocks eye-level sight while crouched.");
+                    Assert.That(through, Is.GreaterThan(.95f), "Visible space through the opening must reach beyond the wall.");
+                    camera.transform.position = crouched;
+                    typeof(BoardMapView).GetMethod("RefreshVisionMask", flags).Invoke(view, new object[] { camera, floor });
+                    var fractions = (float[])typeof(BoardMapView).GetField("_visionClearFractions", flags).GetValue(view);
+                    Assert.That(fractions[fractions.Length / 2] * minimap.VisibleWorldRadius, Is.GreaterThan(5.9f),
+                        "The actual minimap fan must include the visible space across a window while crouched: " + window.name);
+                    camera.transform.position = center - normal * 3f;
+                    var above = (normal * 6f + Vector3.up * 8f).normalized;
+                    Assert.That(BoardMapView.GetVisionClearFraction(crouched, above, 6f, floor + .15f, floor + 2f, hits),
+                        Is.LessThan(.5f), "Looking at sky above the wall cannot reveal the ground behind it.");
+                    camera.transform.position += Vector3.up * 1.5f;
+                    Assert.That(BoardMapView.IsPointDirectlyVisible(camera, target + Vector3.up * 1.5f, hits), Is.False,
+                        "Opaque wall above the window must remain hidden.");
+                }
+                Assert.That(count, Is.GreaterThan(0), "The authored map must include windows.");
+            }
+            finally { Object.DestroyImmediate(ui); Object.DestroyImmediate(cameraObject); Object.DestroyImmediate(map); }
         }
 
         [Test]

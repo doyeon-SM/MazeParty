@@ -215,7 +215,8 @@ namespace MazeParty.Gameplay
 
         public int LastStrike { get; private set; }
 
-        public int Resolve(bool hit, double now, int attackerHealth)
+        public int Resolve(bool hit, double now, int attackerHealth,
+            PlayerHitRegion region = PlayerHitRegion.Body)
         {
             LastStrike = 0;
             if (_paused) return 0;
@@ -227,7 +228,7 @@ namespace MazeParty.Gameplay
             LastStrike = _nextStrike + 1;
             var damage = BoardCombatRules.GetPunchDamage(_nextStrike, attackerHealth);
             _nextStrike = (_nextStrike + 1) % 3;
-            return damage;
+            return PlayerHitDamageRules.ApplyRegionMultiplier(damage, region);
         }
 
         public void Reset()

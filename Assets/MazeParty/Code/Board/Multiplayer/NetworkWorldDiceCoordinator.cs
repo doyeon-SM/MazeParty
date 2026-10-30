@@ -80,7 +80,8 @@ namespace MazeParty.Multiplayer
                     var index = Index(slot, n);
                     if (_prepared[index] || avatar.HasDieResultOnServer(n) || !TryGetDie(slot, n, out var die)) continue;
                     var lateral = avatar.UsesDoubleDice ? avatar.transform.right * (n == 0 ? -.65f : .65f) : Vector3.zero;
-                    _prepared[index] = die.PrepareOnServer(tile, avatar.transform.position + lateral, avatar.transform.forward);
+                    _prepared[index] = die.PrepareOnServer(tile, avatar.transform.position + lateral,
+                        avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward);
                 }
             }
         }
@@ -101,7 +102,8 @@ namespace MazeParty.Multiplayer
                 die.HideOnServer();
                 var lateral = avatar.UsesDoubleDice ? avatar.transform.right * (n == 0 ? -.65f : .65f) : Vector3.zero;
                 _prepared[index] = die.PrepareOnServer(avatar.CurrentBoardTileOnServer,
-                    avatar.transform.position + lateral, avatar.transform.forward);
+                    avatar.transform.position + lateral,
+                        avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward);
             }
         }
 

@@ -36,7 +36,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 130, y: 50}
+  m_SizeDelta: {x: 100, y: 50}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &6537684898574676556
 CanvasRenderer:
@@ -131,7 +131,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 50}
+  m_SizeDelta: {x: 150, y: 50}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &5636481520537408880
 CanvasRenderer:
@@ -241,6 +241,7 @@ GameObject:
   - component: {fileID: 2953299623853835781}
   - component: {fileID: 7754760403731542243}
   - component: {fileID: 7111055496550854350}
+  - component: {fileID: 6444910238186610139}
   m_Layer: 5
   m_Name: Player Card 4
   m_TagString: Untagged
@@ -306,7 +307,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 3
 --- !u!114 &7111055496550854350
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -322,6 +323,21 @@ MonoBehaviour:
   m_EffectColor: {r: 0.81960785, g: 0.34901962, b: 1, a: 0.5}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &6444910238186610139
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2551130574626026658}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 1, g: 0.85, b: 0.05, a: 1}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 0
 --- !u!1 &3083664832795616706
 GameObject:
   m_ObjectHideFlags: 0
@@ -358,7 +374,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 130, y: 50}
+  m_SizeDelta: {x: 100, y: 50}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &5521561178671882560
 CanvasRenderer:
@@ -453,7 +469,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 130, y: 50}
+  m_SizeDelta: {x: 100, y: 50}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &8006189822953910916
 CanvasRenderer:
@@ -548,7 +564,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 50}
+  m_SizeDelta: {x: 150, y: 50}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &8533275929695927543
 CanvasRenderer:
@@ -643,7 +659,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 50}
+  m_SizeDelta: {x: 150, y: 50}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &1768855275804467432
 CanvasRenderer:
@@ -714,6 +730,7 @@ GameObject:
   - component: {fileID: 8099983654450917213}
   - component: {fileID: 9032156411928574875}
   - component: {fileID: 5985408721313336739}
+  - component: {fileID: 1030506471997733646}
   m_Layer: 5
   m_Name: Player Card 3
   m_TagString: Untagged
@@ -779,7 +796,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 3
 --- !u!114 &5985408721313336739
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -795,6 +812,21 @@ MonoBehaviour:
   m_EffectColor: {r: 0.2509804, g: 0.85882354, b: 0.47843137, a: 0.5}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &1030506471997733646
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5725922900030991148}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 1, g: 0.85, b: 0.05, a: 1}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 0
 --- !u!1 &7295931867519353401
 GameObject:
   m_ObjectHideFlags: 0
@@ -831,7 +863,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0.5}
   m_AnchorMax: {x: 0, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 50}
+  m_SizeDelta: {x: 150, y: 50}
   m_Pivot: {x: 0, y: 0.5}
 --- !u!222 &9183328462110787849
 CanvasRenderer:
@@ -902,6 +934,7 @@ GameObject:
   - component: {fileID: 5016288297643831702}
   - component: {fileID: 6847695976207080009}
   - component: {fileID: 1654703491682003246}
+  - component: {fileID: 6958398344331622859}
   m_Layer: 5
   m_Name: Player Card 1
   m_TagString: Untagged
@@ -967,7 +1000,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 3
 --- !u!114 &1654703491682003246
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -983,6 +1016,21 @@ MonoBehaviour:
   m_EffectColor: {r: 0.2, g: 0.6, b: 1, a: 0.5}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &6958398344331622859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7624173489966302400}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 1, g: 0.85, b: 0.05, a: 1}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 0
 --- !u!1 &7772012421553821699
 GameObject:
   m_ObjectHideFlags: 0
@@ -995,6 +1043,7 @@ GameObject:
   - component: {fileID: 569608729033464672}
   - component: {fileID: 3766578898566114748}
   - component: {fileID: 2344711261866569690}
+  - component: {fileID: 3371995730811440382}
   m_Layer: 5
   m_Name: Player Card 2
   m_TagString: Untagged
@@ -1060,7 +1109,7 @@ MonoBehaviour:
   m_FillClockwise: 1
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
+  m_PixelsPerUnitMultiplier: 3
 --- !u!114 &2344711261866569690
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1076,6 +1125,21 @@ MonoBehaviour:
   m_EffectColor: {r: 1, g: 0.32156864, b: 0.23921569, a: 0.5}
   m_EffectDistance: {x: 1, y: -1}
   m_UseGraphicAlpha: 1
+--- !u!114 &3371995730811440382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7772012421553821699}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 1, g: 0.85, b: 0.05, a: 1}
+  m_EffectDistance: {x: 3, y: -3}
+  m_UseGraphicAlpha: 0
 --- !u!1 &8314290245210494436
 GameObject:
   m_ObjectHideFlags: 0
@@ -1112,7 +1176,7 @@ RectTransform:
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 130, y: 50}
+  m_SizeDelta: {x: 100, y: 50}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!222 &3200594200918900843
 CanvasRenderer:
@@ -1200,7 +1264,7 @@ RectTransform:
   m_GameObject: {fileID: 8947122821540895794}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0, y: 0, z: 0}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7906698047989059914}
@@ -1282,6 +1346,11 @@ MonoBehaviour:
   - {fileID: 6578681793470692391}
   - {fileID: 2511120627964077457}
   - {fileID: 839324029912788320}
+  leaderOutlines:
+  - {fileID: 6958398344331622859}
+  - {fileID: 3371995730811440382}
+  - {fileID: 1030506471997733646}
+  - {fileID: 6444910238186610139}
 --- !u!114 &3823775137677154704
 MonoBehaviour:
   m_ObjectHideFlags: 0

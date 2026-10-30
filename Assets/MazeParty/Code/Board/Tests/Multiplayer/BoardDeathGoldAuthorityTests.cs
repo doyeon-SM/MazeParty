@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace MazeParty.Multiplayer.Tests
 {
-    public sealed class BoardDeathGoldAuthorityTests
+    public sealed partial class BoardDeathGoldAuthorityTests
     {
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private GameObject _root;
@@ -157,6 +157,262 @@ namespace MazeParty.Multiplayer.Tests
                     ? BoardFlowState.LandingEffectResolve : BoardFlowState.MinigameIntroReady));
             }
             Assert.That(flow.GetStateRemaining(130d), Is.EqualTo(60d));
+        }
+
+        [Test]
+        public void GrenadeBlast_DamagesThrowerWithoutSelfCredit_AndHonorsWallCover()
+        {
+            var owner = _players[0];
+            owner.transform.position = new Vector3(0f, 100f, 2f);
+            owner.gameObject.AddComponent<CharacterController>();
+            for (var i = 1; i < 4; i++) _players[i].transform.position = new Vector3(100f, 100f, i * 10f);
+            var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.transform.SetParent(_root.transform);
+            wall.transform.position = new Vector3(0f, 100f, 1f);
+            var grenade = PrototypeItemCatalog.Get(PrototypeItemId.Grenade);
+            var explode = typeof(NetworkMatchState).GetMethod("ExplodeBoardItem", Private);
+            foreach (var covered in new[] { true, false })
+            {
+                wall.SetActive(covered);
+                Physics.SyncTransforms();
+                ExpectPresentationRpcs(covered ? 1 : 2);
+                explode.Invoke(_match, new object[] { new Vector3(0f, 100f, 0f), 0, grenade });
+                Assert.That(owner.CurrentHealth, Is.EqualTo(covered ? 100 : 100 - grenade.Damage));
+                Assert.That(_match.DeathGoldTransfers.Count, Is.Zero);
+                Assert.That(_achievements[0].flags, Is.Zero);
+            }
+        }
+
+        [TestCase(PrototypeItemId.Mine, false, PartyAchievement.OwnMine)]
+        [TestCase(PrototypeItemId.Mine, true, PartyAchievement.OwnMine)]
+        [TestCase(PrototypeItemId.Grenade, false, PartyAchievement.OwnGrenade)]
+        [TestCase(PrototypeItemId.Grenade, true, PartyAchievement.OwnGrenade)]
+        public void OwnExplosive_ArmsThenCreditsOnlyLethalUnprotectedSelfDamage(
+            PrototypeItemId id, bool protectedOwner, PartyAchievement achievement)
+        {
+            var owner = _players[0];
+            var item = PrototypeItemCatalog.Get(id);
+            var origin = new Vector3(0f, 100f, 0f);
+            owner.transform.position = origin + Vector3.forward;
+            owner.gameObject.AddComponent<CharacterController>();
+            for (var i = 1; i < 4; i++) _players[i].transform.position = origin + Vector3.right * (100f + i * 10f);
+            Set(owner, "_currentHealth", item.Damage);
+            Authority(owner, false);
+            Assert.That(owner.ApplyDamage(new DamageRequest(item.Damage, DamageKind.Item,
+                owner.gameObject, itemId: id)), Is.EqualTo(DamageResult.Ignored));
+            Assert.That(owner.CurrentHealth, Is.EqualTo(item.Damage));
+            Authority(owner, true);
+            if (protectedOwner) Set(owner, "_personalProtectionEndsAt", _match.SynchronizedNow + 1000d);
+            Physics.SyncTransforms();
+
+            var explode = typeof(NetworkMatchState).GetMethod("ExplodeBoardItem", Private);
+            if (id == PrototypeItemId.Mine)
+            {
+                var mineType = typeof(NetworkMatchState).GetNestedType("PlantedMine", BindingFlags.NonPublic);
+                var mine = Activator.CreateInstance(mineType);
+                mineType.GetField("OwnerSlot").SetValue(mine, 0);
+                mineType.GetField("Position").SetValue(mine, origin);
+                mineType.GetField("ArmRemaining").SetValue(mine, item.ArmingDelay);
+                var mines = (System.Collections.IList)typeof(NetworkMatchState).GetField("_boardMines", Private).GetValue(_match);
+                mines.Add(mine);
+                var tick = typeof(NetworkMatchState).GetMethod("TickBoardMines", Private);
+                tick.Invoke(_match, new object[] { 0.875f });
+                Assert.That(mines.Count, Is.EqualTo(1), "The owner is protected before one second.");
+                Assert.That(owner.CurrentHealth, Is.EqualTo(item.Damage));
+                Assert.That(_achievements[0].flags, Is.Zero);
+                ExpectPresentationRpcs(protectedOwner ? 5 : 6);
+                tick.Invoke(_match, new object[] { 0.125f });
+                Assert.That(mines.Count, Is.Zero, "The owner triggers the mine at exactly one second.");
+            }
+            else
+            {
+                ExpectPresentationRpcs(protectedOwner ? 1 : 2);
+                explode.Invoke(_match, new object[] { origin, 0, item });
+            }
+
+            Assert.That(owner.CurrentHealth, Is.EqualTo(protectedOwner ? item.Damage : 0));
+            Assert.That(_achievements[0].flags,
+                Is.EqualTo(protectedOwner ? 0L : PartyAchievements.Bit(achievement)));
+            Assert.That(_achievements.Skip(1).All(progress => progress.flags == 0L), Is.True);
+            Assert.That(_players.Select(player => player.Gold),
+                Is.EqualTo(protectedOwner ? new[] { 10, 10, 10, 10 } : new[] { 4, 12, 12, 12 }));
+            var transfers = _match.DeathGoldTransfers.Count;
+            ExpectPresentationRpcs(1);
+            explode.Invoke(_match, new object[] { origin, 0, item });
+            Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(transfers), "No duplicate death reward.");
+        }
+
+        [Test]
+        public void ForestGhost_VisitsOnlyForestAndNonRespawnTilesIncludingTheFinalTurn()
+        {
+            var tiles = PrepareGhostBoard();
+            foreach (var map in new[] { "maze", BoardForestGhostRules.MapId })
+            {
+                Set(_match, "_boardMapId", new Unity.Collections.FixedString64Bytes(map));
+                foreach (var target in new[] { 0, 1, 4 })
+                {
+                    // Seat zero is on the respawn tile; both it and the empty bucket must miss.
+                    var seed = Enumerable.Range(1, 10000).First(s =>
+                        BoardForestGhostRules.Resolve(s, 20, 15, 2).Slot == (target == 4 ? -1 : target));
+                    Set(_match, "_boardEffectSeed", seed);
+                    typeof(NetworkMatchState).GetMethod("ResetForestGhostOnServer", Private).Invoke(_match, null);
+                    Invoke("AdvanceForestGhostOnServer", 100d);
+                    var shot = _match.ForestGhost;
+                    Assert.That(shot.Active, Is.EqualTo(map == BoardForestGhostRules.MapId));
+                    if (!shot.Active) continue;
+                    Assert.That(shot.Strong, Is.True);
+                    Assert.That(shot.Slot, Is.EqualTo(target == 1 ? 1 : -1));
+                    Assert.That(shot.Position, Is.Not.EqualTo(tiles[0].WorldCenter));
+                    Assert.That(shot.Position, Is.Not.EqualTo(tiles[6].WorldCenter));
+                    if (shot.Slot < 0)
+                        Assert.That(shot.Position, Is.EqualTo(tiles[4].WorldCenter).Or.EqualTo(tiles[5].WorldCenter));
+                }
+            }
+        }
+
+        [Test]
+        public void ForestGhost_FirstTurnIntroPreservesResourcesAndWaitsForTopViewBeforeReady()
+        {
+            PrepareGhostBoard();
+            Set(_match, "_turn", 1);
+            var before = _players.Select(player => (player.Gold, player.KeyCount, player.CurrentHealth)).ToArray();
+            Authority(_match, false);
+            Invoke("AdvanceForestGhostOnServer", 100d);
+            Assert.That(_match.ForestGhost.Active, Is.False);
+            Authority(_match, true);
+            Invoke("AdvanceForestGhostOnServer", 100d);
+            var intro = _match.ForestGhost;
+            Assert.That(intro.Active && intro.IsIntro, Is.True);
+            using (var writer = new FastBufferWriter(256, Unity.Collections.Allocator.Temp))
+            {
+                writer.WriteNetworkSerializable(intro);
+                using (var reader = new FastBufferReader(writer, Unity.Collections.Allocator.Temp))
+                {
+                    reader.ReadNetworkSerializable(out BoardForestGhostSnapshot received);
+                    Assert.That(received.Equals(intro), Is.True, "Clients must receive the intro phase.");
+                }
+            }
+            Assert.That(intro.Slot, Is.EqualTo(-1));
+            Assert.That((bool)typeof(NetworkMatchState).GetMethod("ApplyForestGhostOnServer", Private)
+                .Invoke(_match, null), Is.False);
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Assert.That(_match.ForestGhost.Applied, Is.False);
+            Invoke("PauseForestGhostOnServer", 101.5d);
+            Invoke("AdvanceForestGhostOnServer", 200d);
+            Assert.That(_match.ForestGhost.Elapsed(200d), Is.EqualTo(1.5d));
+            Invoke("ResumeForestGhostOnServer", 201.5d);
+            Invoke("AdvanceForestGhostOnServer", 203d);
+            Assert.That(_match.ForestGhost.Active, Is.True, "Top-view transition still owns two seconds.");
+            Assert.That((bool)typeof(NetworkMatchState).GetMethod("ShouldDeferLandingEffectResolutionOnServer", Private)
+                .Invoke(_match, new object[] { false }), Is.True);
+            Invoke("AdvanceForestGhostOnServer", 204.999999d);
+            Assert.That(_match.ForestGhost.Active, Is.True);
+            Invoke("AdvanceForestGhostOnServer", 205d);
+            Assert.That(_match.ForestGhost.Active, Is.False);
+            Assert.That(_players.Select(player => (player.Gold, player.KeyCount, player.CurrentHealth)), Is.EqualTo(before));
+            Assert.That((bool)typeof(NetworkMatchState).GetMethod("ShouldDeferLandingEffectResolutionOnServer", Private)
+                .Invoke(_match, new object[] { false }), Is.False);
+            Set(_match, "_turn", 2);
+            Set(_match, "_boardEffectSeed", Enumerable.Range(1, 10000).First(seed =>
+                BoardForestGhostRules.Resolve(seed, 2, 14, 2).Slot == 1 &&
+                BoardForestGhostRules.Resolve(seed, 2, 14, 2).Resource == ForestGhostResource.Gold &&
+                BoardForestGhostRules.Resolve(seed, 2, 14, 2).Amount > 0));
+            typeof(NetworkMatchState).GetMethod("ResetForestGhostOnServer", Private).Invoke(_match, null);
+            Invoke("AdvanceForestGhostOnServer", 210d);
+            Assert.That(_match.ForestGhost.IsIntro, Is.False);
+            Invoke("AdvanceForestGhostOnServer", 211.25d);
+            Assert.That(_players[1].Gold, Is.EqualTo(before[1].Gold + 10));
+        }
+
+        [Test]
+        public void ForestGhost_ServerAppliesOnceAtBoundaryAndPausePreservesThreeSecondShot()
+        {
+            PrepareGhostBoard();
+            Set(_match, "_forestGhost", new BoardForestGhostSnapshot { Active = true, Slot = 1,
+                Revision = 1, Amount = 20, StartedAt = 100d, Resource = (byte)ForestGhostResource.Gold });
+            Authority(_match, false);
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Assert.That(_players[1].Gold, Is.EqualTo(10));
+            Authority(_match, true);
+            Invoke("AdvanceForestGhostOnServer", 101.249999d);
+            Assert.That(_players[1].Gold, Is.EqualTo(10));
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Assert.That(_players[1].Gold, Is.EqualTo(30));
+            Assert.That(_match.ForestGhost.Applied, Is.True);
+            Invoke("PauseForestGhostOnServer", 101.4d);
+            Invoke("AdvanceForestGhostOnServer", 201d);
+            Assert.That(_match.ForestGhost.Active, Is.True);
+            Invoke("ResumeForestGhostOnServer", 201.4d);
+            Invoke("AdvanceForestGhostOnServer", 202.999999d);
+            Assert.That(_match.ForestGhost.Active, Is.True);
+            Invoke("AdvanceForestGhostOnServer", 203d);
+            Assert.That(_match.ForestGhost.Active, Is.False);
+            Assert.That(_players[1].Gold, Is.EqualTo(30));
+            var defer = (bool)typeof(NetworkMatchState).GetMethod("ShouldDeferLandingEffectResolutionOnServer", Private)
+                .Invoke(_match, new object[] { false });
+            Assert.That(defer, Is.False);
+        }
+
+        [Test]
+        public void ForestGhost_ClampsResourcesAndLethalHealthLossUsesEnvironmentDeathOnce()
+        {
+            PrepareGhostBoard();
+            foreach (var entry in new[] { (ForestGhostResource.Gold, -20, 10, -10),
+                (ForestGhostResource.Key, -1, 0, 0), (ForestGhostResource.Key, 1, 0, 1),
+                (ForestGhostResource.Health, 50, 90, 10), (ForestGhostResource.Health, -50, 30, -30) })
+            {
+                var player = _players[1];
+                if (entry.Item1 == ForestGhostResource.Gold) Set(player, "_gold", entry.Item3);
+                if (entry.Item1 == ForestGhostResource.Key) Set(player, "_keyCount", entry.Item3);
+                if (entry.Item1 == ForestGhostResource.Health) Set(player, "_currentHealth", entry.Item3);
+                Set(_match, "_forestGhost", new BoardForestGhostSnapshot { Active = true, Slot = 1,
+                    Revision = 1, Amount = entry.Item2, StartedAt = 100d, Resource = (byte)entry.Item1 });
+                if (entry.Item2 == -50)
+                {
+                    foreach (var other in _players) Set(other, "_gold", 10);
+                    ExpectPresentationRpcs(1);
+                }
+                Invoke("AdvanceForestGhostOnServer", 101.25d);
+                Invoke("AdvanceForestGhostOnServer", 101.25d);
+                Assert.That(_match.ForestGhost.ActualAmount, Is.EqualTo(entry.Item4));
+                if (entry.Item2 == -50)
+                {
+                    Assert.That(player.CurrentHealth, Is.Zero);
+                    Assert.That(_players.Select(p => p.Gold), Is.EqualTo(new[] { 12, 4, 12, 12 }));
+                    Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(3));
+                }
+            }
+        }
+
+        private BoardTile[] PrepareGhostBoard()
+        {
+            Set(_match, "_boardMapId", new Unity.Collections.FixedString64Bytes(BoardForestGhostRules.MapId));
+            Set(_match, "_turn", 20);
+            Set(_match, "_flowState", (byte)BoardFlowState.LandingEffectResolve);
+            var flow = new BoardFlowStateMachine(totalTurns: 20);
+            flow.Start(0d, 20); flow.Tick(7d);
+            for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 10d);
+            flow.Tick(15d); flow.TryCompleteCombat(15d, 3d);
+            typeof(NetworkMatchState).GetField("_flow", Private).SetValue(_match, flow);
+            typeof(NetworkMatchState).GetField("_nextLandingEffectSlot", Private).SetValue(_match, 4);
+            var tiles = new BoardTile[7];
+            for (var i = 0; i < tiles.Length; i++)
+            {
+                var go = new GameObject("Ghost test tile " + i); go.transform.SetParent(_root.transform);
+                go.transform.position = new Vector3(i * 8f, 0, 0);
+                tiles[i] = go.AddComponent<BoardTile>();
+                tiles[i].Configure(new Vector2Int(i, 0), i == 0 || i == 6 ? BoardTileType.Respawn : BoardTileType.Normal);
+            }
+            var topology = _root.AddComponent<BoardTopology>(); topology.Configure(tiles, Array.Empty<BoardGate>());
+            typeof(NetworkMatchState).GetField("_boardTopology", Private).SetValue(_match, topology);
+            for (var i = 0; i < 4; i++)
+            {
+                ((BoardTraversalState)typeof(NetworkPlayerAvatar).GetField("_traversal", Private).GetValue(_players[i])).Begin(tiles[i], 0);
+                _players[i].transform.position = tiles[i].WorldCenter;
+            }
+            typeof(NetworkMatchState).GetMethod("ResetForestGhostOnServer", Private).Invoke(_match, null);
+            return tiles;
         }
 
         private static void ExpectPresentationRpcs(int count)

@@ -9,6 +9,76 @@ namespace MazeParty.Multiplayer.Tests
     {
 
         [Test]
+        public void MagicMaze_RoundTripsLayoutAndRejectsCorruptState_AndMigratesPriorFormats()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.boardMapId = MagicMazeRules.MapId; snapshot.boardMapContentVersion = 1;
+            snapshot.magicMazeEffects = new[] { new MagicMazeEffectSnapshot(Vector2Int.zero, BoardLandingEffectType.GoldGain) };
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            Assert.That(restored.magicMazeEffects, Is.EqualTo(snapshot.magicMazeEffects));
+            foreach (var bad in new[] { "missing", "duplicate", "type", "generation", "old-version" })
+            {
+                var broken = JsonUtility.FromJson<MatchRecoverySnapshot>(codec.Encode(snapshot));
+                if (bad == "missing") broken.magicMazeEffects = System.Array.Empty<MagicMazeEffectSnapshot>();
+                if (bad == "duplicate") broken.magicMazeEffects = new[] { snapshot.magicMazeEffects[0], snapshot.magicMazeEffects[0] };
+                if (bad == "type") broken.magicMazeEffects[0].Effect = 255;
+                if (bad == "generation") broken.magicMazeWallGeneration = 1;
+                if (bad == "old-version") broken.recoveryVersion = 6;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(broken), out _), Is.False, bad);
+            }
+            foreach (var version in new[] { 1, 2, 3, 4, 5, 6 })
+            {
+                var legacy = CreateValidSnapshot(); legacy.recoveryVersion = version;
+                if (version == 1) legacy.mines = System.Array.Empty<MatchRecoveryMineSnapshot>();
+                var payload = JsonUtility.ToJson(legacy).Replace("\"magicMazeEffects\":[],", "").Replace("\"magicMazeWallGeneration\":0,", "");
+                Assert.That(codec.TryDecode(payload, out var migrated), Is.True, "version " + version);
+                Assert.That(migrated.recoveryVersion, Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+                Assert.That(migrated.magicMazeEffects, Is.Empty);
+            }
+        }
+        [Test]
+        public void TileAmplifier_CheckpointPreservesUsageRewardsAndShuffle_RejectsCorruption_AndMigratesV7()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var saved = CreateValidSnapshot();
+            saved.boardMapId = MagicMazeRules.MapId; saved.boardMapContentVersion = 1;
+            saved.magicMazeEffects = new[] { new MagicMazeEffectSnapshot(Vector2Int.zero, BoardLandingEffectType.ItemReward) };
+            saved.checkpoint = MatchRecoveryCheckpoint.MinigameIntroReady;
+            saved.currentMinigame = saved.scheduleEntries[saved.turn - 1];
+            saved.tileAmplifierTurn = saved.turn; saved.magicMazeShuffledTurn = saved.turn;
+            saved.players[0].usedTileAmplifier = true; saved.players[2].usedTileAmplifier = true;
+            saved.players[1].occupiedItemMask = 7;
+            saved.players[1].itemSlot0 = (byte)PrototypeItemId.Mine;
+            saved.players[1].itemSlot1 = (byte)PrototypeItemId.TileAmplifier;
+            saved.players[1].itemSlot2 = (byte)PrototypeItemId.Pistol;
+            var payload = codec.Encode(saved);
+            Assert.That(codec.TryDecode(payload, out var loaded), Is.True);
+            Assert.That(loaded.players[0].usedTileAmplifier && loaded.players[2].usedTileAmplifier, Is.True);
+            Assert.That(loaded.players[1].itemSlot1, Is.EqualTo((byte)PrototypeItemId.TileAmplifier));
+            Assert.That(loaded.magicMazeShuffledTurn, Is.EqualTo(2));
+            Assert.That(MatchRecoveryResumeRules.Resolve(loaded).State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            foreach (var bad in new[] { "map", "turn", "overview", "unshuffled", "future-shuffle", "no-users", "legacy" })
+            {
+                var broken = JsonUtility.FromJson<MatchRecoverySnapshot>(payload);
+                if (bad == "map") broken.boardMapId = "maze-graybox";
+                if (bad == "turn") broken.tileAmplifierTurn--;
+                if (bad == "overview") { broken.checkpoint = MatchRecoveryCheckpoint.TurnOverview; broken.currentMinigame = 0; }
+                if (bad == "unshuffled") broken.magicMazeShuffledTurn = 0;
+                if (bad == "future-shuffle") broken.magicMazeShuffledTurn++;
+                if (bad == "no-users") foreach (var player in broken.players) player.usedTileAmplifier = false;
+                if (bad == "legacy") broken.recoveryVersion = 7;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(broken), out _), Is.False, bad);
+            }
+            var legacy = CreateValidSnapshot(); legacy.recoveryVersion = 7; legacy.turn = 4;
+            legacy.boardMapId = MagicMazeRules.MapId; legacy.boardMapContentVersion = 1;
+            legacy.magicMazeEffects = saved.magicMazeEffects;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(legacy), out var migrated), Is.True);
+            Assert.That(migrated.magicMazeShuffledTurn, Is.EqualTo(3));
+            Assert.That(migrated.tileAmplifierTurn, Is.Zero);
+        }
+
+        [Test]
         public void SavedTurn_PreservesBothDiceForEverySlotRegardlessOfRollOrderAndGlobalRandom()
         {
             var snapshot = CreateValidSnapshot();
@@ -429,11 +499,11 @@ namespace MazeParty.Multiplayer.Tests
         public void Decode_ItemIdsPreserveActiveItemsAndRejectRetiredOrUnknownInventoryAndOffers()
         {
             var codec = new MatchRecoverySnapshotCodec();
-            foreach (var raw in new byte[] { 1, 2, 3, 9, 13, 255, 4, 10, 12 })
+            foreach (var raw in new byte[] { 1, 2, 3, 9, 17, 255, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, 16 })
             foreach (var inShop in new[] { false, true })
             {
                 var snapshot = CreateValidSnapshot();
-                var valid = raw == 4 || raw == 10 || raw == 12;
+                var valid = raw >= 4 && raw <= 8 || raw >= 10 && raw <= 16;
                 if (inShop)
                     snapshot.itemShops[0] = new MatchRecoveryItemShopSnapshot
                     {
@@ -456,6 +526,38 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.Throws<System.ArgumentException>(() => codec.Encode(snapshot));
                 }
             }
+        }
+
+        [Test]
+        public void WallSnapshots_RoundTripMigrateAndRejectCorruptLifetimeAndPassages()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.boardMapId = BoardWallRules.MapId; snapshot.boardMapContentVersion = 1;
+            var wall = new BoardWallSnapshot(Vector2Int.zero, Vector2Int.right, snapshot.turn + 5);
+            snapshot.walls = new[] { wall };
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            Assert.That(restored.walls, Is.EqualTo(snapshot.walls));
+            foreach (var bad in new[] { "expired", "future", "duplicate", "reversed", "self", "map", "legacy" })
+            {
+                snapshot = CreateValidSnapshot();
+                snapshot.boardMapId = bad == "map" ? BoardForestGhostRules.MapId : BoardWallRules.MapId;
+                snapshot.boardMapContentVersion = 1;
+                var invalid = wall;
+                if (bad == "expired") invalid.ExpiresAtTurn = snapshot.turn;
+                if (bad == "future") invalid.ExpiresAtTurn = snapshot.turn + 6;
+                if (bad == "reversed") { invalid.FromX = 1; invalid.ToX = 0; }
+                if (bad == "self") invalid.ToX = 0;
+                if (bad == "legacy") snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutWalls;
+                snapshot.walls = bad == "duplicate" ? new[] { invalid, invalid } : new[] { invalid };
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False, bad);
+            }
+            snapshot = CreateValidSnapshot();
+            snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutWalls;
+            var json = JsonUtility.ToJson(snapshot).Replace(",\"walls\":[]", string.Empty);
+            Assert.That(codec.TryDecode(json, out restored), Is.True);
+            Assert.That(restored.recoveryVersion, Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+            Assert.That(restored.walls, Is.Empty);
         }
 
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(

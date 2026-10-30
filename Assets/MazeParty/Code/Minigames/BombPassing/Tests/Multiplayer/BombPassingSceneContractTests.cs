@@ -146,8 +146,22 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(arena, Is.Not.Null);
                 Assert.That(arena.position,
                     Is.EqualTo(new Vector3(1380f, 0f, 0f)));
-                Assert.That(FindDescendant(arena, "Boundary Walls")?.childCount,
-                    Is.EqualTo(4));
+                var boundaryWalls = FindDescendant(arena, "Boundary Walls");
+                Assert.That(boundaryWalls, Is.Not.Null);
+                // Authored decorations can add children without changing the four boundaries.
+                foreach (var wallName in new[]
+                         {
+                             "North Wall", "South Wall", "West Wall", "East Wall"
+                         })
+                {
+                    var wall = boundaryWalls.Find(wallName);
+                    Assert.That(wall, Is.Not.Null, wallName);
+                    Assert.That(wall.GetComponentsInChildren<Renderer>(true),
+                        Is.Not.Empty, wallName);
+                }
+                Assert.That(boundaryWalls.GetComponentsInChildren<Collider>(true)
+                        .Where(collider => collider.enabled),
+                    Is.Empty, "Boundary visuals must not add gameplay collision.");
                 Assert.That(FindDescendant(arena,
                     "Player Spawn Markers")?.childCount, Is.EqualTo(4));
                 Assert.That(FindDescendant(arena, "Player Visuals"),

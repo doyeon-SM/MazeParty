@@ -33,7 +33,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera taggerCamera;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private GameObject arenaPresentation;
-        [SerializeField] private GameObject hitSparkVfxPrefab;
+        [UnityEngine.Serialization.FormerlySerializedAs("hitSparkVfxPrefab")]
+        [SerializeField] private GameObject catchLightningVfxPrefab;
         [SerializeField] private GameObject taggerAuraPrefab;
 
         private readonly PlayerView[] _players =
@@ -49,14 +50,14 @@ namespace MazeParty.Multiplayer
         private byte _lastCaughtMask;
         private NetworkTagChaseState _subscribedActionState;
 
-        public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
+        public GameObject CatchLightningVfxPrefab => catchLightningVfxPrefab;
         public GameObject TaggerAuraPrefab => taggerAuraPrefab;
 
         public void ConfigureVfx(
-            GameObject hitSparkPrefab,
+            GameObject lightningPrefab,
             GameObject auraPrefab)
         {
-            hitSparkVfxPrefab = hitSparkPrefab;
+            catchLightningVfxPrefab = lightningPrefab;
             taggerAuraPrefab = auraPrefab;
         }
 
@@ -366,18 +367,15 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
-                GameSound.PlayAt(
-                    SoundKeys.Lightning,
-                    player.Root.position);
-                if (hitSparkVfxPrefab != null)
-                {
-                    OneShotVfxPool.Play(
-                        hitSparkVfxPrefab,
-                        player.Root.position + Vector3.up * 0.7f,
-                        Quaternion.identity,
-                        0.75f);
-                }
+                PresentCatchVfx(PlayerAvatarVisual.GetFeetPosition(player.Root));
             }
+        }
+
+        public void PresentCatchVfx(Vector3 feetPosition)
+        {
+            GameSound.PlayAt(SoundKeys.Lightning, feetPosition);
+            OneShotVfxPool.Play(catchLightningVfxPrefab, feetPosition,
+                Quaternion.identity, 0.75f);
         }
 
         private void RefreshCamera(NetworkMatchState match)
@@ -481,8 +479,13 @@ namespace MazeParty.Multiplayer
 
         private void SetTaggerAimVisible(bool visible)
         {
-            _commonHud ??= FindAnyObjectByType<MinigameCommonHudView>(
-                FindObjectsInactive.Include);
+            if (_commonHud == null || !_commonHud.isActiveAndEnabled)
+            {
+                _commonHud = null;
+                foreach (var hud in FindObjectsByType<MinigameCommonHudView>(FindObjectsSortMode.None))
+                    if (hud.isActiveAndEnabled && hud.RootCanvas != null && hud.RootCanvas.enabled)
+                    { _commonHud = hud; break; }
+            }
             _commonHud?.SetTaggerAimVisible(visible);
         }
 

@@ -10,6 +10,21 @@ namespace MazeParty.Gameplay
         Hand
     }
 
+    public static class PlayerHitDamageRules
+    {
+        public static int ApplyRegionMultiplier(int baseDamage, PlayerHitRegion region)
+        {
+            var damage = Mathf.Max(0, baseDamage);
+            return region == PlayerHitRegion.Head ? Mathf.RoundToInt(damage * 1.2f) : damage;
+        }
+
+        public static PlayerHitRegion RegionOf(Collider collider)
+        {
+            var zone = collider != null ? collider.GetComponent<PlayerHitZone>() : null;
+            return zone != null ? zone.Region : PlayerHitRegion.Body;
+        }
+    }
+
     public static class FirearmDamageRules
     {
         public const int PulseBlasterBaseDamage = 20;
@@ -18,16 +33,7 @@ namespace MazeParty.Gameplay
 
         public static int ApplyRegionMultiplier(int bodyDamage, PlayerHitRegion region)
         {
-            var safeDamage = Mathf.Max(0, bodyDamage);
-            switch (region)
-            {
-                case PlayerHitRegion.Head:
-                    return Mathf.RoundToInt(safeDamage * 1.3f);
-                case PlayerHitRegion.Hand:
-                    return Mathf.RoundToInt(safeDamage * 0.7f);
-                default:
-                    return safeDamage;
-            }
+            return PlayerHitDamageRules.ApplyRegionMultiplier(bodyDamage, region);
         }
     }
 

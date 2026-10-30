@@ -372,10 +372,7 @@ namespace MazeParty.Multiplayer
 
         public void PresentHitSpark(Vector3 point, Vector3 normal)
         {
-            if (hitSparkVfxPrefab == null) return;
-            var outward = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
-            OneShotVfxPool.Play(hitSparkVfxPrefab, point + outward * 0.025f,
-                Quaternion.LookRotation(outward), 0.7f);
+            CombatHitVfx.Play(hitSparkVfxPrefab, point, normal);
         }
 
         private void RegisterCamera(CinemachineCamera desired)

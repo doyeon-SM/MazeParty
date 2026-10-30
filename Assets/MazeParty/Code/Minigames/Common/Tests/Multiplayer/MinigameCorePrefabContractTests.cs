@@ -88,7 +88,7 @@ namespace MazeParty.Multiplayer.Tests
                 "WrongWay", "Wrong Way Environment",
                 "WrongWayEnvironment.prefab",
                 typeof(NetworkWrongWayState),
-                "Lane 1", "Finish Arch"),
+                "Lane 1"),
             EnvironmentCase(
                 "StableFooting", "Stable Footing Environment",
                 "StableFootingEnvironment.prefab",
@@ -131,7 +131,7 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(RenderSettings.sun, Is.SameAs(night.Moonlight));
                     var grade = new SerializedObject(night).FindProperty("colorGrade").objectReferenceValue;
                     Assert.That(new SerializedObject(grade).FindProperty("sharedProfile").objectReferenceValue,
-                        Is.SameAs(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/MazeParty/Art/Board/BoardNightColor.asset")));
+                        Is.SameAs(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/MazeParty/Art/Board/MinigameNightColor.asset")));
                     foreach (var flight in scene.GetRootGameObjects().SelectMany(root =>
                                  root.GetComponentsInChildren<FlightNetworkView>(true)))
                         Assert.That(new SerializedObject(flight).FindProperty("skyboxMaterial").objectReferenceValue,
@@ -281,9 +281,11 @@ namespace MazeParty.Multiplayer.Tests
                             Is.EqualTo(PrefabInstanceStatus.Connected),
                             scenePath + " :: " + item.Instance.name);
 
+                        // Resolve the asset that owns this instance root even
+                        // when it is nested inside an environment prefab.
                         var source = PrefabUtility
-                            .GetCorrespondingObjectFromSource(
-                                item.Instance);
+                            .GetCorrespondingObjectFromSourceAtPath(
+                                item.Instance, item.Path);
                         Assert.That(
                             source,
                             Is.Not.Null,
@@ -293,6 +295,15 @@ namespace MazeParty.Multiplayer.Tests
                             Is.EqualTo(item.Path),
                             scenePath + " :: " + item.Instance.name);
 
+                        if (item.Path.EndsWith("Exterior.prefab", StringComparison.Ordinal))
+                        {
+                            Assert.That(item.Instance.GetComponentsInChildren<Collider>(true),
+                                Is.Empty, item.Path + " must not change gameplay collision.");
+                            Assert.That(item.Instance.GetComponentsInChildren<Rigidbody>(true),
+                                Is.Empty, item.Path + " must remain static presentation.");
+                            Assert.That(item.Instance.GetComponentsInChildren<NetworkBehaviour>(true),
+                                Is.Empty, item.Path + " must not own authoritative state.");
+                        }
                         AssertNoMissingScripts(prefab, item.Path);
                         AssertNoMissingScripts(
                             item.Instance,

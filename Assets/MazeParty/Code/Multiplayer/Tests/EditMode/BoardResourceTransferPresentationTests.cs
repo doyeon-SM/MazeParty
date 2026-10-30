@@ -48,11 +48,11 @@ namespace MazeParty.Multiplayer.Tests
                 (103d, BoardResourceTransferPhase.Source, 0f),
                 (103.499d, BoardResourceTransferPhase.Source, 0f),
                 (103.5d, BoardResourceTransferPhase.Source, 0f),
-                (104.499d, BoardResourceTransferPhase.Source, 0.99f),
-                (104.5d, BoardResourceTransferPhase.Destination, 0f),
-                (105.499d, BoardResourceTransferPhase.Destination, 0.99f),
-                (105.5d, BoardResourceTransferPhase.Destination, 1f),
-                (106d, BoardResourceTransferPhase.Complete, 1f)
+                (104.999d, BoardResourceTransferPhase.Source, 0.99f),
+                (105d, BoardResourceTransferPhase.Destination, 0f),
+                (106.499d, BoardResourceTransferPhase.Destination, 0.99f),
+                (106.5d, BoardResourceTransferPhase.Destination, 1f),
+                (107d, BoardResourceTransferPhase.Complete, 1f)
             };
 
             foreach (var testCase in cases)

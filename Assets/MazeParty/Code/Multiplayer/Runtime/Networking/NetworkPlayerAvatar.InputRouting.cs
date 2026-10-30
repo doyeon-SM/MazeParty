@@ -30,7 +30,7 @@ namespace MazeParty.Multiplayer
                  ((match.CanAcceptActionInput &&
                    HasResolvedItemChoice &&
                    CurrentHealth > 0 &&
-                   !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping) ||
+                   !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping && !IsSettingBombardment) ||
                   match.CanAvatarUseCombatInput(this)) &&
                  Cursor.lockState == CursorLockMode.Locked);
             var mouse = LocalMouse;
@@ -199,7 +199,7 @@ namespace MazeParty.Multiplayer
                     }
                 }
 
-                if (IsSwapping) return;
+                if (IsSwapping || IsSettingBombardment) return;
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay) &&
                     aimedDie.AssignedSlot == AssignedSlot && !HasRolled)
                 {
@@ -207,7 +207,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (IsSwapping) return;
+            if (IsSwapping || IsSettingBombardment) return;
             if (repeatPrimary || (_equippedItem.Value != 0 && mouse.leftButton.wasPressedThisFrame))
             {
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay))
@@ -232,7 +232,9 @@ namespace MazeParty.Multiplayer
                         var direction = eyePivot != null
                             ? eyePivot.forward
                             : transform.forward;
-                        if (LocalEquippedItem == PrototypeItemId.PositionSwapper)
+                        if (LocalEquippedItem == PrototypeItemId.Bombardment)
+                            BeginBombardment();
+                        else if (LocalEquippedItem == PrototypeItemId.PositionSwapper)
                             BoardUtilityItemView.Instance?.Open(this);
                         else if (TryBeginLocalItemUseRequest(
                                      LocalEquippedItem,
@@ -281,14 +283,15 @@ namespace MazeParty.Multiplayer
             var input = Vector2.zero;
             var quietWalkHeld = false;
             var match = NetworkMatchState.Instance;
-            var lobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
+            var lobbyMovement = CanUseLobbyInput();
+            var lobbyInput = lobbyMovement || CanUseCeremonyInput();
             var keyboard = lobbyInput
                 ? (LocalInputGate.BlocksMovementInput ? null : Keyboard.current)
                 : LocalKeyboard;
             var canMove = ActiveHandGesture == 0 && (lobbyInput || (match != null &&
                           ((match.CanAcceptActionInput && HasResolvedItemChoice &&
                             CurrentHealth > 0 &&
-                            !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping) ||
+                            !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping && !IsSettingBombardment) ||
                            match.CanAvatarUseCombatInput(this))));
             if (keyboard != null && canMove)
             {
@@ -303,6 +306,12 @@ namespace MazeParty.Multiplayer
             if (lobbyInput && input.sqrMagnitude > 0.0001f)
             {
                 _localYaw = Mathf.Atan2(input.x, input.y) * Mathf.Rad2Deg;
+                _localPitch = 0f;
+                ApplyLocalEyeRotation();
+            }
+            else if (lobbyMovement)
+            {
+                _localYaw = transform.eulerAngles.y;
                 _localPitch = 0f;
                 ApplyLocalEyeRotation();
             }

@@ -413,6 +413,7 @@ namespace MazeParty.Editor
                     new Vector3(0f, 0.32f, 0f),
                     new Vector3(0.65f, 0.13f, 0.65f),
                     materials.ProjectileHighlight);
+                GameplayPresentationAssetSetup.AuthorFireBullet(shell);
                 shell.SetActive(false);
                 shell = MinigameCorePrefabUtility.Connect(shell,
                     CorePrefabFolder + "/Projectile.prefab");
@@ -450,6 +451,7 @@ namespace MazeParty.Editor
                     materials.LaserFiring);
                 warning.SetActive(false);
                 firing.SetActive(false);
+                GameplayPresentationAssetSetup.AuthorBlueBeam(root);
                 root.SetActive(false);
                 root = MinigameCorePrefabUtility.Connect(root,
                     CorePrefabFolder + "/LaserRig.prefab");

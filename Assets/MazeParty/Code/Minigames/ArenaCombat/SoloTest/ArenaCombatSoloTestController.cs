@@ -154,7 +154,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 visual.SetDisplayName(slot == LocalPlayerSlot
                     ? "SOLO DEV"
                     : "PRACTICE " + (slot + 1));
-                DisableGeneratedHitColliders(body);
+                ConfigureGeneratedHitColliders(body);
                 var healthBar = Instantiate(_productionView.HealthBarPrefab, body.transform, false);
                 healthBar.SetTarget(visual);
                 _fighters[slot] = new Fighter(body.transform, eye, visual) { HealthBar = healthBar };
@@ -301,36 +301,26 @@ namespace MazeParty.Dev.MinigameSoloTest
                 BoardCombatRules.PunchCooldownSeconds;
             attacker.Visual.TriggerPunch();
 
-            direction.y = 0f;
             direction = direction.sqrMagnitude > 0.0001f
-                ? direction.normalized
-                : attacker.Root.forward;
+                ? direction.normalized : attacker.Root.forward;
+            // Practice fighters move their transforms directly; query their current poses.
+            Physics.SyncTransforms();
+            var didHit = BoardItemPhysics.Cast(
+                attacker.Eye.position, direction, BoardCombatRules.PunchRange,
+                attacker.Root.gameObject, out var contact, BoardCombatRules.PunchRadius,
+                hitZonesOnly: true);
             var bestSlot = -1;
-            var bestDistance = float.MaxValue;
-            for (var slot = 0; slot < _fighters.Length; slot++)
-            {
-                if (slot == attackerSlot || !_fighters[slot].IsAlive)
-                {
-                    continue;
-                }
-                var relative = _fighters[slot].Root.position -
-                               attacker.Root.position;
-                relative.y = 0f;
-                var forwardDistance = Vector3.Dot(relative, direction);
-                var lateral = relative - direction * forwardDistance;
-                if (forwardDistance < 0f ||
-                    forwardDistance > BoardCombatRules.PunchRange ||
-                    lateral.magnitude > BodyRadius +
-                    BoardCombatRules.PunchRadius ||
-                    forwardDistance >= bestDistance)
-                {
-                    continue;
-                }
-                bestSlot = slot;
-                bestDistance = forwardDistance;
-            }
+            if (didHit)
+                for (var slot = 0; slot < _fighters.Length; slot++)
+                    if (slot != attackerSlot && _fighters[slot].IsAlive &&
+                        contact.collider.transform.IsChildOf(_fighters[slot].Root))
+                    {
+                        bestSlot = slot;
+                        break;
+                    }
+            var region = PlayerHitDamageRules.RegionOf(didHit ? contact.collider : null);
             var damage = attacker.PunchSequence.Resolve(
-                bestSlot >= 0, _elapsed, attacker.Health);
+                bestSlot >= 0, _elapsed, attacker.Health, region);
             if (bestSlot < 0)
             {
                 return;
@@ -339,11 +329,13 @@ namespace MazeParty.Dev.MinigameSoloTest
             var victim = _fighters[bestSlot];
             victim.Health = Mathf.Max(0,
                 victim.Health - damage);
-            victim.Visual.TriggerHit(PlayerHitRegion.Body, damage);
-            var hitPoint = victim.Root.position + Vector3.up * EyeOffset - direction * BodyRadius;
+            victim.Visual.TriggerHit(region, damage);
+            var hitPoint = contact.distance > 0.0001f
+                ? contact.point : contact.collider.ClosestPoint(attacker.Eye.position);
             _productionView.PresentHitSpark(hitPoint, -direction);
-            victim.Knockback = direction *
-                BoardCombatRules.PunchKnockbackSpeed;
+            var planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up).normalized;
+            if (planarDirection.sqrMagnitude < 0.0001f) planarDirection = attacker.Root.forward;
+            victim.Knockback = planarDirection * BoardCombatRules.PunchKnockbackSpeed;
             if (bestSlot == LocalPlayerSlot)
             {
                 ArenaCombatHitFlashView.Instance?.Flash();
@@ -542,12 +534,12 @@ namespace MazeParty.Dev.MinigameSoloTest
         private void RestartMatch() => BeginMatch(_seed);
         private void StartNextSeed() => BeginMatch(unchecked(_seed + 1));
 
-        private static void DisableGeneratedHitColliders(GameObject root)
+        private static void ConfigureGeneratedHitColliders(GameObject root)
         {
             foreach (var collider in
                      root.GetComponentsInChildren<Collider>(true))
             {
-                collider.enabled = false;
+                collider.enabled = collider.GetComponent<PlayerHitZone>() != null;
             }
         }
 

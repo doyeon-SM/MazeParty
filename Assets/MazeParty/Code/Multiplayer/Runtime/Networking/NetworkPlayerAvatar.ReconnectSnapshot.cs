@@ -32,6 +32,9 @@ namespace MazeParty.Multiplayer
                 AchievementDoubleDiceSteps = _achievementDoubleDiceSteps,
                 Cloaked = _cloaked.Value, RangeDieItem = _rangeDieItem.Value,
                 SwapTargetSlot = _swapChannel.TargetSlot, SwapRemaining = _swapChannel.Remaining,
+                BombardmentSelecting = IsSettingBombardment,
+                BombardmentRevision = _bombardmentRevision.Value,
+                BombardmentTargets = CaptureBombardmentTargets(),
                 ItemCooldownRemaining = _itemCooldownRemaining, DoubleDice = _doubleDice.Value,
                 FirstDieResult = _firstDieResult.Value, SecondDieResult = _secondDieResult.Value,
                 OccupiedItemMask = _occupiedItemMask.Value,
@@ -121,6 +124,7 @@ namespace MazeParty.Multiplayer
             _swapChannel.Clear();
             if (snapshot.SwapRemaining > 0) _swapChannel.Begin(AssignedSlot, snapshot.SwapTargetSlot, snapshot.SwapRemaining);
             _swapSeconds.Value = (float)_swapChannel.Remaining;
+            RestoreBombardmentSelection(snapshot);
             _itemCooldownRemaining = snapshot.ItemCooldownRemaining; _doubleDice.Value = snapshot.DoubleDice;
             _firstDieResult.Value = snapshot.FirstDieResult; _secondDieResult.Value = snapshot.SecondDieResult;
             _occupiedItemMask.Value = snapshot.OccupiedItemMask;

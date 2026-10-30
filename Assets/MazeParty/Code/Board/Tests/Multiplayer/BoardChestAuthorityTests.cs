@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace MazeParty.Multiplayer.Tests
 {
-    public sealed class BoardChestAuthorityTests
+    public sealed partial class BoardChestAuthorityTests
     {
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private GameObject _root;
@@ -110,7 +110,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(BoardChestRules.DrawItem(PrototypeItemCatalog.All, seed), Is.EqualTo(id));
             }
             Assert.That(PrototypeItemCatalog.All.Where(i => i.UseTiming == BoardItemUseTiming.TurnStart).Select(i => i.Id),
-                Is.EquivalentTo(new[] { PrototypeItemId.DoubleDice, PrototypeItemId.HighDice }));
+                Is.EquivalentTo(new[] { PrototypeItemId.DoubleDice, PrototypeItemId.HighDice, PrototypeItemId.Bombardment }));
         }
         [Test]
         public void Opening_RejectsUnauthorizedStaleRemoteDeadPausedUnchosenOrOccludedRequests_AndCommitsOnce()
@@ -416,6 +416,62 @@ namespace MazeParty.Multiplayer.Tests
         private GameObject Child(string name)
         { var child = new GameObject(name); child.transform.SetParent(_root.transform); return child; }
         private void Invoke(string method, params object[] args) => typeof(NetworkMatchState).GetMethod(method, Private).Invoke(_match, args);
+        [Test]
+        public void Firearms_ApplyHeadBonusOnly_IgnoreMovementCapsules_AndRespectCoverAndProtection()
+        {
+            var victim = Child("Firearm target").AddComponent<NetworkPlayerAvatar>();
+            Authority(victim, true);
+            Set(victim, "_slot", 1);
+            Set(victim, "_maxHealth", 100);
+            Set(_match, "_shieldEndsAt", 0d);
+            Set(_match, "_flowState", (byte)BoardFlowState.Action);
+            Set(_match, "_actionEndsAt", _match.SynchronizedNow + 100d);
+            typeof(NetworkBehaviour).GetProperty("IsOwner").SetValue(_player, true);
+            _player.transform.position = new Vector3(1000f, 1000f, 1000f);
+            _player.EyePivot.position = _player.transform.position + Vector3.up * 0.75f;
+            _player.EyePivot.rotation = Quaternion.identity;
+            victim.transform.position = _player.transform.position + Vector3.forward * 3f;
+            victim.gameObject.AddComponent<PlayerHitZoneOwner>();
+            var hitbox = new GameObject("Damage region");
+            hitbox.transform.SetParent(victim.transform, false);
+            hitbox.transform.localPosition = Vector3.up * 0.75f;
+            var sphere = hitbox.AddComponent<SphereCollider>();
+            sphere.radius = 0.2f;
+            sphere.isTrigger = true;
+            var zone = hitbox.AddComponent<PlayerHitZone>();
+            var wall = Child("Shot cover").AddComponent<BoxCollider>();
+            wall.transform.position = _player.EyePivot.position + Vector3.forward * 1.5f;
+            wall.size = new Vector3(2f, 2f, 0.1f);
+
+            foreach (var weapon in new[] { PrototypeItemId.Pistol, PrototypeItemId.Sniper })
+                foreach (var region in new[] { PlayerHitRegion.Head, PlayerHitRegion.Body, PlayerHitRegion.Hand })
+                    foreach (var condition in new[] { "hit", "wall", "shield" })
+                    {
+                        zone.Configure(region);
+                        wall.gameObject.SetActive(condition == "wall");
+                        Set(victim, "_currentHealth", 100);
+                        Set(victim, "_personalProtectionEndsAt", condition == "shield" ? _match.SynchronizedNow + 30d : 0d);
+                        Set(victim, "_knockdownEndsAt", 0d);
+                        Assert.That(_player.EquipChestItemOnServer(weapon), Is.True);
+                        typeof(NetworkPlayerAvatar).GetField("_itemCooldownRemaining", Private).SetValue(_player, 0d);
+                        Physics.SyncTransforms();
+                        Assert.That(_player.HasLocalDamageableFirearmTarget(), Is.EqualTo(condition == "hit"),
+                            $"Reticle must match the actual damage path: {weapon}, {region}, {condition}");
+                        Authority(_match, false);
+                        Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.False);
+                        Authority(_match, true);
+                        var rpcCount = condition == "hit" ? 3 : 2;
+                        for (var rpc = 0; rpc < rpcCount; rpc++)
+                            LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                        Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.True);
+                        var normalDamage = weapon == PrototypeItemId.Pistol ? 20 : 50;
+                        var headDamage = weapon == PrototypeItemId.Pistol ? 24 : 60;
+                        var damage = condition == "hit" ? (region == PlayerHitRegion.Head ? headDamage : normalDamage) : 0;
+                        Assert.That(victim.CurrentHealth, Is.EqualTo(100 - damage),
+                            $"{weapon}, {region}, {condition}");
+                    }
+        }
+
         private static void Authority(NetworkBehaviour b, bool server)
         { typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(b, server); typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(b, true); }
         private static void Set<T>(object target, string field, T value) where T : unmanaged =>

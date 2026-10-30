@@ -17,6 +17,9 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void BothDirections_HoldPoseUntilRenderedCover_CutUnderClouds_AndFinishAtSharedDeadline()
         {
+            Assert.That((bool)typeof(GameplayCameraDirector).GetMethod("UsesPlayerBridge",
+                BindingFlags.Static | BindingFlags.NonPublic).Invoke(null,
+                new object[] { GameplayMode.BoardResourceEvent, GameplayMode.BoardTopDown }), Is.True);
             foreach (var target in new[] { GameplayMode.BoardTopDown, GameplayMode.FirstPerson })
             foreach (var yaw in new[] { 0f, 179f, 270f })
             {
@@ -69,21 +72,25 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void RewardShot_IgnoresAnimatedHeadAndRewardHeight()
+        public void RewardShot_RaisesCameraToCenterHeadWithoutMovingPlayerOrFollowingAnimation()
         {
             var root = new GameObject("Stable reward camera contract");
             var head = new GameObject("Animated head");
             try
             {
                 var director = root.AddComponent<GameplayCameraDirector>();
+                head.transform.position = new Vector3(0f, 1.6f, 0f);
                 director.CalculateBoardResourceEventPose(root.transform, head.transform, 0,
                     out var position, out var rotation, out _);
+                Assert.That(Vector3.Dot(rotation * Vector3.forward,
+                    (head.transform.position - position).normalized), Is.GreaterThan(.9999f));
                 head.transform.position += Vector3.up * 2;
                 director.CalculateBoardResourceEventPose(root.transform, head.transform, 4,
                     out var moved, out var rotated, out _);
                 Assert.That(moved, Is.EqualTo(position));
                 Assert.That(Quaternion.Angle(rotation, rotated), Is.LessThan(.001f));
-                Assert.That(position.y, Is.LessThanOrEqualTo(PlayerAvatarVisual.StandingEyeHeight));
+                Assert.That(position.y, Is.GreaterThanOrEqualTo(1.6f));
+                Assert.That(root.transform.position, Is.EqualTo(Vector3.zero));
             }
             finally { Object.DestroyImmediate(head); Object.DestroyImmediate(root); }
         }

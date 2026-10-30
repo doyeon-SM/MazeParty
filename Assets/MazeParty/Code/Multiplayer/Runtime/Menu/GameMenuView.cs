@@ -96,6 +96,11 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             UiPopupStack.Refresh();
+            if (LobbyIntroPresentation.BlocksMenu)
+            {
+                bindings.GearButton.gameObject.SetActive(false);
+                return;
+            }
             var controller = OnlineSessionController.Instance;
             var context = controller != null
                 ? controller.MenuContext
@@ -143,7 +148,7 @@ namespace MazeParty.Multiplayer
 
         public void OpenMenu()
         {
-            if (_menuOpen || !enabled)
+            if (_menuOpen || !enabled || LobbyIntroPresentation.BlocksMenu)
             {
                 return;
             }
@@ -185,6 +190,7 @@ namespace MazeParty.Multiplayer
 
         private void HandleEscape()
         {
+            if (LobbyIntroPresentation.ConsumedEscapeThisFrame) return;
             if (_menuOpen && UiPopupStack.IsTop(bindings.MenuRoot))
             {
                 if (_dropdownExpandedLastFrame)

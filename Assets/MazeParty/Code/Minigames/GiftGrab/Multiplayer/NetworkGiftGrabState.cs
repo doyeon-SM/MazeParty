@@ -1578,10 +1578,7 @@ namespace MazeParty.Multiplayer
 
         public static Vector2 GetDepositedGiftDisplayCenter(int ownerSlot)
         {
-            var baseCenter = GetBaseCenter(ownerSlot);
-            var towardArenaCenter =
-                new Vector2(ArenaCenterX, 0f) - baseCenter;
-            return baseCenter + towardArenaCenter.normalized * 0.5f;
+            return GetBaseCenter(ownerSlot);
         }
 
         private Vector2 GetStoredGiftPosition(
@@ -1601,14 +1598,20 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            var outer = stackIndex < 8;
-            var ringIndex = outer ? stackIndex : stackIndex - 8;
-            var ringCount = outer ? 8 : 6;
-            var angle = Mathf.PI * 2f * ringIndex / ringCount;
-            var radius = outer ? 1.12f : 0.61f;
-            var offset = new Vector2(
-                Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            var offset = GetStoredGiftOffset(stackIndex, _roundState.GetPlayer(ownerSlot).StoredGiftCount);
             return GetDepositedGiftDisplayCenter(ownerSlot) + offset;
+        }
+
+        public static Vector2 GetStoredGiftOffset(int index, int count)
+        {
+            if (count <= 1) return Vector2.zero;
+            var outer = index < 8;
+            var ringCount = outer ? Mathf.Min(count, 8) : count - 8;
+            if (ringCount <= 1) return Vector2.zero;
+            var ringIndex = outer ? index : index - 8;
+            var angle = Mathf.PI * 2f * ringIndex / ringCount;
+            var radius = outer ? 1.12f : .61f;
+            return new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
         }
 
         private Vector2 GetCarriedGiftPosition(int carrierSlot)

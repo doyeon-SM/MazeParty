@@ -478,12 +478,12 @@ namespace MazeParty.Multiplayer
             if (IsKeyShopRevealActive)
             {
                 var elapsed = KeyPurchasePresentationRules.TotalDuration(
-                    _keyShopTransitionSeconds.Value) - KeyShopRevealRemaining;
+                    _keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) - KeyShopRevealRemaining;
                 if (KeyPurchasePhase == KeyPurchasePresentationPhase.ToTopView)
                     return Math.Max(0d, elapsed);
                 if (KeyPurchasePhase >= KeyPurchasePresentationPhase.ReturnToFirstPerson)
-                    return Math.Max(0d, elapsed - _keyShopTransitionSeconds.Value -
-                        KeyPurchasePresentationRules.AcquisitionSeconds -
+                    return Math.Max(0d, elapsed - KeyPurchasePresentationRules.RevealStartsAt(
+                        _keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
                         KeyPurchasePresentationRules.ShopRevealSeconds);
                 return double.NaN;
             }
@@ -508,9 +508,14 @@ namespace MazeParty.Multiplayer
             acquisitionMotion = 0f;
             if (!IsKeyShopRevealActive) return KeyPurchasePresentationPhase.None;
             return KeyPurchasePresentationRules.GetPhase(
-                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value) -
-                KeyShopRevealRemaining, _keyShopTransitionSeconds.Value, out acquisitionMotion);
+                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
+                KeyShopRevealRemaining, _keyShopTransitionSeconds.Value, out acquisitionMotion, KeyShopBuyerSlot >= 0);
         }
+
+        public float KeyShopZoomOutProgress => KeyPurchasePresentationRules.ZoomOutProgress(
+            KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0) -
+            KeyShopRevealRemaining - KeyPurchasePresentationRules.RevealStartsAt(
+                _keyShopTransitionSeconds.Value, KeyShopBuyerSlot >= 0));
 
         public BoardResourceTransferPhase GetResourceTransferPresentationPhase(
             out float phaseProgress,
@@ -541,6 +546,8 @@ namespace MazeParty.Multiplayer
             InitializeStatisticsReplication();
             InitializeGameSettings();
             InitializeBoardMapRuntime();
+            InitializeBoardWalls();
+            InitializeMagicMazeReplication();
             PrewarmBoardItemVfx();
             if (IsServer)
             {
@@ -558,6 +565,8 @@ namespace MazeParty.Multiplayer
 
         public override void OnNetworkDespawn()
         {
+            _boardWalls.OnListChanged -= OnBoardWallsChanged;
+            _magicMazeEffects.OnListChanged -= OnMagicMazeEffectsChanged;
             ReleaseStatisticsReplication();
             ReleaseGameSettings();
             ClearBoardItemWorld();
@@ -599,6 +608,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            RefreshBoardWallPresentation();
+            RefreshMagicMazeWalls();
             TickBoardGrenadePresentation();
             TickChestPresentation();
             if (!IsServer)
@@ -936,6 +947,9 @@ namespace MazeParty.Multiplayer
         /// </summary>
         private void SuspendSimulationOnServer(double now)
         {
+            // Commit a due final icon before freezing its presentation deadline.
+            AdvanceMagicMazeOnServer(now);
+            PauseForestGhostOnServer(now);
             PauseResourceTransferPresentationOnServer(now);
             if (_flow.State == BoardFlowState.MinigameIntroReady &&
                 CurrentMinigame == ScheduledMinigameId.Skip &&
@@ -1189,7 +1203,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _flow = new BoardFlowStateMachine(totalTurns: TotalTurns);
+            _flow = new BoardFlowStateMachine(totalTurns: TotalTurns, magicMaze: IsMagicMaze);
             _flow.Transitioned += OnFlowTransitioned;
         }
 
@@ -1209,9 +1223,13 @@ namespace MazeParty.Multiplayer
                 ClearLandingEffectPresentationOnServer();
             }
 
+            if (transition.Previous == BoardFlowState.MagicMazeChange)
+                CommitMagicMazeShuffleOnServer();
+
             switch (transition.Current)
             {
                 case BoardFlowState.TurnOverview:
+                    ResetTileAmplifierOnServer();
                     EndAllMinigameRuntimes();
                     _selectedMinigameNetworkLoadCompleted = false;
                     ResetCombatRuntimeOnServer();
@@ -1230,10 +1248,10 @@ namespace MazeParty.Multiplayer
                               transition.Turn + 1);
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
                     RefreshItemShopsForTurnOnServer(transition.Turn);
-                    TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
                     RefreshChestsForTurnOnServer(transition.Turn);
                     break;
                 case BoardFlowState.Descending:
+                    TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
                     CaptureOverviewEndPositionsOnServer();
                     break;
                 case BoardFlowState.Action:
@@ -1264,6 +1282,9 @@ namespace MazeParty.Multiplayer
                     break;
                 case BoardFlowState.LandingEffectResolve:
                     BeginLandingEffectsOnServer();
+                    break;
+                case BoardFlowState.MagicMazeChange:
+                    BeginMagicMazeChangeOnServer();
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLandingEffectsOnServer();
@@ -1352,6 +1373,7 @@ namespace MazeParty.Multiplayer
         {
             _flowState.Value = (byte)_flow.State;
             _turn.Value = _flow.CurrentTurn;
+            ExpireBoardWallsOnServer(Turn);
             _stateEndsAt.Value = Deadline(now, _flow.GetStateRemaining(now));
             _actionEndsAt.Value = Deadline(now, _flow.GetActionRemaining(now));
             _choiceEndsAt.Value = Deadline(now, _flow.GetChoiceRemaining(now));
@@ -1395,6 +1417,7 @@ namespace MazeParty.Multiplayer
         /// <summary>Restores every clock frozen by <see cref="SuspendSimulationOnServer"/>.</summary>
         private void ResumeSimulationOnServer(double now)
         {
+            ResumeForestGhostOnServer(now);
             ResumeResourceTransferPresentationOnServer(now);
             if (_keyShopRevealActive.Value)
             {
@@ -1566,7 +1589,7 @@ namespace MazeParty.Multiplayer
             var accepted = CanProcessAvatarRequest(avatar) &&
                            FlowState == BoardFlowState.Action &&
                            ActionRemaining > 0d &&
-                           !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping && !avatar.IsKnockedDown;
+                           !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping && !avatar.IsSettingBombardment && !avatar.IsKnockedDown;
             if (!accepted)
             {
                 ServerEventTrace.Record(
@@ -1685,10 +1708,12 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            _magicMazeEffects.Clear();
             _boardEffectSeed.Value = UnityEngine.Random.Range(1, int.MaxValue);
             _boardEffectRevision.Value++;
             _cachedBoardEffectRevision = -1;
             EnsureBoardLandingEffectLayout();
+            InitializeMagicMazeOnServer();
         }
 
         private bool EnsureBoardLandingEffectLayout()
@@ -1717,6 +1742,8 @@ namespace MazeParty.Multiplayer
             _boardEffectLayout = BoardLandingEffectLayout.Create(
                 _boardTopology.Tiles,
                 _boardEffectSeed.Value);
+            if (IsMagicMaze && _magicMazeEffects.Count > 0)
+                _boardEffectLayout = _boardEffectLayout.WithEffects(ReadMagicMazeEffects());
             _cachedBoardEffectSeed = _boardEffectSeed.Value;
             _cachedBoardEffectRevision = _boardEffectRevision.Value;
             return true;
@@ -1798,7 +1825,7 @@ namespace MazeParty.Multiplayer
 
         private void BeginNextCombatOrFinishOnServer(double now)
         {
-            if (!AreBoardResolutionPlayersAvailableOnServer()) return;
+            if (!IsServer || _combatRetreat.Value.Mask != 0 || !AreBoardResolutionPlayersAvailableOnServer()) return;
             while (_combatQueue.Count > 0 &&
                    _fightsResolvedThisTurn < BoardCombatRules.MaximumFightsPerTurn)
             {
@@ -1884,34 +1911,21 @@ namespace MazeParty.Multiplayer
             _nextPunchAllowedAt[slot] = now + BoardCombatRules.PunchCooldownSeconds;
             attacker.PresentPunchOnServer();
             var direction = authoritativeDirection;
-            var hits = Physics.SphereCastAll(
-                authoritativeOrigin,
-                BoardCombatRules.PunchRadius,
-                direction,
-                BoardCombatRules.PunchRange,
-                Physics.DefaultRaycastLayers,
-                QueryTriggerInteraction.Ignore);
-            NetworkPlayerAvatar target = null;
-            var closestDistance = float.MaxValue;
-            for (var i = 0; i < hits.Length; i++)
-            {
-                var candidate = hits[i].collider != null
-                    ? hits[i].collider.GetComponentInParent<NetworkPlayerAvatar>()
-                    : null;
-                if (candidate == null || candidate == attacker ||
-                    !IsCombatParticipant(candidate.AssignedSlot) ||
-                    !IsCombatAlive(candidate.AssignedSlot) ||
-                    candidate.LogicalBoardTileCoordinate != _combatTile.Value ||
-                    hits[i].distance >= closestDistance)
+            var didHit = BoardItemPhysics.Cast(
+                authoritativeOrigin, direction, BoardCombatRules.PunchRange,
+                attacker.gameObject, out var contact, BoardCombatRules.PunchRadius,
+                hitZonesOnly: true,
+                playerFilter: collider =>
                 {
-                    continue;
-                }
-
-                target = candidate;
-                closestDistance = hits[i].distance;
-            }
-
-            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now);
+                    var candidate = collider.GetComponentInParent<NetworkPlayerAvatar>();
+                    return candidate != null && candidate != attacker &&
+                        IsCombatParticipant(candidate.AssignedSlot) &&
+                        IsCombatAlive(candidate.AssignedSlot) &&
+                        candidate.LogicalBoardTileCoordinate == _combatTile.Value;
+                });
+            var target = didHit ? contact.collider.GetComponentInParent<NetworkPlayerAvatar>() : null;
+            var region = PlayerHitDamageRules.RegionOf(didHit ? contact.collider : null);
+            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now, region);
             if (target == null)
             {
                 return true;
@@ -1926,10 +1940,13 @@ namespace MazeParty.Multiplayer
             }
             knockbackDirection.Normalize();
 
+            CombatHitVfx.ResolveContact(contact, authoritativeOrigin, direction,
+                BoardCombatRules.PunchRange, out var hitPoint, out var hitNormal);
             var eliminated = target.ApplyCombatPunchOnServer(
                 attacker,
                 knockbackDirection * BoardCombatRules.PunchKnockbackSpeed,
-                damage);
+                damage, region);
+            PresentCombatHitSparkRpc(hitPoint, hitNormal);
             if (!eliminated)
             {
                 return true;
@@ -1948,6 +1965,12 @@ namespace MazeParty.Multiplayer
                 ResolveCurrentCombatOnServer(now);
             }
             return true;
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentCombatHitSparkRpc(Vector3 point, Vector3 normal)
+        {
+            FindAnyObjectByType<BoardFlowCameraPresenter>()?.PresentCombatHitSpark(point, normal);
         }
 
         internal void PublishBoardKillOnServer(
@@ -2048,7 +2071,7 @@ namespace MazeParty.Multiplayer
             for (var index = 0; index < hits.Length; index++)
             {
                 var collider = hits[index].collider;
-                if (collider == null || collider.transform == attacker.transform ||
+                if (collider == null || MagicMazeWall.AllowsSightAndAttacks(collider) || collider.transform == attacker.transform ||
                     collider.transform.IsChildOf(attacker.transform))
                 {
                     continue;
@@ -2101,6 +2124,11 @@ namespace MazeParty.Multiplayer
                 !AreBoardResolutionPlayersAvailableOnServer())
                 return;
 
+            if (_combatRetreat.Value.Mask != 0)
+            {
+                AdvanceCombatRetreatOnServer(now);
+                return;
+            }
             if (!_combatActive.Value)
             {
                 if (_combatSequenceIndex.Value == 0)
@@ -2140,6 +2168,7 @@ namespace MazeParty.Multiplayer
             }
 
             var standings = BoardCombatRules.ResolveStandings(entries);
+            var retreat = new BoardCombatRetreatSnapshot { StartedAt = now };
             var possibleChainTiles = new List<Vector2Int>(standings.Length);
             for (var index = 0; index < standings.Length; index++)
             {
@@ -2151,7 +2180,11 @@ namespace MazeParty.Multiplayer
                 }
 
                 if (standing.Rank == 1) RecordAchievementOnServer(standing.Slot, PartyAchievement.BoardWinner);
-                avatar.ApplyCombatRetreatOnServer(standing.RetreatDistance);
+                if (standing.RetreatDistance > 0)
+                {
+                    avatar.PrepareCombatRetreatOnServer(standing.RetreatDistance, out var path);
+                    retreat.SetPath(standing.Slot, path);
+                }
                 if (avatar.HasLogicalBoardTile &&
                     !possibleChainTiles.Contains(avatar.LogicalBoardTileCoordinate))
                 {
@@ -2167,7 +2200,9 @@ namespace MazeParty.Multiplayer
                 EnqueueChainFightIfNeeded(possibleChainTiles[i], now);
             }
             _combatQueueCount.Value = _combatQueue.Count;
-            BeginNextCombatOrFinishOnServer(now);
+            _combatRetreat.Value = retreat;
+            _stateRevision.Value++;
+            if (retreat.Mask == 0) BeginNextCombatOrFinishOnServer(now);
         }
 
         private void EnqueueChainFightIfNeeded(Vector2Int coordinate, double formedAt)
@@ -2228,6 +2263,7 @@ namespace MazeParty.Multiplayer
 
         private void ResetCombatRuntimeOnServer()
         {
+            _combatRetreat.Value = default;
             _combatQueue.Clear();
             _fightsResolvedThisTurn = 0;
             _combatSequenceIndex.Value = 0;
@@ -2253,6 +2289,7 @@ namespace MazeParty.Multiplayer
         private void PauseCombatAndPersonalProtectionOnServer(double now)
         {
             PauseDeathGoldPresentationOnServer(now);
+            PauseCombatRetreatOnServer(now);
             if (_combatActive.Value && _combatEndsAt.Value > 0d)
             {
                 _pausedCombatRemaining.Value = Math.Max(
@@ -2270,6 +2307,7 @@ namespace MazeParty.Multiplayer
         private void ResumeCombatAndPersonalProtectionOnServer(double now)
         {
             ResumeDeathGoldPresentationOnServer(now);
+            ResumeCombatRetreatOnServer(now);
             if (_combatActive.Value && _pausedCombatRemaining.Value > 0d)
             {
                 _combatEndsAt.Value = now + _pausedCombatRemaining.Value;
@@ -2396,6 +2434,9 @@ namespace MazeParty.Multiplayer
         public byte RangeDieItem;
         public int SwapTargetSlot;
         public double SwapRemaining;
+        public bool BombardmentSelecting;
+        public uint BombardmentRevision;
+        public Vector3[] BombardmentTargets;
         public byte OccupiedItemMask;
         public byte ItemSlot0;
         public byte ItemSlot1;

@@ -18,13 +18,12 @@ namespace MazeParty.Editor
         private const string BoundaryWallPath = Folder + "/PlayerBoundaryWall.prefab";
         private const string ToolkitPrefabFolder =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/";
-        private const string BlueFirePath = ToolkitPrefabFolder + "Blue Fire.prefab";
         private const string RealFirePath = ToolkitPrefabFolder + "Real Fire.prefab";
         private const float BoundaryFlamePrefabScale = .65f;
-        private const float PassableFlameDensity = .45f;
+        private const float BoundaryFlameVisualScale = 1.2f;
         private const float BlockedFlameDensity = 2f;
-        private const float MaximumBoundaryParticleDiameter = .72f;
-        private const float MaximumBoundaryParticleTravel = .65f;
+        private const float MaximumBoundaryParticleDiameter = .72f * BoundaryFlameVisualScale;
+        private const float MaximumBoundaryParticleTravel = .65f * BoundaryFlameVisualScale;
         private const string ShopPhysicalFootprintName =
             "Physical Footprint";
 
@@ -99,21 +98,20 @@ namespace MazeParty.Editor
                 "Boundary flame VFX installed. Existing authored flame design was preserved when already configured.");
         }
 
-        [MenuItem("MazeParty/Board/Upgrade Shop Location Highlights")]
-        public static void UpgradeShopLocationHighlights()
+        [MenuItem("MazeParty/Board/Validate Shop Prefabs")]
+        public static void ValidateShopPrefabs()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 throw new InvalidOperationException(
-                    "Stop Play Mode before upgrading shop location highlights.");
+                    "Stop Play Mode before validating shop prefabs.");
             }
 
-            EnsureShopPrefabsAndLocationHighlights();
+            EnsureShopPrefabs();
 
             AssetDatabase.SaveAssets();
             Debug.Log(
-                "Shop highlights now use shared WaterShield instances for item " +
-                "shops and SandShield for the key shop.");
+                "Shop prefab interaction and physical collider bindings validated.");
         }
 
         private static void Convert(GameObject instance, GameObject prefab)
@@ -152,7 +150,7 @@ namespace MazeParty.Editor
         {
             EnsureFolder(Folder);
             EnsureFolder("Assets/MazeParty/Resources/MazeParty/Board");
-            EnsureShopPrefabsAndLocationHighlights();
+            EnsureShopPrefabs();
             var assets = AssetDatabase.LoadAssetAtPath<BoardWorldPrefabs>(CatalogPath);
             if (assets == null)
             {
@@ -284,18 +282,8 @@ namespace MazeParty.Editor
                     colliders.Add(baseCollider);
                     physicalColliders.Add(stand.GetComponent<Collider>());
                 }
-                var sharedShield = key
-                    ? SharedVfxProjectSetup.EnsureSandShieldPrefab()
-                    : SharedVfxProjectSetup.EnsureWaterShieldPrefab();
-                var highlight = CreateShopHighlight(
-                    root,
-                    sharedShield);
                 var binding = root.AddComponent<BoardShopVisual>();
                 var so = new SerializedObject(binding);
-                so.FindProperty("topViewHighlight").objectReferenceValue =
-                    highlight;
-                so.FindProperty("locationHighlightVfx").objectReferenceValue =
-                    highlight;
                 var targets = so.FindProperty("interactionColliders");
                 targets.arraySize = colliders.Count;
                 for (var i = 0; i < colliders.Count; i++) targets.GetArrayElementAtIndex(i).objectReferenceValue = colliders[i];
@@ -346,9 +334,7 @@ namespace MazeParty.Editor
             return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
-        private static void UpgradeShopHighlight(
-            string prefabPath,
-            GameObject desiredShield)
+        private static void UpgradeShopColliders(string prefabPath)
         {
             var root = PrefabUtility.LoadPrefabContents(prefabPath);
             try
@@ -361,79 +347,9 @@ namespace MazeParty.Editor
                 }
 
                 var serialized = new SerializedObject(visual);
-                var topViewProperty = serialized.FindProperty(
-                    "topViewHighlight");
-                var locationProperty = serialized.FindProperty(
-                    "locationHighlightVfx");
-                var interactionProperty = serialized.FindProperty(
-                    "interactionColliders");
-                var physicalProperty = serialized.FindProperty(
-                    "physicalColliders");
-                if (topViewProperty == null || locationProperty == null ||
-                    interactionProperty == null || physicalProperty == null)
-                {
-                    throw new InvalidOperationException(
-                        "BoardShopVisual has incomplete highlight bindings. " +
-                        "Wait for scripts to compile and retry.");
-                }
-
-                var desiredPath = AssetDatabase.GetAssetPath(desiredShield);
-                var currentTop =
-                    topViewProperty.objectReferenceValue as GameObject;
-                var currentLocation =
-                    locationProperty.objectReferenceValue as GameObject;
-                var highlight = currentLocation;
+                var interactionProperty = serialized.FindProperty("interactionColliders");
+                var physicalProperty = serialized.FindProperty("physicalColliders");
                 var changed = false;
-                if (!IsShieldInstance(highlight, desiredPath))
-                {
-                    if (highlight != null &&
-                        !IsSharedShieldInstance(highlight))
-                    {
-                        throw new InvalidOperationException(
-                            prefabPath + " has a custom location highlight. " +
-                            "Repair it explicitly instead of overwriting " +
-                            "authored design.");
-                    }
-
-                    if (highlight != null)
-                    {
-                        Object.DestroyImmediate(highlight);
-                    }
-                    highlight = CreateShopHighlight(root, desiredShield);
-                    changed = true;
-                }
-
-                if (currentTop != null && currentTop != highlight &&
-                    currentTop != currentLocation)
-                {
-                    if (!IsGeneratedSquareHighlight(currentTop) &&
-                        !IsSharedShieldInstance(currentTop))
-                    {
-                        throw new InvalidOperationException(
-                            prefabPath + " has a custom top-view highlight. " +
-                            "Repair it explicitly instead of overwriting " +
-                            "authored design.");
-                    }
-
-                    Object.DestroyImmediate(currentTop);
-                    changed = true;
-                }
-
-                if (highlight.activeSelf)
-                {
-                    highlight.SetActive(false);
-                    changed = true;
-                }
-                if (topViewProperty.objectReferenceValue != highlight)
-                {
-                    topViewProperty.objectReferenceValue = highlight;
-                    changed = true;
-                }
-                if (locationProperty.objectReferenceValue != highlight)
-                {
-                    locationProperty.objectReferenceValue = highlight;
-                    changed = true;
-                }
 
                 for (var index = 0;
                      index < interactionProperty.arraySize;
@@ -591,175 +507,14 @@ namespace MazeParty.Editor
                 : value / parentScale;
         }
 
-        private static void EnsureShopPrefabsAndLocationHighlights()
+        private static void EnsureShopPrefabs()
         {
             EnsureShop(-1);
             EnsureShop(0);
             EnsureShop(1);
-
-            var waterShield = SharedVfxProjectSetup.EnsureWaterShieldPrefab();
-            var sandShield = SharedVfxProjectSetup.EnsureSandShieldPrefab();
-            UpgradeShopHighlight(
-                Folder + "/KeyShop.prefab",
-                sandShield);
-            UpgradeShopHighlight(
-                Folder + "/ItemShop1.prefab",
-                waterShield);
-            UpgradeShopHighlight(
-                Folder + "/ItemShop2.prefab",
-                waterShield);
-        }
-
-        private static GameObject CreateShopHighlight(
-            GameObject shopRoot,
-            GameObject shieldPrefab)
-        {
-            if (shopRoot == null)
-                throw new ArgumentNullException(nameof(shopRoot));
-            if (shieldPrefab == null)
-            {
-                throw new InvalidOperationException(
-                    "A shared shield prefab is required.");
-            }
-
-            var instance = PrefabUtility.InstantiatePrefab(
-                shieldPrefab,
-                shopRoot.transform) as GameObject;
-            if (instance == null)
-            {
-                throw new InvalidOperationException(
-                    "Could not instantiate the shared shield prefab.");
-            }
-
-            instance.name = "Shop Location Highlight VFX";
-            instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = Quaternion.identity;
-            instance.transform.localScale = Vector3.one;
-
-            var visualRoot = shopRoot.transform.Find("Visuals");
-            if (visualRoot == null)
-            {
-                Object.DestroyImmediate(instance);
-                throw new InvalidOperationException(
-                    shopRoot.name + " is missing its authored Visuals root.");
-            }
-
-            var shopBounds = CalculateRenderedBounds(
-                visualRoot,
-                shopRoot.transform,
-                shopRoot.name + " Visuals");
-            var shieldBounds = CalculateRenderedBounds(
-                instance.transform,
-                instance.transform,
-                shieldPrefab.name);
-            // Match the two authored renderer envelopes instead of baking the
-            // current house height or the toolkit prefab's native scale.
-            var shopDiameter = MaximumComponent(shopBounds.size);
-            var shieldDiameter = MaximumComponent(shieldBounds.size);
-            if (shopDiameter <= Mathf.Epsilon)
-            {
-                Object.DestroyImmediate(instance);
-                throw new InvalidOperationException(
-                    shopRoot.name + " has no measurable renderer envelope.");
-            }
-            if (shieldDiameter <= Mathf.Epsilon)
-            {
-                Object.DestroyImmediate(instance);
-                throw new InvalidOperationException(
-                    shieldPrefab.name +
-                    " has no measurable renderer envelope.");
-            }
-
-            var scale = shopDiameter / shieldDiameter;
-            instance.transform.localScale = Vector3.one * scale;
-            instance.transform.localPosition =
-                shopBounds.center - shieldBounds.center * scale;
-            instance.SetActive(false);
-            return instance;
-        }
-
-        private static Bounds CalculateRenderedBounds(
-            Transform renderedRoot,
-            Transform relativeTo,
-            string context)
-        {
-            var renderers = renderedRoot.GetComponentsInChildren<Renderer>(true);
-            if (renderers.Length == 0)
-            {
-                throw new InvalidOperationException(
-                    context + " has no authored renderers.");
-            }
-
-            var initialized = false;
-            var localBounds = new Bounds();
-            foreach (var renderer in renderers)
-            {
-                var bounds = renderer.bounds;
-                for (var x = -1; x <= 1; x += 2)
-                for (var y = -1; y <= 1; y += 2)
-                for (var z = -1; z <= 1; z += 2)
-                {
-                    var corner = bounds.center + Vector3.Scale(
-                        bounds.extents,
-                        new Vector3(x, y, z));
-                    var point = relativeTo.InverseTransformPoint(corner);
-                    if (!initialized)
-                    {
-                        localBounds = new Bounds(point, Vector3.zero);
-                        initialized = true;
-                    }
-                    else
-                    {
-                        localBounds.Encapsulate(point);
-                    }
-                }
-            }
-
-            return localBounds;
-        }
-
-        private static float MaximumComponent(Vector3 value)
-        {
-            return Mathf.Max(value.x, value.y, value.z);
-        }
-
-        private static bool IsShieldInstance(
-            GameObject candidate,
-            string prefabPath)
-        {
-            return candidate != null && string.Equals(
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    candidate),
-                prefabPath,
-                StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool IsSharedShieldInstance(GameObject candidate)
-        {
-            return IsShieldInstance(
-                       candidate,
-                       SharedVfxProjectSetup.WaterShieldPrefabPath) ||
-                   IsShieldInstance(
-                       candidate,
-                       SharedVfxProjectSetup.SandShieldPrefabPath);
-        }
-
-        private static bool IsGeneratedSquareHighlight(GameObject candidate)
-        {
-            if (candidate == null ||
-                PrefabUtility.IsAnyPrefabInstanceRoot(candidate) ||
-                !string.Equals(
-                    candidate.name,
-                    "Top View Highlight",
-                    StringComparison.Ordinal))
-            {
-                return false;
-            }
-
-            return candidate.transform.Find("North") != null &&
-                   candidate.transform.Find("South") != null &&
-                   candidate.transform.Find("East") != null &&
-                   candidate.transform.Find("West") != null;
+            UpgradeShopColliders(Folder + "/KeyShop.prefab");
+            UpgradeShopColliders(Folder + "/ItemShop1.prefab");
+            UpgradeShopColliders(Folder + "/ItemShop2.prefab");
         }
 
         private static GameObject EnsureWall()
@@ -794,18 +549,16 @@ namespace MazeParty.Editor
 
                 var serializedBinding = new SerializedObject(binding);
                 if (serializedBinding.FindProperty("flameWidthRoot").objectReferenceValue != null &&
-                    serializedBinding.FindProperty("passableFlameRoot").objectReferenceValue != null &&
                     serializedBinding.FindProperty("blockedFlameRoot").objectReferenceValue != null)
                 {
-                    var changed = ApplyBoundaryFlameSettings(serializedBinding);
                     if (!binding.HasRequiredReferences)
                     {
                         throw new InvalidOperationException(
                             BoundaryWallPath +
                             " has authored flame roots but incomplete renderer or particle bindings. Repair it manually so setup does not overwrite the design.");
                     }
-                    changed |= EnsureBoundaryFlameUrpCompatibility(contents);
-                    changed |= EnsureBoundaryFlameEnvelope(binding);
+                    // Preserve the authored VFX dimensions when setup is rerun.
+                    var changed = EnsureBoundaryFlameUrpCompatibility(contents);
                     if (changed)
                         PrefabUtility.SaveAsPrefabAsset(contents, BoundaryWallPath);
                     return;
@@ -818,9 +571,8 @@ namespace MazeParty.Editor
                         " has authored children but no complete flame bindings. Repair it manually so setup does not overwrite the design.");
                 }
 
-                var blueFire = AssetDatabase.LoadAssetAtPath<GameObject>(BlueFirePath);
                 var redFire = AssetDatabase.LoadAssetAtPath<GameObject>(RealFirePath);
-                if (blueFire == null || redFire == null)
+                if (redFire == null)
                 {
                     throw new InvalidOperationException(
                         "AllIn1VfxToolkit v2.32 is required at Assets/Ignore/AllIn1VfxToolkit before installing boundary VFX.");
@@ -836,11 +588,6 @@ namespace MazeParty.Editor
                 var flameWidth = new GameObject("Flame Width").transform;
                 flameWidth.SetParent(contents.transform, false);
 
-                var passable = InstantiateNestedFlame(
-                    blueFire,
-                    flameWidth,
-                    "Passable Blue Flame",
-                    true);
                 var blocked = InstantiateNestedFlame(
                     redFire,
                     flameWidth,
@@ -852,16 +599,12 @@ namespace MazeParty.Editor
                     contents.GetComponent<BoxCollider>();
                 serializedBinding.FindProperty("flameWidthRoot").objectReferenceValue =
                     flameWidth;
-                serializedBinding.FindProperty("passableFlameRoot").objectReferenceValue =
-                    passable;
                 serializedBinding.FindProperty("blockedFlameRoot").objectReferenceValue =
                     blocked;
                 serializedBinding.FindProperty("authoredFlameWidth").floatValue =
                     BoundaryFlamePrefabScale;
                 serializedBinding.FindProperty("flameTopHeight").floatValue =
                     BoardBoundaryWallVisual.RequiredFlameTopHeight;
-                serializedBinding.FindProperty("passableEmissionDensity").floatValue =
-                    PassableFlameDensity;
                 serializedBinding.FindProperty("blockedEmissionDensity").floatValue =
                     BlockedFlameDensity;
                 SetObjectArray(
@@ -897,29 +640,21 @@ namespace MazeParty.Editor
             instance.transform.localScale = Vector3.one;
             instance.SetActive(active);
 
-            BakeNestedParticleScale(instance, BoundaryFlamePrefabScale);
+            BakeNestedParticleScale(
+                instance, BoundaryFlamePrefabScale * BoundaryFlameVisualScale);
+            foreach (var particle in instance.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var velocity = particle.velocityOverLifetime;
+                if (!velocity.enabled)
+                    continue;
+
+                velocity.xMultiplier *= BoundaryFlameVisualScale;
+                velocity.yMultiplier *= BoundaryFlameVisualScale;
+                velocity.zMultiplier *= BoundaryFlameVisualScale;
+            }
             EnsureBoundaryFlameUrpCompatibility(instance);
 
             return instance;
-        }
-
-        private static bool ApplyBoundaryFlameSettings(
-            SerializedObject serializedBinding)
-        {
-            serializedBinding.Update();
-            var changed = false;
-            changed |= SetFloat(
-                serializedBinding.FindProperty("flameTopHeight"),
-                BoardBoundaryWallVisual.RequiredFlameTopHeight);
-            changed |= SetFloat(
-                serializedBinding.FindProperty("passableEmissionDensity"),
-                PassableFlameDensity);
-            changed |= SetFloat(
-                serializedBinding.FindProperty("blockedEmissionDensity"),
-                BlockedFlameDensity);
-            if (changed)
-                serializedBinding.ApplyModifiedPropertiesWithoutUndo();
-            return changed;
         }
 
         private static bool EnsureBoundaryFlameEnvelope(
@@ -943,11 +678,7 @@ namespace MazeParty.Editor
                 changed = true;
             }
 
-            foreach (var stateRoot in new[]
-                     {
-                         binding.PassableFlameRoot,
-                         binding.BlockedFlameRoot
-                     })
+            foreach (var stateRoot in new[] { binding.BlockedFlameRoot })
             {
                 if (stateRoot.transform.localPosition != Vector3.zero)
                 {
@@ -1042,17 +773,6 @@ namespace MazeParty.Editor
                     Mathf.Abs(curve.Evaluate(time, 1f)));
             }
             return maximum;
-        }
-
-        private static bool SetFloat(
-            SerializedProperty property,
-            float value)
-        {
-            if (Mathf.Approximately(property.floatValue, value))
-                return false;
-
-            property.floatValue = value;
-            return true;
         }
 
         private static void BakeNestedParticleScale(GameObject root, float scale)

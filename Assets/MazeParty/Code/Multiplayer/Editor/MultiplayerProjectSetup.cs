@@ -195,6 +195,7 @@ namespace MazeParty.Editor
                     boardMapPreviewRoot,
                     boardMapPreviewNameText,
                     boardMapPreviewGraphic);
+                view.ConfigureBoardMapTurns(GameplayPresentationAssetSetup.EnsureLobbyTurns(boardMapPreviewRoot));
                 view.ConfigureCustomizationCloseButton(
                     closeCustomizationButton);
                 EditorUtility.SetDirty(view);
@@ -1359,6 +1360,7 @@ namespace MazeParty.Editor
                 boardMapPreviewRoot,
                 boardMapPreviewNameText,
                 boardMapPreviewGraphic);
+            lobbyView.ConfigureBoardMapTurns(GameplayPresentationAssetSetup.EnsureLobbyTurns(boardMapPreviewRoot));
             PlayerExpressionAuthoring.EnsureLobbySelectors(canvasObject);
             RecoveryUiProjectSetup.EnsureLobby(lobbyView.gameObject);
             MazeParty.Multiplayer.Editor.SteamUiProjectSetup.EnsureLobby(canvasObject);

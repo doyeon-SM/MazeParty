@@ -39,7 +39,7 @@ namespace MazeParty.Gameplay
 
         internal bool TryCommit(BoardGate gate)
         {
-            if (gate == null || CurrentTile != gate.Source || gate.Destination == null || RemainingMoves <= 0)
+            if (gate == null || gate.IsTemporarilyBlocked || CurrentTile != gate.Source || gate.Destination == null || RemainingMoves <= 0)
                 return false;
 
             Commit(gate.Destination, RemainingMoves - 1);
@@ -48,7 +48,7 @@ namespace MazeParty.Gameplay
 
         public bool TryForceCommit(BoardGate gate)
         {
-            if (gate == null || CurrentTile != gate.Source || gate.Destination == null ||
+            if (gate == null || gate.IsTemporarilyBlocked || CurrentTile != gate.Source || gate.Destination == null ||
                 gate.Destination == CurrentTile)
                 return false;
 
@@ -66,7 +66,7 @@ namespace MazeParty.Gameplay
             _history.Add(CurrentTile);
         }
 
-        public BoardTile[] Retreat(int requestedSteps)
+        public BoardTile[] Retreat(int requestedSteps, Func<BoardTile, BoardTile, bool> canRetreat = null)
         {
             if (!IsInitialized || requestedSteps <= 0 || _history.Count <= 1)
             {
@@ -74,6 +74,13 @@ namespace MazeParty.Gameplay
             }
 
             var actualSteps = Math.Min(requestedSteps, _history.Count - 1);
+            if (canRetreat != null)
+            {
+                var allowed = 0;
+                while (allowed < actualSteps && canRetreat(_history[_history.Count - 1 - allowed], _history[_history.Count - 2 - allowed])) allowed++;
+                actualSteps = allowed;
+            }
+            if (actualSteps == 0) return Array.Empty<BoardTile>();
             var path = new BoardTile[actualSteps];
             CurrentTile.Unregister(this);
             for (var step = 0; step < actualSteps; step++)

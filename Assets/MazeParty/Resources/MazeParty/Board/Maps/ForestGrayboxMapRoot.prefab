@@ -8443,6 +8443,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Forest Light 05
       objectReference: {fileID: 0}
+    - target: {fileID: 9095624066221870679, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7208093944223552971, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
     m_RemovedGameObjects: []
@@ -8642,6 +8646,10 @@ PrefabInstance:
     - target: {fileID: 1343845655354127327, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
       propertyPath: m_Name
       value: Forest Light 09 (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 9095624066221870679, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7208093944223552971, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
@@ -9186,6 +9194,10 @@ PrefabInstance:
     - target: {fileID: 1343845655354127327, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
       propertyPath: m_Name
       value: Forest Light 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 9095624066221870679, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7208093944223552971, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
@@ -11172,6 +11184,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Forest Light 25
       objectReference: {fileID: 0}
+    - target: {fileID: 9095624066221870679, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 2
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7208093944223552971, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
     m_RemovedGameObjects: []
@@ -11599,6 +11615,10 @@ PrefabInstance:
     - target: {fileID: 1343845655354127327, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
       propertyPath: m_Name
       value: Forest Light 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 9095624066221870679, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7208093944223552971, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
@@ -13619,6 +13639,10 @@ PrefabInstance:
     - target: {fileID: 1343845655354127327, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
       propertyPath: m_Name
       value: Forest Light 00
+      objectReference: {fileID: 0}
+    - target: {fileID: 9095624066221870679, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}
+      propertyPath: m_Shadows.m_Type
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7208093944223552971, guid: a0e6e5825ff1ec848b757d470f8bbaa4, type: 3}

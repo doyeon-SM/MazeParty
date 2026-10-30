@@ -1092,13 +1092,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
             }
 
-            var outer = stackIndex < 8;
-            var ringIndex = outer ? stackIndex : stackIndex - 8;
-            var ringCount = outer ? 8 : 6;
-            var angle = Mathf.PI * 2f * ringIndex / ringCount;
-            var radius = outer ? 1.12f : 0.61f;
-            var offset = new Vector2(
-                Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
+            var offset = NetworkGiftGrabState.GetStoredGiftOffset(stackIndex, _players[owner].StoredGiftCount);
             return NetworkGiftGrabState.GetDepositedGiftDisplayCenter(owner) +
                    offset;
         }

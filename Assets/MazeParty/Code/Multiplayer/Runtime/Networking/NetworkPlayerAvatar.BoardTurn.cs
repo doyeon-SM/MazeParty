@@ -39,12 +39,24 @@ namespace MazeParty.Multiplayer
                         out var position,
                         out var rotation);
                     TeleportController(position, rotation);
+                    _serverYaw = rotation.eulerAngles.y;
+                    _serverPitch = 0f;
+                    ApplyBoardStartFacingRpc(_serverYaw);
                 }
             }
 
             _boardPositionInitialized = true;
             EnsureTraversalInitialized();
             RefreshBoundaryWallsOnServer();
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void ApplyBoardStartFacingRpc(float yaw)
+        {
+            // The lobby look direction must not survive the authored board spawn pose.
+            _localYaw = yaw;
+            _localPitch = 0f;
+            ApplyLocalEyeRotation();
         }
 
         public void PrepareForOverviewOnServer()
@@ -133,7 +145,18 @@ namespace MazeParty.Multiplayer
             }
 
             StopServerInputOnServer();
-            if (_equippedItem.Value != 0)
+            var match = NetworkMatchState.Instance;
+            // First-turn GhostPass use is forbidden; even stale equipment must
+            // be unequipped without removing the owned inventory item.
+            var preserveGhostPass = (PrototypeItemId)_equippedItem.Value == PrototypeItemId.GhostPass &&
+                                    match != null && match.Turn <= 1;
+            if (preserveGhostPass)
+            {
+                _selectedItemSlot.Value = -1;
+                _equippedItem.Value = 0;
+                _itemCharges.Value = 0;
+            }
+            else if (_equippedItem.Value != 0)
             {
                 ConsumeSelectedItemOnServer();
             }
@@ -165,11 +188,18 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            var itemId = GetItemSlotValue(slotIndex);
+            var match = NetworkMatchState.Instance;
+            if (itemId == PrototypeItemId.GhostPass && match != null && match.Turn <= 1)
+            {
+                return false;
+            }
+
             _selectedItemSlot.Value = slotIndex;
             InitializeSelectedItem();
             _choiceResolution.Value = (byte)ItemChoiceResolution.ItemSelected;
-            var itemId = GetSelectedItemOnServer();
-            if (PrototypeItemCatalog.Get(itemId).UseTiming == BoardItemUseTiming.TurnStart)
+            if (PrototypeItemCatalog.Get(itemId).UseTiming == BoardItemUseTiming.TurnStart &&
+                itemId != PrototypeItemId.Bombardment)
                 PresentItemUseOnServer(itemId, animate: false);
             ActivateSelectedCloakOnServer();
             return true;

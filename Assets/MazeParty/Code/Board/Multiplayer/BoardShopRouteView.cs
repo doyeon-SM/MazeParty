@@ -37,7 +37,7 @@ namespace MazeParty.Multiplayer
             new BoardRouteDotLayout();
         private BoardTravelRoutePreview _travelPreview;
         private BoardTile _travelOrigin, _travelDestination;
-        private int _travelRoll, _travelOffset;
+        private int _travelRoll, _travelOffset, _travelRevision, _routeRevision;
         private int _travelStateSignature;
         private bool _travelStateValid;
         private BoardTopology _travelSignatureTopology;
@@ -124,7 +124,7 @@ namespace MazeParty.Multiplayer
             BoardTile source,
             BoardTile shop)
         {
-            var signature = ComputeTravelSignature(local, source, shop);
+            var signature = unchecked(ComputeTravelSignature(local, source, shop) * 31 + topology.TraversalRevision);
             if (_travelStateValid && topology == _travelSignatureTopology &&
                 signature == _travelStateSignature)
                 return;
@@ -146,7 +146,7 @@ namespace MazeParty.Multiplayer
                 _travelPreview = null;
             else if (_travelPreview == null || topology != _lastTopology ||
                      origin != _travelOrigin || shop != _travelDestination ||
-                     roll != _travelRoll || offset != _travelOffset)
+                     roll != _travelRoll || offset != _travelOffset || _travelRevision != topology.TraversalRevision)
             {
                 _travelPreview = new BoardTravelRoutePreview(
                     topology, origin, offset, roll, shop);
@@ -154,6 +154,7 @@ namespace MazeParty.Multiplayer
                 _travelDestination = shop;
                 _travelRoll = roll;
                 _travelOffset = offset;
+                _travelRevision = topology.TraversalRevision;
             }
             _lastTopology = topology;
             _choices.Clear();
@@ -286,9 +287,11 @@ namespace MazeParty.Multiplayer
         public void PresentRoute(BoardTopology topology, BoardTile source, BoardTile shop)
         {
             if (routeMarkerPrefab == null) return;
-            if (!_hasRoute || topology != _lastTopology || source != _lastSource || shop != _lastShop)
+            if (!_hasRoute || topology != _lastTopology || source != _lastSource || shop != _lastShop ||
+                _routeRevision != (topology != null ? topology.TraversalRevision : 0))
             {
                 _hasRoute = true;
+                _routeRevision = topology != null ? topology.TraversalRevision : 0;
                 _lastTopology = topology; _lastSource = source; _lastShop = shop;
                 _points.Clear();
                 if (BoardMapRoute.TryFind(topology, source, shop, _route))

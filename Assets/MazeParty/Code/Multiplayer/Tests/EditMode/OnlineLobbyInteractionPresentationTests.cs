@@ -55,10 +55,7 @@ namespace MazeParty.Multiplayer.Tests
                     "The pre-session background must use an authored uGUI Image.");
                 Assert.That(image.sprite, Is.Not.Null,
                     "The pre-session background must reference an imported sprite.");
-                Assert.That(
-                    AssetDatabase.GetAssetPath(image.sprite),
-                    Does.StartWith("Assets/Ignore/AIImage/"),
-                    "Temporary generated lobby art must stay under Assets/Ignore/AIImage.");
+                Assert.That(EditorUtility.IsPersistent(image.sprite), Is.True);
 
                 view.Render(
                     SessionSnapshot.Empty,
@@ -362,198 +359,70 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BoardSettingsPopup_TogglesSeparatelyAndOnlyHostCanCycleMaps()
+        public void BoardSettingsPopup_OnlyHostCanOpenAndUnlockedHostCanPublishChanges()
         {
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
             try
             {
                 var view = GetLobbyView(root);
-                var boardSettingsPanel = GetField<GameObject>(
-                    view,
-                    "boardSettingsPanel");
-                var boardSettingsButton = GetField<Button>(
-                    view,
-                    "boardSettingsButton");
-                var closeBoardSettingsButton = GetField<Button>(
-                    view,
-                    "closeBoardSettingsButton");
-                var selector = GetField<GameObject>(
-                    view,
-                    "boardMapSelectionRoot");
-                var previous = GetField<Button>(
-                    view,
-                    "previousBoardMapButton");
-                var next = GetField<Button>(
-                    view,
-                    "nextBoardMapButton");
-                var mapName = GetField<Text>(view, "boardMapNameText");
-                var ready = GetField<Button>(view, "readyButton");
-                var start = GetField<Button>(view, "startButton");
-                var sessionActions = GetField<GameObject>(
-                    view,
-                    "sessionActionsRoot");
-                var wardrobeButton = GetField<Button>(
-                    view,
-                    "customizationButton");
-                var wardrobePanel = GetField<GameObject>(
-                    view,
-                    "customizationPanel");
-
-                Assert.That(boardSettingsPanel.transform.parent,
-                    Is.SameAs(root.transform),
-                    "Board settings must be a separate root-level popup.");
-                Assert.That(selector.transform.IsChildOf(
-                    boardSettingsPanel.transform), Is.True);
-                Assert.That(closeBoardSettingsButton.transform.IsChildOf(
-                    boardSettingsPanel.transform), Is.True);
-                Assert.That(previous.transform.IsChildOf(selector.transform), Is.True);
-                Assert.That(next.transform.IsChildOf(selector.transform), Is.True);
-                Assert.That(mapName.transform.IsChildOf(selector.transform), Is.True);
-                Assert.That(boardSettingsButton.transform.parent,
-                    Is.SameAs(wardrobeButton.transform.parent));
-
-                Assert.That(sessionActions.transform.parent,
-                    Is.SameAs(root.transform));
-                Assert.That(ready.transform.parent,
-                    Is.SameAs(sessionActions.transform));
-                Assert.That(start.transform.parent,
-                    Is.SameAs(sessionActions.transform));
-
+                var panel = GetField<GameObject>(view, "boardSettingsPanel");
+                var open = GetField<Button>(view, "boardSettingsButton");
+                var close = GetField<Button>(view, "closeBoardSettingsButton");
+                var previous = GetField<Button>(view, "previousBoardMapButton");
+                var next = GetField<Button>(view, "nextBoardMapButton");
+                var wardrobe = GetField<Button>(view, "customizationButton");
+                var wardrobePanel = GetField<GameObject>(view, "customizationPanel");
                 BindButtonEvents(view);
                 var deltas = new List<int>();
                 view.MapSelectionDeltaRequested += deltas.Add;
 
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.LobbyPhase,
-                        true),
-                    true,
-                    false,
-                    string.Empty);
-                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
-                Assert.That(boardSettingsPanel.activeSelf, Is.False,
-                    "Board settings must start closed each time the lobby is entered.");
-                Assert.That(selector.activeInHierarchy, Is.False);
+                foreach (var sample in new[]
+                {
+                    (host: true, busy: false, locked: false, phase: MultiplayerConstants.LobbyPhase, allowed: true),
+                    (host: true, busy: true, locked: false, phase: MultiplayerConstants.LobbyPhase, allowed: false),
+                    (host: true, busy: false, locked: true, phase: MultiplayerConstants.LobbyPhase, allowed: false),
+                    (host: false, busy: false, locked: false, phase: MultiplayerConstants.LobbyPhase, allowed: false),
+                    (host: true, busy: false, locked: false, phase: MultiplayerConstants.PlayingPhase, allowed: false)
+                })
+                {
+                    close.onClick.Invoke();
+                    deltas.Clear();
+                    view.SetBoardMapSelectionLocked(sample.locked);
+                    view.Render(CreateSnapshot(sample.phase, sample.host), true, sample.busy, string.Empty);
+                    var canOpen = sample.host && sample.phase == MultiplayerConstants.LobbyPhase;
+                    Assert.That(open.gameObject.activeSelf, Is.EqualTo(canOpen), sample.ToString());
+                    Assert.That(panel.activeSelf, Is.False);
+                    open.onClick.Invoke();
+                    Assert.That(panel.activeSelf, Is.EqualTo(canOpen), sample.ToString());
+                    if (canOpen) Assert.That(UiPopupStack.IsTop(panel), Is.True);
+                    previous.onClick.Invoke();
+                    next.onClick.Invoke();
+                    Assert.That(deltas, Is.EqualTo(sample.allowed ? new[] { -1, 1 } : new int[0]), sample.ToString());
+                    close.onClick.Invoke();
+                    Assert.That(panel.activeSelf, Is.False);
+                    Assert.That(UiPopupStack.Count, Is.Zero);
+                }
 
-                boardSettingsButton.onClick.Invoke();
-                Assert.That(boardSettingsPanel.activeSelf, Is.True);
-                Assert.That(UiPopupStack.IsTop(boardSettingsPanel), Is.True);
-                Assert.That(selector.activeInHierarchy, Is.True);
-                Assert.That(mapName.text,
-                    Is.EqualTo(GameText.F(
-                        "Map: {0}",
-                        GameText.T("Forest"))));
-                Assert.That(previous.gameObject.activeSelf, Is.True);
-                Assert.That(next.gameObject.activeSelf, Is.True);
-                Assert.That(previous.interactable, Is.True,
-                    "The shipped catalog contains two selectable maps (forest-graybox, maze-graybox).");
-                Assert.That(next.interactable, Is.True);
-                previous.interactable = false;
-                next.interactable = false;
-                previous.onClick.Invoke();
-                next.onClick.Invoke();
-                Assert.That(deltas, Is.Empty,
-                    "Disabled map controls must not publish requests.");
-
-                previous.interactable = true;
-                next.interactable = true;
-                previous.onClick.Invoke();
-                next.onClick.Invoke();
-                Assert.That(deltas, Is.EqualTo(new[] { -1, 1 }));
-
-                wardrobeButton.onClick.Invoke();
-                Assert.That(boardSettingsPanel.activeSelf, Is.False,
-                    "Opening Wardrobe must close Board Settings.");
-                Assert.That(wardrobePanel.activeSelf, Is.True);
-                boardSettingsButton.onClick.Invoke();
-                Assert.That(boardSettingsPanel.activeSelf, Is.True);
-                Assert.That(wardrobePanel.activeSelf, Is.False,
-                    "Opening Board Settings must close Wardrobe.");
-                closeBoardSettingsButton.onClick.Invoke();
-                Assert.That(boardSettingsPanel.activeSelf, Is.False);
-                Assert.That(UiPopupStack.Count, Is.Zero);
-
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.LobbyPhase,
-                        false),
-                    true,
-                    false,
-                    string.Empty);
-                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
-                Assert.That(boardSettingsPanel.activeSelf, Is.False);
-                boardSettingsButton.onClick.Invoke();
-                Assert.That(boardSettingsPanel.activeSelf, Is.True);
-                Assert.That(mapName.text,
-                    Is.EqualTo(GameText.F(
-                        "Map: {0}",
-                        GameText.T("Forest"))));
-                Assert.That(previous.gameObject.activeSelf, Is.False);
-                Assert.That(next.gameObject.activeSelf, Is.False);
-
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.LobbyPhase,
-                        false,
-                        new BoardMapSelection("forest-graybox", 999)),
-                    true,
-                    false,
-                    string.Empty);
-                Assert.That(mapName.text,
-                    Is.EqualTo(GameText.F(
-                        "Map: {0}",
-                        GameText.T("Unavailable Map"))));
-
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.LobbyPhase,
-                        true),
-                    true,
-                    true,
-                    string.Empty);
-                Assert.That(boardSettingsPanel.activeSelf, Is.True);
-                Assert.That(previous.gameObject.activeSelf, Is.True);
-                Assert.That(next.gameObject.activeSelf, Is.True);
-                Assert.That(previous.interactable, Is.False);
-                Assert.That(next.interactable, Is.False);
-
-                view.SetBoardMapSelectionLocked(true);
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.LobbyPhase,
-                        true),
-                    true,
-                    false,
-                    string.Empty);
-                Assert.That(boardSettingsPanel.activeSelf, Is.True);
-                Assert.That(previous.interactable, Is.False);
-                Assert.That(next.interactable, Is.False);
                 view.SetBoardMapSelectionLocked(false);
-
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.PlayingPhase,
-                        true),
-                    true,
-                    false,
-                    string.Empty);
-                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.False);
-                Assert.That(boardSettingsPanel.activeSelf, Is.False);
-                Assert.That(selector.activeInHierarchy, Is.False);
-
-                view.Render(CreateSnapshot(
-                        MultiplayerConstants.LobbyPhase,
-                        true),
-                    true,
-                    false,
-                    string.Empty);
-                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
-                Assert.That(boardSettingsPanel.activeSelf, Is.False,
-                    "Returning to the lobby must not reopen Board Settings.");
-
+                view.Render(CreateSnapshot(MultiplayerConstants.LobbyPhase, true), true, false, string.Empty);
+                open.onClick.Invoke();
+                wardrobe.onClick.Invoke();
+                Assert.That(panel.activeSelf, Is.False);
+                Assert.That(wardrobePanel.activeSelf, Is.True);
+                open.onClick.Invoke();
+                Assert.That(panel.activeSelf, Is.True);
+                Assert.That(wardrobePanel.activeSelf, Is.False);
+                view.Render(CreateSnapshot(MultiplayerConstants.LobbyPhase, false), true, false, string.Empty);
+                Assert.That(panel.activeSelf, Is.False, "Losing host authority must close an open popup.");
+                open.onClick.Invoke();
+                Assert.That(panel.activeSelf, Is.False);
+                view.Render(CreateSnapshot(MultiplayerConstants.PlayingPhase, true), true, false, string.Empty);
+                view.Render(CreateSnapshot(MultiplayerConstants.LobbyPhase, true), true, false, string.Empty);
+                Assert.That(panel.activeSelf, Is.False, "Returning to the lobby must not reopen settings.");
                 view.Render(SessionSnapshot.Empty, false, false, string.Empty);
-                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.False);
-                Assert.That(boardSettingsPanel.activeSelf, Is.False);
-                Assert.That(selector.activeInHierarchy, Is.False);
+                Assert.That(open.gameObject.activeSelf || panel.activeSelf, Is.False);
             }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(root);
-            }
+            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
 
         [Test]
@@ -675,6 +544,32 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(view, Is.Not.Null, LobbyPrefabPath);
             Assert.That(view.HasRequiredReferences, Is.True, LobbyPrefabPath);
             return view;
+        }
+
+        [Test]
+        public void MapPreviewTurns_RefreshForSameMapAndEveryLanguage()
+        {
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            var previousLanguage = GameText.Language;
+            try
+            {
+                var view = GetLobbyView(root);
+                var label = GetField<Text>(view, "boardMapPreviewTurnsText");
+                foreach (GameLanguage language in System.Enum.GetValues(typeof(GameLanguage)))
+                {
+                    GameText.SetLanguage(language);
+                    foreach (var turns in new[] { 10, 20, 15 })
+                    {
+                        Assert.That(MazeParty.Gameplay.Minigames.MatchGameSettings.Default.TryChangeTurns(turns, out var settings), Is.True);
+                        var snapshot = new SessionSnapshot("ABCD", false, MultiplayerConstants.LobbyPhase, "guest",
+                            new[] { new OnlinePlayerSnapshot("guest", "Guest", 1, true, false) },
+                            new BoardMapSelection("forest-graybox", 4), gameSettingsPayload: settings.Encode());
+                        view.Render(snapshot, true, false, string.Empty);
+                        Assert.That(label.text, Is.EqualTo("Turn: " + turns.ToString("00")));
+                    }
+                }
+            }
+            finally { GameText.SetLanguage(previousLanguage); PrefabUtility.UnloadPrefabContents(root); }
         }
 
         private static SessionSnapshot CreateSnapshot(

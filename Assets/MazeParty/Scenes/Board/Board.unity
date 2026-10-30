@@ -3583,9 +3583,9 @@ Light:
     m_Type: 2
     m_Resolution: -1
     m_CustomResolution: -1
-    m_Strength: 1
+    m_Strength: 0.45
     m_Bias: 0.05
-    m_NormalBias: 0.4
+    m_NormalBias: 0.15
     m_NearPlane: 0.2
     m_CullingMatrixOverride:
       e00: 1
@@ -5660,7 +5660,7 @@ MonoBehaviour:
   combatSpectatorFieldOfView: 55
   boardResourceEventDistance: 3.4
   boardResourceEventHeightOffset: -0.15
-  boardResourceEventFieldOfView: 60
+  boardResourceEventFieldOfView: 90
   boardResourceEventTextClearance: 1.1
 --- !u!4 &1548230741
 Transform:
@@ -5695,6 +5695,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 23cdc0112b5dbcb46a0e6b73b460f980, type: 3}
   m_Name:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardFlowCameraPresenter
+  forestGhostPrefab: {fileID: 6547811529742475455, guid: ff6c1d3340dd20b4987bfc2a908257c7, type: 3}
+  magicMazeCloudPrefab: {fileID: 711608704938222956, guid: 478c9cb223e6bfe4aa23f9d49c386002, type: 3}
   cameraDirector: {fileID: 1548230740}
   localPlayerMarker: {fileID: 1434759359}
   eventSplitViewPrefab: {fileID: 6104406375937452250, guid: 229f47fa81a41a241943eec20eb61681, type: 3}
@@ -5702,6 +5704,7 @@ MonoBehaviour:
   resourceTransferKeyPrefab: {fileID: 5763527392341924887, guid: 97909a6d33d76194c949ebeeac5f92f4, type: 3}
   landingEffectFeedbackPrefab: {fileID: 73536901730914453, guid: d1d51ae957162df4ebfed799518d5fb2, type: 3}
   landingEventLightningPrefab: {fileID: 4374848859648381583, guid: 4406f2ebf4af00a419646e0df20adbcf, type: 3}
+  combatHitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 2c8fae67a1dcad347954e4f755bb4de7, type: 3}
   landingGiftPrefab: {fileID: 4662300302048209276, guid: c317ad8f4d19679499922bbff0ff0be8, type: 3}
   landingHealingShieldPrefab: {fileID: 1450662250858090858, guid: b99a68b07069be241881e107e8b308e9, type: 3}
   resourceTransferHeadOffset: 0.3

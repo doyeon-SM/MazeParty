@@ -20,6 +20,7 @@ namespace MazeParty.Multiplayer
         private readonly PlayerAvatarVisual[] _players = new PlayerAvatarVisual[4];
         private readonly Transform[,] _boxes = new Transform[4, Race2Rules.BoxCount];
         private readonly bool[] _lastAlive = new bool[4];
+        private readonly bool[] _watchable = new bool[4];
         private GameplayCameraDirector _director;
         private Race2BoxStream _stream;
         private ulong _seed;
@@ -60,7 +61,7 @@ namespace MazeParty.Multiplayer
         }
         public void ResetPracticePresentation()
         {
-            _observed = false; _watching = -1; _round = 0;
+            _observed = false; _watching = -1; SpectatedSlot = -1; _round = 0;
             practiceCountdown.SetCountdown(0, false, false);
         }
         private void LateUpdate()
@@ -70,7 +71,7 @@ namespace MazeParty.Multiplayer
             var visible = match != null && state != null && state.IsSpawned && match.CurrentMinigame == ScheduledMinigameId.Race2 &&
                 (match.FlowState == BoardFlowState.MinigamePlaying || match.FlowState == BoardFlowState.MinigameResult);
             SetVisible(visible);
-            if (!visible) { _observed = false; if (_director != null) _director.ClearMinigameCamera(sharedCamera); return; }
+            if (!visible) { SpectatedSlot = -1; _observed = false; if (_director != null) _director.ClearMinigameCamera(sharedCamera); return; }
             var local = -1;
             for (var i = 0; i < 4; i++) if (match.GetAvatarForSlot(i) != null && match.GetAvatarForSlot(i).IsOwner) local = i;
             Render(state.Seed, state.RoundNumber, state.Phase, state.RoundElapsed, state.IsAlive,
@@ -127,13 +128,21 @@ namespace MazeParty.Multiplayer
                     _boxes[i,b].gameObject.SetActive(phase != Race2Phase.Inactive && (phase != Race2Phase.Countdown || b < Race2Rules.PreviewBoxCount));
                 }
             }
+            for (var slot = 0; slot < _watchable.Length; slot++)
+                _watchable[slot] = alive(slot) && (match == null || match.GetAvatarForSlot(slot) != null);
             if (alive(local)) _watching = local;
-            else if (_watching < 0 || !alive(_watching))
+            else if (_watching < 0 || !_watchable[_watching])
             {
-                var next = Race2Rules.NextSpectator(_watching >= 0 ? _watching : local, alive);
+                var next = MinigameSpectatorSelection.NextTarget(_watching >= 0 ? _watching : local, _watchable);
                 if (next >= 0) _watching = next;
             }
-            SpectatedSlot = _watching >= 0 && _watching != local && alive(_watching) ? _watching : -1;
+            else if (phase == Race2Phase.Running && (match == null || !state.IsPaused) &&
+                     MinigameSpectatorInput.SwitchPressed(match, _practice))
+                _watching = MinigameSpectatorSelection.NextTarget(_watching, _watchable);
+            SpectatedSlot = _watching >= 0 && _watching != local && _watchable[_watching] ? _watching : -1;
+            if (_practice)
+                practiceHud.ShowSpectator(SpectatedSlot >= 0 ? GameText.F("Player {0}", SpectatedSlot + 1) : null,
+                    Color.white);
             if (_watching >= 0)
                 sharedCamera.transform.SetPositionAndRotation(CalculatePlayerCameraPosition(_watching), PlayerCameraRotation);
             _observed = true;

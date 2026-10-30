@@ -334,21 +334,26 @@ namespace MazeParty.Multiplayer.Tests
                 var visual = root.AddComponent<PlayerAvatarVisual>();
                 visual.EnsureBuilt();
                 var bindings = visual.Bindings;
-                var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
-
-                visual.SetEquippedItem(PrototypeItemId.Pistol);
-                Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.False);
-                Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.False);
-                Assert.That(bindings.WorldItemRoot.gameObject.activeSelf, Is.True);
-                Assert.That(
-                    bindings.WorldItemRoot.Cast<Transform>()
-                        .Single(child => child.gameObject.activeSelf).name,
-                    Does.StartWith(pistol.HeldPrefab.name));
-
-                visual.SetEquippedItem(PrototypeItemId.None);
-                Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
+                foreach (var item in PrototypeItemCatalog.All.Where(item => item.HeldPrefab != null))
+                {
+                    visual.SetOwnerFirstPerson(false);
+                    visual.SetEquippedItem(item.Id);
+                    Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.False, item.Id.ToString());
+                    Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.False);
+                    Assert.That(bindings.WorldItemRoot.gameObject.activeSelf, Is.True);
+                    Assert.That(bindings.WorldItemRoot.Cast<Transform>()
+                        .Single(child => child.gameObject.activeSelf).name, Does.StartWith(item.HeldPrefab.name));
+                    visual.SetOwnerFirstPerson(true);
+                    Assert.That(bindings.FirstPersonItemRoot.gameObject.activeInHierarchy, Is.True);
+                    Assert.That(bindings.FirstPersonItemRoot.Cast<Transform>()
+                        .Single(child => child.gameObject.activeInHierarchy).name, Does.StartWith(item.HeldPrefab.name));
+                    visual.SetEquippedItem(PrototypeItemId.None);
+                    Assert.That(bindings.FirstPersonHands.gameObject.activeInHierarchy, Is.True);
+                    visual.SetOwnerFirstPerson(false);
+                    Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
+                    Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
+                    Assert.That(bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
+                }
             }
             finally
             {

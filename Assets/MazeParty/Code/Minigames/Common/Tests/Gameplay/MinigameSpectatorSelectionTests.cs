@@ -6,6 +6,19 @@ namespace MazeParty.Gameplay.Tests
     public sealed class MinigameSpectatorSelectionTests
     {
         [Test]
+        public void ManualCycleWrapsSkipsUnavailableAndRetainsOnlySurvivor()
+        {
+            var targets = new[] { false, true, false, true };
+            foreach (var pair in new[] { new[] { -1, 1 }, new[] { 1, 3 }, new[] { 3, 1 } })
+                Assert.That(MinigameSpectatorSelection.NextTarget(pair[0], targets), Is.EqualTo(pair[1]));
+            targets[3] = false;
+            Assert.That(MinigameSpectatorSelection.NextTarget(1, targets), Is.EqualTo(1));
+            targets[1] = false;
+            Assert.That(MinigameSpectatorSelection.NextTarget(1, targets), Is.EqualTo(-1));
+            Assert.That(MinigameSpectatorSelection.NextTarget(-1, new bool[0]), Is.EqualTo(-1));
+        }
+
+        [Test]
         public void TargetLocksUntilEliminatedThenChoosesCurrentLeader()
         {
             var watchable = new[] { false, true, true, true };

@@ -35,18 +35,18 @@ namespace MazeParty.Gameplay
             return result;
         }
 
-        public static PrototypeItemId DrawItem(IReadOnlyList<BoardItemDefinition> items, int seed)
+        public static PrototypeItemId DrawItem(IReadOnlyList<BoardItemDefinition> items, int seed, string mapId = null)
         {
             var total = 0;
             foreach (var item in items)
-                if (item.UseTiming == BoardItemUseTiming.Immediate)
+                if (item.UseTiming == BoardItemUseTiming.Immediate && item.IsAvailableOnMap(mapId))
                     total = checked(total + Mathf.Max(0, item.SpawnWeight));
             if (total == 0)
                 throw new InvalidOperationException("A chest needs an immediate-use item with positive weight.");
             var selected = new System.Random(seed).Next(total);
             foreach (var item in items)
             {
-                if (item.UseTiming != BoardItemUseTiming.Immediate) continue;
+                if (item.UseTiming != BoardItemUseTiming.Immediate || !item.IsAvailableOnMap(mapId)) continue;
                 selected -= Mathf.Max(0, item.SpawnWeight);
                 if (selected < 0) return item.Id;
             }

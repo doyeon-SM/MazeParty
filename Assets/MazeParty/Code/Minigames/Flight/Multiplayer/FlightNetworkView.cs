@@ -127,7 +127,9 @@ namespace MazeParty.Multiplayer
                 _flightVisuals[i].SetFlaps(_flaps[i]);
                 if (_observed && _lastAlive[i] && !alive(i))
                 {
-                    OneShotVfxPool.Play(explosionPrefab, visual.transform.position, Quaternion.identity, 1f);
+                    // Remote deaths must not obscure the local player's flight path.
+                    if (i == local)
+                        OneShotVfxPool.Play(explosionPrefab, visual.transform.position, Quaternion.identity, 1f);
                     GameSound.Play(SoundKeys.MinigameFlightExplosion, .75f);
                 }
                 visual.gameObject.SetActive(alive(i)); _lastAlive[i] = alive(i);

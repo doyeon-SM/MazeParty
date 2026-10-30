@@ -76,6 +76,7 @@ namespace MazeParty.Multiplayer
         private void TickBoardItems()
         {
             TickUtilityItems();
+            TickBombardmentSelection();
             var match = NetworkMatchState.Instance;
             if (IsServer && match != null && match.IsActionPhase && !match.IsGlobalSimulationPaused)
                 _itemCooldownRemaining = Math.Max(0d, _itemCooldownRemaining - Time.unscaledDeltaTime);
@@ -98,6 +99,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            RefreshWallPlacementPreview(match, equippedItem);
             RefreshGrenadeRangeIndicator(match, equippedItem);
             bool visible = match != null && match.GameplayEnabled &&
                 match.FlowState <= BoardFlowState.LandingEffectResolve;
@@ -109,8 +111,9 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var itemId = LocalEquippedItem;
             if (!IsOwner || !IsSpawned || match == null || !match.CanAcceptActionInput ||
-                CurrentHealth <= 0 || LocalChoiceResolution != ItemChoiceResolution.ItemSelected ||
-                LocalItemCharges <= 0 || IsSwapping || !BoardItemPresentationRules.IsFirearm(itemId))
+                // Chest weapons are usable even after choosing "Do not use" for the turn.
+                CurrentHealth <= 0 || LocalItemCharges <= 0 || IsSwapping ||
+                !BoardItemPresentationRules.IsFirearm(itemId))
             {
                 return false;
             }
@@ -124,7 +127,8 @@ namespace MazeParty.Multiplayer
                     direction,
                     PrototypeItemCatalog.Get(itemId).Range,
                     gameObject,
-                    out var hit))
+                    out var hit,
+                    hitZonesOnly: true))
             {
                 return false;
             }
@@ -174,6 +178,10 @@ namespace MazeParty.Multiplayer
             {
                 return false;
             }
+
+            if (itemId == PrototypeItemId.GhostPass &&
+                NetworkMatchState.Instance != null && NetworkMatchState.Instance.Turn <= 1)
+                return false;
 
             if (itemId != PrototypeItemId.Grenade)
             {
@@ -225,6 +233,7 @@ namespace MazeParty.Multiplayer
 
         private void DisposeBoardItems()
         {
+            ClearWallPlacementPreview();
             _grenadeRangeUseState.Clear();
             grenadeRangeIndicator?.Hide();
             _avatarVisual?.SetBoardProtectionVisible(false);

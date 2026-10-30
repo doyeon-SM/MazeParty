@@ -76,12 +76,12 @@ namespace MazeParty.Multiplayer.Tests
                     tiles[slot] = tileObject.AddComponent<BoardTile>();
                     tiles[slot].Configure(new Vector2Int(slot, 0), BoardTileType.Normal);
                     order[slot] = slot;
-                    durations[slot] = 2d;
+                    durations[slot] = 2.5d;
                 }
                 effects[0] = BoardLandingEffectType.GoldGain;
                 effects[1] = BoardLandingEffectType.SpecialEvent;
                 effects[2] = BoardLandingEffectType.GoldLoss;
-                durations[1] = 9.5d;
+                durations[1] = 11.5d;
                 var plan = (BoardSpecialEventRules.Resolution[])typeof(NetworkMatchState)
                     .GetField("_specialEventPlan", flags).GetValue(match);
                 plan[1] = new BoardSpecialEventRules.Resolution(BoardSpecialEventFamily.Direct,
@@ -92,7 +92,7 @@ namespace MazeParty.Multiplayer.Tests
                 var flow = new BoardFlowStateMachine();
                 flow.Start(0d); flow.Tick(7d);
                 for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 10d);
-                flow.Tick(15d); flow.TryCompleteCombat(15d, 15.5d);
+                flow.Tick(15d); flow.TryCompleteCombat(15d, 19d);
                 typeof(NetworkMatchState).GetField("_flow", flags).SetValue(match, flow);
                 var advance = typeof(NetworkMatchState).GetMethod("AdvanceLandingEffectResolutionOnServer", flags);
                 System.Action<double> tick = elapsed => advance.Invoke(match, new object[] { 15d + elapsed });
@@ -100,31 +100,32 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(players[0].Gold, Is.EqualTo(10));
                 tick(0.5d);
                 Assert.That(players[0].Gold, Is.EqualTo(13));
-                tick(2d);
+                tick(2.499d);
+                Assert.That(match.LastLandingEffectSlot, Is.EqualTo(0));
+                tick(2.5d);
                 Assert.That(match.LandingEffectFeedback.FeedbackKind, Is.EqualTo(BoardLandingEffectFeedbackKind.EventIntro));
-                tick(3.999d);
-                Assert.That(players[1].Gold, Is.EqualTo(10));
-                foreach (var phase in new[] { (4d, "TARGET >"), (4.5d, "TARGET >"),
-                    (5.5d, "RESOURCE >"), (6.5d, "ACTION >") })
+                foreach (var elapsed in new[] { 4.999d, 5d, 5.5d, 6.5d, 7.5d, 8.499d })
                 {
-                    tick(phase.Item1);
-                    Assert.That(match.LastLandingEffectEncodedMessage, Does.Contain(phase.Item2));
-                    Assert.That(players[1].Gold, Is.EqualTo(10));
+                    tick(elapsed);
+                    Assert.That(players[1].Gold, Is.EqualTo(10), "event applied early at " + elapsed);
+                    Assert.That(match.LastLandingEffectSlot, Is.EqualTo(1));
+                    Assert.That(LandingEffectMessage.GetEffectType(match.LastLandingEffectEncodedMessage),
+                        Is.EqualTo(BoardLandingEffectType.SpecialEvent));
                 }
-                tick(7.499d);
-                Assert.That(players[1].Gold, Is.EqualTo(10));
-                tick(7.5d);
+                tick(8.5d);
                 Assert.That(players[1].Gold, Is.EqualTo(20));
                 Assert.That(match.LandingEffectFeedback.AffectedMask, Is.EqualTo(15));
-                tick(11.499d);
+                tick(8.5d);
+                Assert.That(players[1].Gold, Is.EqualTo(20), "The event must settle exactly once.");
+                tick(13.999d);
                 Assert.That(match.LastLandingEffectSlot, Is.EqualTo(1));
                 Assert.That(players[2].Gold, Is.EqualTo(20));
-                tick(11.5d); tick(11.999d);
+                tick(14d); tick(14.499d);
                 Assert.That(match.LastLandingEffectSlot, Is.EqualTo(2));
                 Assert.That(players[2].Gold, Is.EqualTo(20));
-                tick(12d);
+                tick(14.5d);
                 Assert.That(players[2].Gold, Is.EqualTo(17));
-                tick(13.5d); tick(14d); tick(15.5d);
+                tick(16.5d); tick(17d); tick(19d);
                 Assert.That(typeof(NetworkMatchState).GetField("_nextLandingEffectSlot", flags)
                     .GetValue(match), Is.EqualTo(4));
             }

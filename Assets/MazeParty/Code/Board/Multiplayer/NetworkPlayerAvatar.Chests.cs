@@ -12,8 +12,9 @@ namespace MazeParty.Multiplayer
 
         public bool EquipChestItemOnServer(PrototypeItemId id)
         {
-            if (!IsServer || !PrototypeItemCatalog.IsValid(id) ||
-                PrototypeItemCatalog.Get(id).UseTiming != BoardItemUseTiming.Immediate) return false;
+            if (!IsServer || IsSettingBombardment || !PrototypeItemCatalog.IsValid(id) ||
+                PrototypeItemCatalog.Get(id).UseTiming != BoardItemUseTiming.Immediate ||
+                !PrototypeItemCatalog.Get(id).IsAvailableOnMap(NetworkMatchState.Instance?.BoardMapId)) return false;
             var dice = NetworkWorldDiceCoordinator.Instance;
             var rollStarted = !HasRolled && (HasDieResultOnServer(0) || HasDieResultOnServer(1) ||
                 dice != null && dice.IsRollInFlightOnServer(AssignedSlot));

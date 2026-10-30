@@ -247,7 +247,8 @@ namespace MazeParty.Multiplayer
                     return 0;
                 }
 
-                if (UsesDoubleDice) return _privateRoll.Value;
+                if (UsesDoubleDice) return _privateRoll.Value > 0
+                    ? _privateRoll.Value : _firstDieResult.Value + _secondDieResult.Value;
                 var slot = _slot.Value;
                 var die = ResolveLocalWorldDie(slot);
                 var match = NetworkMatchState.Instance;
@@ -451,7 +452,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _avatarVisual?.SetKnockedDown(IsKnockedDown);
+            _avatarVisual?.SetKnockedDown(IsKnockedDown ||
+                (NetworkMatchState.Instance != null && NetworkMatchState.Instance.IsCombatRetreatKnockedDown(AssignedSlot)));
             TickBoardItems();
             TickHandGestures();
             if (IsServer && _slot.Value < 0 && Time.unscaledTime >= _nextSlotResolveAttempt)
@@ -553,6 +555,7 @@ namespace MazeParty.Multiplayer
 
         private void LateUpdate()
         {
+            TickCombatRetreatPresentation();
             if (IsSpawned && IsOwner)
             {
                 // The server-authoritative body yaw can arrive after input was
@@ -606,8 +609,10 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsCombatRetreatActive)
+            { StopServerInputOnServer(); return; }
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
-                                  HasResolvedItemChoice && !IsSwapping &&
+                                  HasResolvedItemChoice && !IsSwapping && !IsSettingBombardment &&
                                   !IsBoardDeathInProgressOnServer && !IsKnockedDown &&
                                   ActiveHandGesture == 0;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
@@ -1193,10 +1198,11 @@ namespace MazeParty.Multiplayer
             _serverPitch = 0f;
         }
 
-        public int ResolveCombatPunchDamageOnServer(bool hit, double now)
+        public int ResolveCombatPunchDamageOnServer(bool hit, double now,
+            PlayerHitRegion region = PlayerHitRegion.Body)
         {
             if (!IsServer || !IsCombatAlive) return 0;
-            var damage = _combatPunchSequence.Resolve(hit, now, _combatHealth.Value);
+            var damage = _combatPunchSequence.Resolve(hit, now, _combatHealth.Value, region);
             if (damage > 0 && _combatPunchSequence.LastStrike == 3)
                 NetworkMatchState.Instance?.RecordAchievementOnServer(AssignedSlot, PartyAchievement.ThreePunches);
             return damage;
@@ -1215,7 +1221,8 @@ namespace MazeParty.Multiplayer
         public bool ApplyCombatPunchOnServer(
             NetworkPlayerAvatar attacker,
             Vector3 knockbackVelocity,
-            int damage)
+            int damage,
+            PlayerHitRegion region = PlayerHitRegion.Body)
         {
             if (!IsServer || CombatState != NetworkCombatState.Active ||
                 _combatHealth.Value <= 0 || damage <= 0)
@@ -1230,7 +1237,7 @@ namespace MazeParty.Multiplayer
             RecordDamageOnServer(appliedDamage, attacker);
             NetworkMatchState.Instance?.RecordStatisticsDamageOnServer(this, attacker, appliedDamage, -1);
             BeginBoardKnockdownOnServer(appliedDamage, _combatHealth.Value > 0);
-            PresentHitRpc((byte)PlayerHitRegion.Body, true, damage);
+            PresentHitRpc((byte)region, true, damage);
             if (_combatHealth.Value > 0)
             {
                 if (!IsKnockedDown) _combatKnockbackVelocity += Vector3.ClampMagnitude(
@@ -1248,24 +1255,36 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
-        public int ApplyCombatRetreatOnServer(int requestedDistance)
+        public int PrepareCombatRetreatOnServer(int requestedDistance, out BoardCombatRetreatPath path)
         {
+            path = new BoardCombatRetreatPath { Facing = transform.rotation };
+            path.Add(transform.position);
             if (!IsServer || requestedDistance <= 0 || !_traversal.IsInitialized)
             {
                 return 0;
             }
 
-            var retreatPath = _traversal.Retreat(requestedDistance);
-            var actualDistance = retreatPath.Length;
+            requestedDistance = Math.Min(3, requestedDistance);
             ResolveTopology();
-            while (actualDistance < requestedDistance && _topology != null)
+            var previousTile = _traversal.CurrentTile;
+            var retreatPath = _traversal.Retreat(requestedDistance, (from, to) =>
+                !BoardWallRules.IsPassageBlocked(_topology, from, to));
+            var actualDistance = retreatPath.Length;
+            if (actualDistance > 0) path.Add(previousTile.GetRecoveryCenter(1f));
+            foreach (var tile in retreatPath)
+            {
+                AppendCombatRetreatStep(ref path, previousTile, tile);
+                previousTile = tile;
+            }
+            // Remaining history means a wall interrupted the retreat; do not reroute through it.
+            while (actualDistance < requestedDistance && _topology != null && _traversal.History.Count <= 1)
             {
                 var incoming = _topology.GetIncomingGates(_traversal.CurrentTile);
                 BoardTile fallback = null;
                 for (var i = 0; i < incoming.Count; i++)
                 {
                     var source = incoming[i] != null ? incoming[i].Source : null;
-                    if (source == null || fallback != null &&
+                    if (source == null || incoming[i].IsTemporarilyBlocked || fallback != null &&
                         CompareCoordinates(source.Coordinate, fallback.Coordinate) >= 0)
                     {
                         continue;
@@ -1278,15 +1297,19 @@ namespace MazeParty.Multiplayer
                     break;
                 }
 
+                if (actualDistance == 0) path.Add(_traversal.CurrentTile.GetRecoveryCenter(1f));
+                AppendCombatRetreatStep(ref path, _traversal.CurrentTile, fallback);
                 _traversal.Relocate(fallback);
                 actualDistance++;
             }
 
-            // TODO(COMBAT-PRESENTATION): replace this authoritative center snap
-            // with authored retreat locomotion while keeping the same path result.
-            TeleportController(
-                _traversal.CurrentTile.GetRecoveryCenter(1f),
-                transform.rotation);
+            // Face away from the retreat so the frontal camera trails ahead of
+            // the sliding body, rather than being overtaken on a long straight.
+            var travel = Vector3.ProjectOnPlane(path.Points[path.Points.Length - 1] - path.Points[0], Vector3.up);
+            if (travel.sqrMagnitude > 0.0001f)
+                path.Facing = Quaternion.LookRotation(-travel.normalized, Vector3.up);
+            // Logical occupancy is committed once; the visible body follows the
+            // replicated path during the shared aftermath instead of snapping here.
             SyncLogicalTileOnServer();
             return actualDistance;
         }
@@ -1398,14 +1421,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            var arena = LobbyArena.Instance;
+            var rotation = arena.GetSpawnRotation(_slot.Value);
             _serverInput = Vector2.zero;
             _serverQuietWalkHeld = false;
-            _serverYaw = 0f;
+            _serverYaw = rotation.eulerAngles.y;
             _serverPitch = 0f;
             _combatKnockbackVelocity = Vector3.zero;
-            TeleportController(
-                LobbyArena.Instance.GetSpawnPosition(_slot.Value),
-                Quaternion.identity);
+            TeleportController(arena.GetSpawnPosition(_slot.Value), rotation);
             _lobbyPositionInitialized = true;
         }
 
@@ -2501,9 +2524,10 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
-            var canUseLobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
+            var lobbyMovement = CanUseLobbyInput();
+            var canUseLobbyInput = lobbyMovement || CanUseCeremonyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
-                                    HasResolvedItemChoice && !IsSwapping &&
+                                    HasResolvedItemChoice && !IsSwapping && !IsSettingBombardment &&
                                     !IsBoardDeathInProgressOnServer && !IsKnockedDown;
             var canUseCombatInput = match != null && match.CanAvatarUseCombatInput(this);
             if (ActiveHandGesture != 0 ||
@@ -2517,7 +2541,12 @@ namespace MazeParty.Multiplayer
 
             _serverInput = Vector2.ClampMagnitude(input, 1f);
             _serverQuietWalkHeld = !canUseLobbyInput && quietWalkHeld;
-            _serverYaw = Mathf.Repeat(yaw, 360f);
+            // Idle input can arrive before the owner receives the spawn rotation.
+            // Lobby facing changes only when the player actually moves.
+            if (!lobbyMovement || _serverInput.sqrMagnitude > 0.0001f)
+            {
+                _serverYaw = Mathf.Repeat(yaw, 360f);
+            }
             _serverPitch = canUseLobbyInput ? 0f : Mathf.Clamp(pitch, -85f, 85f);
         }
 
@@ -2551,6 +2580,7 @@ namespace MazeParty.Multiplayer
                         this,
                         claimedOrigin,
                         claimedDirection);
+                if (!accepted && GetSelectedItemOnServer() == PrototypeItemId.Wall) RejectWallPlacementRpc();
                 if (requestId != 0u)
                 {
                     ConfirmItemUseRpc(requestId, accepted);

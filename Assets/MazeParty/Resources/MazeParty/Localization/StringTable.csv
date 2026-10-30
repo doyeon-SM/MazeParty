@@ -1,4 +1,5 @@
 source,ko,ja,zh-Hans,zh-Hant
+LET THE MISCHIEF BEGIN!,장난시작,いたずら開始！,恶作剧开始！,惡作劇開始！
 #{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WIN,#{0}  {1}     열쇠 {2}  /  골드 {3}  /  {4}승,#{0}  {1}     鍵 {2}  /  ゴールド {3}  /  {4}勝,#{0}  {1}     钥匙 {2}  /  金币 {3}  /  {4}胜,#{0}  {1}     鑰匙 {2}  /  金幣 {3}  /  {4}勝
 #{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WINS,#{0}  {1}     열쇠 {2}  /  골드 {3}  /  {4}승,#{0}  {1}     鍵 {2}  /  ゴールド {3}  /  {4}勝,#{0}  {1}     钥匙 {2}  /  金币 {3}  /  {4}胜,#{0}  {1}     鑰匙 {2}  /  金幣 {3}  /  {4}勝
 +1 KEY EACH,각자 열쇠 +1,各自 鍵 +1,每人 钥匙 +1,每人 鑰匙 +1
@@ -27,7 +28,7 @@ A player,한 플레이어,プレイヤー,一名玩家,一名玩家
 A player did not reconnect within 60 seconds. The fixed four-player match is ending.,플레이어가 60초 안에 재접속하지 않았습니다. 4인 고정 매치를 종료합니다.,プレイヤーが60秒以内に再接続しませんでした。4人固定のマッチを終了します。,有玩家未在 60 秒内重新连接。固定四人对局即将结束。,有玩家未在 60 秒內重新連線。固定四人對局即將結束。
 A player did not reconnect within 60 seconds. The match was voided and everyone is returning to the waiting room.,플레이어가 60초 안에 재접속하지 않았습니다. 경기를 무효 처리하고 모두 대기방으로 돌아갑니다.,プレイヤーが60秒以内に再接続しませんでした。試合を無効にして全員が待機ルームへ戻ります。,有玩家未在 60 秒内重新连接。本局作废，所有人将返回等候室。,有玩家未在 60 秒內重新連線。本局作廢，所有人將返回等候室。
 A player disconnected while the completed match was returning to the lobby.,완료된 게임이 로비로 돌아가는 중에 플레이어의 연결이 끊겼습니다.,終了した試合がロビーに戻る途中でプレイヤーが切断されました。,已完成的比赛返回大厅时，有玩家断开了连接。,已完成的比賽返回大廳時，有玩家斷開了連線。
-A player disconnected. Gameplay is paused for the 60-second reconnect window.,플레이어의 연결이 끊겼습니다. 60초의 재접속 대기 시간 동안 게임이 일시정지됩니다.,プレイヤーが切断されました。60秒間の再接続猶予中はゲームを一時停止します。,有玩家断开连接。游戏已暂停，等待60秒重连时间。,有玩家斷開連線。遊戲已暫停，等待60秒重新連線時間。
+A player disconnected. Gameplay is paused for the 60-second reconnect window.,플레이어의 연결이 끊겼습니다. 60초의 재접속 대기 시간 동안 게임이 일시 정지됩니다.,プレイヤーが切断されました。60秒間の再接続猶予中はゲームを一時停止します。,有玩家断开连接。游戏已暂停，等待60秒重连时间。,有玩家斷開連線。遊戲已暫停，等待60秒重新連線時間。
 A player left the room after the award ceremony.,시상식이 끝난 뒤 플레이어 한 명이 방을 나갔습니다.,表彰式の後、プレイヤーが1人退室しました。,颁奖典礼结束后，有一名玩家离开了房间。,頒獎典禮結束後，有一名玩家離開了房間。
 "A player left, so the match ended.",플레이어가 나가서 게임이 종료되었습니다.,プレイヤーが退出したため、試合が終了しました。,有玩家离开，比赛已结束。,有玩家離開，比賽已結束。
 A player left. The active four-player session is ending.,플레이어가 나갔습니다. 진행 중인 4인 방이 종료됩니다.,プレイヤーが退出しました。進行中の4人ルームを終了します。,有玩家离开。当前的四人房间即将关闭。,有玩家離開。當前的四人房間即將關閉。
@@ -69,7 +70,7 @@ Board Settings,보드 설정,ボード設定,棋盘设置,棋盤設定
 BOMB PASSING,폭탄 돌리기,爆弾まわし,传炸弹,傳炸彈
 BOMB PASSING RESULTS,폭탄 돌리기 결과,爆弾まわし結果,传炸弹结果,傳炸彈結果
 BONUS KEY AWARD {0} / 2,보너스 열쇠 시상 {0} / 2,ボーナス鍵 表彰 {0} / 2,额外钥匙奖项 {0} / 2,額外鑰匙獎項 {0} / 2
-Borderless Fullscreen,전체화면 창모드,ボーダーレスフルスクリーン,无边框全屏,無邊框全螢幕
+Borderless Fullscreen,전체 화면 창 모드,ボーダーレスフルスクリーン,无边框全屏,無邊框全螢幕
 BOUNCING BALLS,튕기는 공,バウンドボール,弹跳球,彈跳球
 BOUNCING BALLS  ROUND {0} / {1}  -  COUNTDOWN,튕기는 공  라운드 {0} / {1}  -  카운트다운,バウンドボール  ラウンド {0} / {1}  -  カウントダウン,弹跳球  第{0} / {1}轮  -  倒计时,彈跳球  第{0} / {1}輪  -  倒數計時
 BOUNCING BALLS  ROUND {0} / {1}  -  PLAY,튕기는 공  라운드 {0} / {1}  -  플레이,バウンドボール  ラウンド {0} / {1}  -  プレイ,弹跳球  第{0} / {1}轮  -  进行中,彈跳球  第{0} / {1}輪  -  進行中
@@ -83,8 +84,8 @@ Cancel Ready,준비 취소,準備解除,取消准备,取消準備
 CARRYING,운반 중,運搬中,搬运中,搬運中
 CARRYING GIFT,선물 운반 중,プレゼント運搬中,搬运礼物中,搬運禮物中
 CEREMONY COMPLETE,시상식 종료,表彰式終了,颁奖典礼结束,頒獎典禮結束
-CEREMONY PAUSED,시상식 일시정지,表彰式 一時停止中,颁奖典礼已暂停,頒獎典禮已暫停
-CEREMONY PAUSED  -  WAITING FOR PLAYER,시상식 일시정지  -  플레이어 대기 중,表彰式 一時停止中  -  プレイヤー待ち,颁奖典礼已暂停  -  等待玩家,頒獎典禮已暫停  -  等待玩家
+CEREMONY PAUSED,시상식 일시 정지,表彰式 一時停止中,颁奖典礼已暂停,頒獎典禮已暫停
+CEREMONY PAUSED  -  WAITING FOR PLAYER,시상식 일시 정지  -  플레이어 대기 중,表彰式 一時停止中  -  プレイヤー待ち,颁奖典礼已暂停  -  等待玩家,頒獎典禮已暫停  -  等待玩家
 Character - Unique Body Color / Face / Hat,캐릭터 - 고유 몸 색상 / 표정 / 모자,キャラクター - 固有の体色 / 表情 / 帽子,角色 - 专属身体颜色 / 表情 / 帽子,角色 - 專屬身體顏色 / 表情 / 帽子
 CHARGE  --,잔량  --,残量  --,剩余  --,剩餘  --
 CHOICE  {0},선택  {0},選択  {0},选择  {0},選擇  {0}
@@ -103,7 +104,7 @@ Color,색,色,颜色,顏色
 COMBAT QUEUE,전투 대기열,バトル待機列,战斗队列,戰鬥佇列
 Connected to the online game.,온라인 게임에 접속했습니다.,オンラインゲームに接続しました。,已连接到在线游戏。,已連線到線上遊戲。
 Connected to the online lobby.,온라인 로비에 접속했습니다.,オンラインロビーに接続しました。,已连接到在线大厅。,已連線到線上大廳。
-Continue Saved Match,저장된 게임 이어하기,保存した試合を続ける,继续已保存的对局,繼續已儲存的對局
+Continue Saved Match,저장된 게임 이어 하기,保存した試合を続ける,继续已保存的对局,繼續已儲存的對局
 Continuing lobby return after disconnecting clients that could not finish the scene unload.,씬 언로드를 끝내지 못한 클라이언트의 연결을 끊고 로비 복귀를 계속합니다.,シーンのアンロードを完了できなかったクライアントを切断し、ロビーへの復帰を続行します。,已断开未能完成场景卸载的客户端，继续返回大厅。,已斷開未能完成場景卸載的用戶端，繼續返回大廳。
 COOLDOWN {0:0.0}s,쿨다운 {0:0.0}초,クールダウン {0:0.0}秒,冷却 {0:0.0}秒,冷卻 {0:0.0}秒
 Copy Code,코드 복사,コードをコピー,复制代码,複製邀請碼
@@ -166,7 +167,7 @@ Forest,숲,森,森林,森林
 Four connected players with server-assigned seats are required.,서버에서 자리를 배정받은 접속 플레이어 4명이 필요합니다.,サーバーから席を割り当てられた接続中のプレイヤーが4人必要です。,需要四名已连接且已由服务器分配座位的玩家。,需要四名已連線且已由伺服器分配座位的玩家。
 Four-player Board synchronization failed. The session is ending.,4인 보드 동기화에 실패했습니다. 방이 종료됩니다.,4人のボード同期に失敗しました。ルームを終了します。,四人棋盘同步失败。房间即将关闭。,四人棋盤同步失敗。房間即將關閉。
 FULL MAP / NORTH ^,전체 지도 / 북쪽 ^,全体マップ / 北 ^,全图 / 北 ^,全圖 / 北 ^
-Fullscreen,전체화면,フルスクリーン,全屏,全螢幕
+Fullscreen,전체 화면,フルスクリーン,全屏,全螢幕
 Face,얼굴,顔,脸,臉
 Face1,표정1,表情1,表情1,表情1
 Face2,표정2,表情2,表情2,表情2
@@ -183,7 +184,7 @@ Face12,표정12,表情12,表情12,表情12
 Face13,표정13,表情13,表情13,表情13
 Face14,표정14,表情14,表情14,表情14
 Face15,표정15,表情15,表情15,表情15
-GAME PAUSED,일시정지,一時停止中,游戏已暂停,遊戲已暫停
+GAME PAUSED,일시 정지,一時停止中,游戏已暂停,遊戲已暫停
 GET READY,준비하세요,準備して,准备,準備
 Get ready at the shared start line.,공용 출발선에서 준비하세요.,共通のスタートラインで準備してください。,在共同起跑线上准备。,在共同起跑線上準備。
 Get ready at your corner.,자신의 모서리에서 준비하세요.,自分のコーナーで準備してください。,在你的角落准备。,在你的角落準備。
@@ -296,7 +297,7 @@ Landing: Item,도착 효과: 아이템,到着効果: アイテム,停留效果: 
 Landing: Special Event,도착 효과: 특별 이벤트,到着効果: スペシャルイベント,停留效果: 特殊事件,停留效果: 特殊事件
 Language,언어,言語,语言,語言
 Leave,나가기,退出,离开,離開
-Leave Game,게임나가기,ゲームから退出,离开游戏,離開遊戲
+Leave Game,게임 나가기,ゲームから退出,离开游戏,離開遊戲
 Leaving the game...,게임에서 나가는 중...,ゲームから退出中...,正在离开游戏...,正在離開遊戲...
 Leaving the session...,방에서 나가는 중...,ルームから退出中...,正在离开房间...,正在離開房間...
 LMB  PUNCH,좌클릭  펀치,左クリック  パンチ,左键  出拳,左鍵  出拳
@@ -367,8 +368,8 @@ Opening the top block in the minigame tower...,미니게임 타워의 맨 위 �
 Orange,주황,オレンジ,橙,橙
 OUT,탈락,脱落,淘汰,淘汰
 OUT · 2 MISSES,탈락 · 실수 2회,脱落 · ミス2回,淘汰 · 失误 2 次,淘汰 · 失誤 2 次
-PAUSED,일시정지,一時停止中,已暂停,已暫停
-Paused by {0}.,{0}에 의해 일시정지되었습니다,{0}によって一時停止されました,{0} 暂停了游戏,{0} 暫停了遊戲
+PAUSED,일시 정지,一時停止中,已暂停,已暫停
+Paused by {0}.,{0}에 의해 일시 정지되었습니다,{0}によって一時停止されました,{0} 暂停了游戏,{0} 暫停了遊戲
 PEACE,브이,ピース,比耶,勝利手勢
 PENDING,선택 대기 중,選択待ち,等待选择,等待選擇
 Pistol,권총,ピストル,手枪,手槍
@@ -376,7 +377,7 @@ Place on ground within 4m. Arms after 1s; 2m trigger / 4m blast / 50 damage.,4m 
 Platforms are returning; two remain permanently removed.,발판이 복구되고 있습니다. 2개는 영구적으로 제거된 상태로 남습니다.,足場が復元されています。2枚は永久に取り除かれたままです。,平台正在恢复；其中两块将被永久移除。,平台正在恢復；其中兩塊將被永久移除。
 PLAYER,플레이어,プレイヤー,玩家,玩家
 Player,플레이어,プレイヤー,玩家,玩家
-PLAYER DISCONNECTED\nMATCH PAUSED\n{0} remaining,플레이어 연결 끊김\n게임 일시정지\n남은 시간 {0},プレイヤーの接続が切断されました\n試合を一時停止中\n残り {0},玩家已断开连接\n比赛已暂停\n剩余 {0},玩家已斷開連線\n比賽已暫停\n剩餘 {0}
+PLAYER DISCONNECTED\nMATCH PAUSED\n{0} remaining,플레이어 연결 끊김\n게임 일시 정지\n남은 시간 {0},プレイヤーの接続が切断されました\n試合を一時停止中\n残り {0},玩家已断开连接\n比赛已暂停\n剩余 {0},玩家已斷開連線\n比賽已暫停\n剩餘 {0}
 Player Name,플레이어 이름,プレイヤー名,玩家名称,玩家名稱
 PLAYER {0},플레이어 {0},プレイヤー{0},玩家 {0},玩家 {0}
 Player {0},플레이어 {0},プレイヤー{0},玩家 {0},玩家 {0}
@@ -412,7 +413,7 @@ P{0}  {1},P{0}  {1},P{0}  {1},P{0}  {1},P{0}  {1}
 "P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}"
 P{0} exchanged positions with you!,P{0} 플레이어가 당신과 위치를 교환했습니다!,P{0}があなたと位置を交換しました！,P{0} 与你交换了位置！,P{0} 與你交換了位置！
 P{0}: {1},P{0}: {1},P{0}: {1},P{0}: {1},P{0}: {1}
-Quit Game,게임종료,ゲーム終了,退出游戏,退出遊戲
+Quit Game,게임 종료,ゲーム終了,退出游戏,退出遊戲
 RACE,달리기,かけっこ,赛跑,賽跑
 RACE  ROUND {0} / {1}  -  COUNTDOWN,달리기  라운드 {0} / {1}  -  카운트다운,かけっこ  ラウンド {0} / {1}  -  カウントダウン,赛跑  第{0} / {1}轮  -  倒计时,賽跑  第{0} / {1}輪  -  倒數計時
 RACE  ROUND {0} / {1}  -  RESULT,달리기  라운드 {0} / {1}  -  결과,かけっこ  ラウンド {0} / {1}  -  結果,赛跑  第{0} / {1}轮  -  结果,賽跑  第{0} / {1}輪  -  結果
@@ -441,11 +442,11 @@ RED LIGHT / GREEN LIGHT RESULTS,빨간불 / 초록불 결과,赤信号 / 青信�
 Relay connection lost. Waiting for the host or session service.,Relay 연결이 끊겼습니다. 호스트 또는 세션 서비스를 기다리는 중입니다.,Relay接続が切断されました。ホストまたはセッションサービスを待っています。,Relay 连接已断开。正在等待房主或会话服务。,Relay 連線已斷開。正在等待房主或會話服務。
 Relay connection stopped. Waiting for the host or session service.,Relay 연결이 중지되었습니다. 호스트 또는 세션 서비스를 기다리는 중입니다.,Relay接続が停止しました。ホストまたはセッションサービスを待っています。,Relay 连接已停止。正在等待房主或会话服务。,Relay 連線已停止。正在等待房主或會話服務。
 RELEASE,떼기,離す,松开,鬆開
-Release Pause,일시정지 해제,一時停止を解除,解除暂停,解除暫停
+Release Pause,일시 정지 해제,一時停止を解除,解除暂停,解除暫停
 RELEASE T: {0},T 떼기: {0},Tを離す: {0},松开T: {0},鬆開T: {0}
 RELEASE TO REARM,떼면 다시 준비,離して再準備,松开以重新准备,鬆開以重新準備
 "Repeat the hidden sequence with A, S and D. A wrong key locks this problem immediately.","숨겨진 순서를 A, S, D로 따라 입력하세요. 잘못된 키를 누르면 이 문제는 즉시 잠깁니다.",隠された順番をA、S、Dで再現してください。間違ったキーを押すと、この問題はすぐにロックされます。,用A、S、D重复隐藏的序列。按错键会立即锁定本题。,用A、S、D重複隱藏的序列。按錯鍵會立即鎖定本題。
-Request Pause,일시정지 요청,一時停止をリクエスト,请求暂停,請求暫停
+Request Pause,일시 정지 요청,一時停止をリクエスト,请求暂停,請求暫停
 RESOLVING / ASCENDING,정산 / 상승,処理 / 上昇,结算 / 上升,結算 / 上升
 RESPAWN,부활 지점,リスポーン,复活点,復活點
 RESTING,휴식 중,休憩中,休息中,休息中
@@ -508,6 +509,7 @@ SPECIAL EVENT  TARGET > {0},특별 이벤트  대상 > {0},スペシャルイベ
 SPECIAL EVENT  {0}  RESOURCE > {1},특별 이벤트  {0}  자원 > {1},スペシャルイベント  {0}  リソース > {1},特殊事件  {0}  资源 > {1},特殊事件  {0}  資源 > {1}
 SPECIAL EVENT  {0}  {1}  ACTION > {2},특별 이벤트  {0}  {1}  행동 > {2},スペシャルイベント  {0}  {1}  アクション > {2},特殊事件  {0}  {1}  行动 > {2},特殊事件  {0}  {1}  行動 > {2}
 SPECTATING,관전 중,観戦中,观战中,觀戰中
+SWITCH,변경,切替,切换,切換
 SPECTATING: the camera follows the current fight room. Input is locked.,관전 중: 카메라가 현재 전투 중인 방을 따라갑니다. 입력이 잠겨 있습니다.,観戦中：カメラが現在バトル中の部屋を追います。操作はロックされています。,观战中：镜头跟随当前战斗房间。输入已锁定。,觀戰中：鏡頭跟隨當前戰鬥房間。輸入已鎖定。
 SQUARE,사각형,四角,方形,方形
 STABLE FOOTING,안전한 발판,安全な足場,稳固立足点,穩固立足點
@@ -564,7 +566,7 @@ The board map can only be changed in the lobby.,보드 맵은 대기방에서만
 The Board network state was not created. The session is ending.,보드 네트워크 상태가 생성되지 않았습니다. 방이 종료됩니다.,ボードのネットワーク状態が作成されませんでした。ルームを終了します。,棋盘网络状态未创建。房间即将关闭。,棋盤網路狀態未建立。房間即將關閉。
 The first-place podium is in the spotlight.,1위 시상대에 스포트라이트가 비칩니다.,1位の表彰台にスポットライトが当たっています。,聚光灯照向第1名领奖台。,聚光燈照向第1名領獎臺。
 Returning to the waiting room automatically in {0} seconds.,{0}초 후 대기방으로 자동 복귀합니다.,{0}秒後に待機ルームへ自動で戻ります。,{0} 秒后将自动返回等候室。,{0} 秒後將自動返回等候室。
-The game is paused.,게임이 일시정지되었습니다.,ゲームは一時停止中です。,游戏已暂停。,遊戲已暫停。
+The game is paused.,게임이 일시 정지되었습니다.,ゲームは一時停止中です。,游戏已暂停。,遊戲已暫停。
 The game was ended by {0}.,{0}에 의해 게임이 종료되었습니다.,{0}によってゲームが終了しました。,{0} 结束了游戏。,{0} 結束了遊戲。
 The host disconnected. The session is closing.,호스트의 연결이 끊겼습니다. 방이 닫힙니다.,ホストの接続が切れました。ルームを閉じています。,房主已断开连接。房间正在关闭。,房主已斷開連線。房間正在關閉。
 The host disconnected. Waiting for the session to close.,호스트의 연결이 끊겼습니다. 방이 닫히기를 기다리는 중입니다.,ホストの接続が切れました。ルームが閉じるのを待っています。,房主已断开连接。正在等待房间关闭。,房主已斷開連線。正在等待房間關閉。
@@ -632,7 +634,7 @@ WASD moves in top view. Stop moving and press RMB to scan nearby mines.,탑뷰�
 "WASD moves. Carry gifts home, throw while carrying, or push while empty-handed. Three gifts drop every 15 seconds.","WASD로 이동합니다. 선물을 기지로 옮기고, 들고 있을 때는 던지고, 빈손일 때는 밀치세요. 15초마다 선물 3개가 떨어집니다.",WASDで移動します。プレゼントを基地へ運び、持っているときは投げ、手ぶらのときは押しましょう。15秒ごとにプレゼントが3個落ちてきます。,用WASD移动。把礼物带回基地，携带时可投掷，空手时可推人。每15秒掉落3个礼物。,用WASD移動。把禮物帶回基地，攜帶時可投擲，空手時可推人。每15秒掉落3個禮物。
 WASD moves. LMB pushes the nearest player in front of you.,WASD로 이동합니다. 좌클릭하면 앞에 있는 가장 가까운 플레이어를 밉니다.,WASDで移動します。左クリックで目の前の一番近いプレイヤーを押します。,用WASD移动。按左键推开你前方最近的玩家。,用WASD移動。按左鍵推開你前方最近的玩家。
 WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS,WASD: 회피\n좌클릭: 밀치기\n포탄 / 레이저 피하기,WASD: 回避\n左クリック: 押す\n砲弾 / レーザーを避ける,WASD: 闪避\n左键: 推人\n躲避炮弹 / 激光,WASD: 閃避\n左鍵: 推人\n躲避炮彈 / 雷射
-WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB,WASD: 이동\n좌클릭: 넘기기 / 기절시키기\n폭탄에서 살아남기,WASD: 移動\n左クリック: パス / スタン\n爆弾から生き残る,WASD: 移动\n左键: 传递 / 眩晕\n躲过炸弹,WASD: 移動\n左鍵: 傳遞 / 眩暈\n躲過炸彈
+WASD: MOVE\nLMB: STUN\nSURVIVE THE BOMB,WASD: 이동\n좌클릭: 기절시키기\n폭탄에서 살아남기,WASD: 移動\n左クリック: スタン\n爆弾から生き残る,WASD: 移动\n左键: 眩晕\n躲过炸弹,WASD: 移動\n左鍵: 眩暈\n躲過炸彈
 WASD: MOVE\nLMB: PUSH\nX  O  □,WASD: 이동\n좌클릭: 밀치기\nX  O  □,WASD: 移動\n左クリック: 押す\nX  O  □,WASD: 移动\n左键: 推人\nX  O  □,WASD: 移動\n左鍵: 推人\nX  O  □
 WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS,WASD: 이동\n좌클릭: 던지기 / 밀치기\n선물 훔치기,WASD: 移動\n左クリック: 投げる / 押す\nプレゼントを奪う,WASD: 移动\n左键: 投掷 / 推人\n偷取礼物,WASD: 移動\n左鍵: 投擲 / 推人\n偷取禮物
 WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH,WASD: 이동\n마우스: 시점\n좌클릭: 펀치,WASD: 移動\nマウス: 視点\n左クリック: パンチ,WASD: 移动\n鼠标: 视角\n左键: 出拳,WASD: 移動\n滑鼠: 視角\n左鍵: 出拳
@@ -641,7 +643,7 @@ WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF,WASD: 구르기\n속도 올리기 · �
 "Watch and listen to the shared A/S/D sequence, then repeat it after it is hidden. A is high, S is middle and D is low. A wrong key locks the current problem. Your first mistake removes your torso; your second eliminates you. Ten problems, one final placement, no per-problem score.\nREADY {0} / 4","모두에게 똑같이 제시되는 A/S/D 순서를 보고 들은 뒤, 순서가 가려지면 그대로 입력하세요. A는 높은 음, S는 중간 음, D는 낮은 음입니다. 틀린 키를 누르면 현재 문제가 잠깁니다. 첫 번째 실수에는 몸통을 잃고, 두 번째 실수에는 탈락합니다. 총 10문제이며, 문제별 점수 없이 최종 순위 하나만 정해집니다.\n준비 {0} / 4",全員共通のA/S/Dの順番を見て聞き、隠された後に同じ順番で入力してください。Aは高音、Sは中音、Dは低音です。間違ったキーを押すと、その問題はロックされます。1回目のミスで胴体を失い、2回目のミスで脱落します。全10問で、問題ごとのスコアはなく、最終順位だけが決まります。\n準備完了 {0} / 4,观看并聆听所有人共享的 A/S/D 序列，序列隐藏后按原顺序重复输入。A 为高音，S 为中音，D 为低音。按错键会锁定当前题目。第一次失误会失去躯干；第二次失误将被淘汰。共十道题，只决定一个最终名次，不按题计分。\n准备 {0} / 4,觀看並聆聽所有人共享的 A/S/D 序列，序列隱藏後按原順序重複輸入。A 為高音，S 為中音，D 為低音。按錯鍵會鎖定當前題目。第一次失誤會失去軀幹；第二次失誤將被淘汰。共十道題，只決定一個最終名次，不按題計分。\n準備 {0} / 4
 "Watch and listen: A is high, S is middle and D is low.","보고 들으세요: A는 높은 음, S는 중간 음, D는 낮은 음입니다.",見て聞いてください：Aは高音、Sは中音、Dは低音です。,观看并聆听：A 为高音，S 为中音，D 为低音。,觀看並聆聽：A 為高音，S 為中音，D 為低音。
 WATCHING,관찰 중,観察中,观察中,觀察中
-Windowed,창모드,ウィンドウ,窗口模式,視窗模式
+Windowed,창 모드,ウィンドウ,窗口模式,視窗模式
 30 FPS,30 FPS,30 FPS,30 FPS,30 FPS
 60 FPS,60 FPS,60 FPS,60 FPS,60 FPS
 Frame Limit,프레임 제한,フレームレート上限,帧率上限,幀率上限
@@ -673,7 +675,7 @@ YOU  ·  {0}%  ·  {1},나  ·  {0}%  ·  {1},あなた  ·  {0}%  ·  {1},你  
 You are already connected to an online session.,이미 온라인 방에 접속되어 있습니다.,すでにオンラインルームに接続しています。,你已连接到在线房间。,你已連線到線上房間。
 You are not connected to an online session.,온라인 방에 접속되어 있지 않습니다.,オンラインルームに接続していません。,你未连接到在线房间。,你未連線到線上房間。
 You left the game.,게임에서 나갔습니다.,ゲームから退出しました。,你已离开游戏。,你已離開遊戲。
-You paused the game.,게임을 일시정지했습니다.,ゲームを一時停止しました。,你暂停了游戏。,你暫停了遊戲。
+You paused the game.,게임을 일시 정지했습니다.,ゲームを一時停止しました。,你暂停了游戏。,你暫停了遊戲。
 You were removed from the session.,방에서 내보내졌습니다.,ルームから外されました。,你已被移出房间。,你已被移出房間。
 {0}   STEP {1} / {2},{0}   계단 {1} / {2},{0}   ステップ {1} / {2},{0}   台阶 {1} / {2},{0}   臺階 {1} / {2}
 {0}  ·  {1} STORED,{0}  ·  보관 {1},{0}  ·  保管 {1},{0}  ·  已存放 {1},{0}  ·  已存放 {1}
@@ -740,7 +742,7 @@ The saved player roster is invalid.,저장된 플레이어 명단이 유효하�
 The saved shop state is no longer valid.,저장된 상점 상태가 더 이상 유효하지 않습니다.,保存したショップの状態は無効になりました。,已保存的商店状态不再有效。,已儲存的商店狀態不再有效。
 The selected board map could not be loaded safely.,선택한 보드 맵을 안전하게 불러오지 못했습니다.,選択したボードマップを安全に読み込めませんでした。,无法安全地加载所选棋盘地图。,無法安全地載入所選棋盤地圖。
 {0} (FACE UNCHANGED),{0} (표정 유지),{0}（表情変更なし）,{0}（表情不变）,{0}（表情不變）
-Emote Faces,감정표현 표정,エモート表情,表情动作脸型,表情動作臉型
+Emote Faces,감정 표현 표정,エモート表情,表情动作脸型,表情動作臉型
 EYES COVER,눈가림,目隠し,蒙眼,矇眼
 GREETING,인사,挨拶,问候,問候
 INSULT,욕설,侮辱,侮辱,侮辱
@@ -761,7 +763,6 @@ TAGGER CATCH,술래 잡기,鬼が捕まえる,追捕者抓捕,追捕者抓捕
 ALTERNATE,번갈아 누르기,交互に押す,交替按键,交替按鍵
 REPEAT,순서대로 누르기,順番どおりに押す,按顺序重复,按順序重複
 MOVE SHIELD,방패 이동,シールド移動,移动护盾,移動護盾
-PASS / STUN,넘기기 / 기절시키기,渡す / 気絶させる,传递 / 击晕,傳遞 / 擊暈
 ROLL,굴리기,転がる,滚动,滾動
 LOOK,시점 조작,視点操作,控制视角,控制視角
 PUNCH,펀치,パンチ,出拳,出拳
@@ -779,20 +780,20 @@ PUNCH,펀치,パンチ,出拳,出拳
 : YOUR MINE,: 내 지뢰,: 自分の地雷,: 自己的地雷,: 自己的地雷
 : ROUTE TO KEY SHOP,: 열쇠 상점 경로,: 鍵ショップへの道,: 前往钥匙商店,: 前往鑰匙商店
 : REACHABLE THIS TURN,: 이번 턴 이동 가능,: このターンに移動可能,: 本回合可到达,: 本回合可到達
-Find and avoid the mines to reach the goal.,"지뢰를 찾고, 피해서 골인지점으로 이동하세요.",地雷を見つけて避けながらゴール地点へ向かってください。,找出并避开地雷，前往终点。,找出並避開地雷，前往終點。
+Find and avoid the mines to reach the goal.,"지뢰를 찾고, 피해서 골인 지점으로 이동하세요.",地雷を見つけて避けながらゴール地点へ向かってください。,找出并避开地雷，前往终点。,找出並避開地雷，前往終點。
 Enter the direction shown on screen.,화면에 표시되는 방향을 입력하세요.,画面に表示される方向を入力してください。,输入屏幕上显示的方向。,輸入螢幕上顯示的方向。
 Move on green. Stop on red.,초록불에는 움직일 수 있습니다. 빨간불에는 움직일 수 없습니다.,緑の光では動けます。赤い光では動けません。,绿灯时可以移动。红灯时不能移动。,綠燈時可以移動。紅燈時不能移動。
 The safe platform has a green symbol.,안전한 발판은 초록색 문양입니다.,安全な足場には緑色の模様があります。,安全的平台带有绿色标记。,安全的平台帶有綠色標記。
 Control your breath to pop the balloon. Push too hard and you may collapse.,숨을 조절하여 풍선을 터트리세요. 너무 무리하면 쓰러질 수 있습니다.,息を調整して風船を割ってください。無理をしすぎると倒れることがあります。,控制呼吸吹爆气球。太用力可能会倒下。,控制呼吸吹爆氣球。太用力可能會倒下。
-Bring more gold bars into your zone. You can steal or throw them.,"더 많은 금괴를 내 구역에 넣으세요. 금괴는 뺐을 수 도 있고, 던질 수 도 있습니다.",より多くの金塊を自分のエリアに入れてください。金塊は奪ったり投げたりできます。,把更多金条放进自己的区域。金条可以抢夺或投掷。,把更多金條放進自己的區域。金條可以搶奪或投擲。
+Bring more gold bars into your zone. You can steal or throw them.,"더 많은 금괴를 내 구역에 넣으세요. 금괴는 빼앗을 수도 있고, 던질 수도 있습니다.",より多くの金塊を自分のエリアに入れてください。金塊は奪ったり投げたりできます。,把更多金条放进自己的区域。金条可以抢夺或投掷。,把更多金條放進自己的區域。金條可以搶奪或投擲。
 Paint as much territory as you can.,더 넓은 지역을 색칠하세요.,できるだけ広い範囲を塗ってください。,尽可能涂满更大的区域。,儘可能塗滿更大的區域。
-"Run from the tagger until time runs out. If you are the tagger, catch everyone.",술래를 피해 도망다니며 시간을 버티세요. 술래는 도망자를 모두 잡으세요.,鬼から逃げて制限時間まで生き残ってください。鬼は逃げる全員を捕まえてください。,躲避追捕者并坚持到时间结束。追捕者要抓住所有逃跑者。,躲避追捕者並堅持到時間結束。追捕者要抓住所有逃跑者。
-Press A and D alternately as fast as you can.,A와 D를 번가라가면서 빠르게 누르세요.,AとDをできるだけ速く交互に押してください。,尽可能快地交替按下 A 和 D。,儘可能快地交替按下 A 和 D。
+"Run from the tagger until time runs out. If you are the tagger, catch everyone.",술래를 피해 도망 다니며 시간을 버티세요. 술래는 도망자를 모두 잡으세요.,鬼から逃げて制限時間まで生き残ってください。鬼は逃げる全員を捕まえてください。,躲避追捕者并坚持到时间结束。追捕者要抓住所有逃跑者。,躲避追捕者並堅持到時間結束。追捕者要抓住所有逃跑者。
+Press A and D alternately as fast as you can.,A와 D를 번갈아 가면서 빠르게 누르세요.,AとDをできるだけ速く交互に押してください。,尽可能快地交替按下 A 和 D。,儘可能快地交替按下 A 和 D。
 Memorize the notes you hear.,들리는 음을 외우세요.,聞こえた音を覚えてください。,记住听到的音符。,記住聽到的音符。
 Keep the ball out of your goal and bounce it into another.,공이 골대에 들어가지 못하게 막으세요. 내가 튕긴 공을 다른 골대에 넣으세요.,ボールを自分のゴールに入れさせず跳ね返してほかのゴールに入れてください。,挡住球，别让它进入自己的球门；把弹回的球打进其他球门。,擋住球，別讓它進入自己的球門；把彈回的球打進其他球門。
 Touch another player to pass the bomb before it explodes. Each pass has a 1-second cooldown.,폭탄이 터지기 전에 다른 플레이어에게 닿아 넘기세요. 전달 후 1초의 쿨타임이 있습니다.,爆弾が爆発する前にほかのプレイヤーに触れて渡しましょう。渡した後は1秒間のクールダウンがあります。,在炸弹爆炸前碰到其他玩家即可传递。每次传递后有1秒冷却。,在炸彈爆炸前碰到其他玩家即可傳遞。每次傳遞後有1秒冷卻。
 Roll your snowball and knock others off.,눈덩이를 굴려서 떨어뜨리세요.,雪玉を転がして相手を落としてください。,滚动雪球，把其他玩家撞下去。,滾動雪球，把其他玩家撞下去。
-Become the top fighter in a bare-knuckle brawl.,맨손싸움의 1등이 되세요.,素手の乱闘で1位を目指してください。,在徒手格斗中争夺第一。,在徒手格鬥中爭奪第一。
+Become the top fighter in a bare-knuckle brawl.,맨손 싸움의 1등이 되세요.,素手の乱闘で1位を目指してください。,在徒手格斗中争夺第一。,在徒手格鬥中爭奪第一。
 Dodge and survive.,피하고 버티세요.,避けて生き残ってください。,躲避攻击并坚持到最后。,躲避攻擊並堅持到最後。
 Waiting for the original host. The room and saved match are preserved.,원래 호스트가 돌아오기를 기다리고 있습니다. 방과 저장 경기는 유지됩니다.,元のホストの復帰を待っています。ルームと保存した試合は維持されます。,正在等待原房主返回。房间和已保存的对局将保留。,正在等待原房主返回。房間和已儲存的對局將保留。
 A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved.,플레이어가 60초 안에 복귀하지 않았습니다. 저장 경기를 보존하고 대기방으로 돌아갑니다.,プレイヤーが60秒以内に再接続しませんでした。保存した試合を保持して待機ルームへ戻ります。,玩家未在60秒内重新连接。将保留已保存的对局并返回等候室。,玩家未在60秒內重新連線。將保留已儲存的對局並返回等候室。
@@ -804,7 +805,7 @@ An interrupted game was found. Reconnect to return to the waiting players.,중�
 Waiting for reconnection: {0},재접속을 기다리는 중: {0},再接続を待っています：{0},等待重连：{0},等待重新連線：{0}
 Waiting for {0}.,{0}를 기다리는 중,{0}を待っています。,正在等待{0}。,正在等待{0}。
 Closing the previous room and creating a new room...,이전 방을 종료하고 새 방을 생성하는 중...,前のルームを終了して新しいルームを作成中...,正在关闭之前的房间并创建新房间…,正在關閉之前的房間並建立新房間…
-Waiting for the original host authority. Retry creating the room.,원래 호스트의 권한을 기다리고 있습니다. 방 생성을 다시 시도해주세요.,元のホストの権限を待っています。ルーム作成を再試行してください。,正在等待原房主权限。请重试创建房间。,正在等待原房主權限。請重試建立房間。
+Waiting for the original host authority. Retry creating the room.,원래 호스트의 권한을 기다리고 있습니다. 방 생성을 다시 시도해 주세요.,元のホストの権限を待っています。ルーム作成を再試行してください。,正在等待原房主权限。请重试创建房间。,正在等待原房主權限。請重試建立房間。
 Restart,재시작,再開,重新开始,重新開始
 Reconnect,재접속,再接続,重新连接,重新連線
 Reconnect to the game,게임 재접속,ゲームに再接続,重新连接游戏,重新連線遊戲
@@ -812,15 +813,15 @@ Create a new room?,새 방을 생성할까요?,新しいルームを作成しま
 You can reconnect to the previous game. Creating a new room ends the previous room and discards its saved game. Create a new room?,이전 게임에 재접속할 수 있습니다. 새 방을 생성하면 이전 방이 종료되고 저장된 게임이 폐기됩니다. 새 방을 생성할까요?,前のゲームに再接続できます。新しいルームを作成すると前のルームが終了し、保存済みゲームが破棄されます。作成しますか？,您可以重新连接之前的游戏。创建新房间会结束之前的房间并丢弃存档。是否创建？,您可以重新連線之前的遊戲。建立新房間會結束之前的房間並丟棄存檔。是否建立？
 Create,생성하기,作成,创建,建立
 Go to Waiting Room,대기실로 이동하기,待機室へ移動,前往等候室,前往等候室
-A player disconnected. Gameplay is paused for the 3-minute reconnect window.,플레이어의 연결이 끊겼습니다. 재접속을 기다리며 게임을 3분간 일시정지합니다.,プレイヤーの接続が切れました。再接続を3分間待機し、ゲームを一時停止します。,玩家已断开连接。游戏暂停，等待重连3分钟。,玩家已斷開連線。遊戲暫停，等待重新連線3分鐘。
+A player disconnected. Gameplay is paused for the 3-minute reconnect window.,플레이어의 연결이 끊겼습니다. 재접속을 기다리며 게임을 3분간 일시 정지합니다.,プレイヤーの接続が切れました。再接続を3分間待機し、ゲームを一時停止します。,玩家已断开连接。游戏暂停，等待重连3分钟。,玩家已斷開連線。遊戲暫停，等待重新連線3分鐘。
 A player did not reconnect within 3 minutes. Returning to the waiting room with the saved match preserved.,플레이어가 3분 안에 재접속하지 않았습니다. 저장된 게임을 보존하고 대기실로 돌아갑니다.,プレイヤーが3分以内に再接続しませんでした。保存済みゲームを保持して待機室に戻ります。,玩家未在3分钟内重新连接。将保留游戏存档并返回等候室。,玩家未在3分鐘內重新連線。將保留遊戲存檔並返回等候室。
 
 EVENT RESULT: {0} GIVES {1} {2},이벤트 결과: {0} → {1} {2} 지급,イベント結果：{0} → {1} {2}を渡す,事件结果：{0} → {1} 交付{2},事件結果：{0} → {1} 交付{2}
 EVENT RESULT: {0} STEALS {2} FROM {1},이벤트 결과: {0} ← {1} {2} 강탈,イベント結果：{0} ← {1} {2}を奪う,事件结果：{0} ← {1} 夺取{2},事件結果：{0} ← {1} 奪取{2}
-KEY SHOP (RMB TO BUY A KEY -20 GOLD),열쇠 상점( 우클릭으로 열쇠구매 -20골드),鍵ショップ（右クリックで鍵を購入 -20ゴールド）,钥匙商店（右键购买钥匙 -20金币）,鑰匙商店（右鍵購買鑰匙 -20金幣）
+KEY SHOP (RMB TO BUY A KEY -20 GOLD),열쇠 상점 (우클릭으로 열쇠 구매 -20골드),鍵ショップ（右クリックで鍵を購入 -20ゴールド）,钥匙商店（右键购买钥匙 -20金币）,鑰匙商店（右鍵購買鑰匙 -20金幣）
 ITEM SHOP (RMB TO OPEN SHOP),아이템 상점 (우클릭으로 상점 열기),アイテムショップ（右クリックで開く）,道具商店（右键打开商店）,道具商店（右鍵開啟商店）
 EVERYONE,모두에게,全員に,所有人,所有人
-EVERYONE EXCEPT ME,나만빼고,自分以外,除我以外,除我以外
+EVERYONE EXCEPT ME,나만 빼고,自分以外,除我以外,除我以外
 TARGET,대상,対象,目标,目標
 RESOURCE,자원,資源,资源,資源
 METHOD,방식,方式,方式,方式
@@ -855,8 +856,8 @@ Remember the items and find the target shown after the shuffle.,아이템 위치
 "<sprite name=""ml"">  CHOOSE BOX","<sprite name=""ml"">  상자 선택","<sprite name=""ml"">  箱を選ぶ","<sprite name=""ml"">  选择箱子","<sprite name=""ml"">  選擇箱子"
 FLIGHT,날기,フライト,飞行,飛行
 FLIGHT RESULTS,날기 결과,フライト結果,飞行结果,飛行結果
-"<sprite name=""ml"">  FLAP","<sprite name=""ml"">  날개짓","<sprite name=""ml"">  羽ばたく","<sprite name=""ml"">  振翅","<sprite name=""ml"">  振翅"
-Click to flap and glide through the gaps. Survive for up to two minutes; obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날개짓하며 장애물 사이를 통과하세요. 최대 2분 동안 생존하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。最大2分間生き残ろう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙，最多生存两分钟。障碍物会加速，碰撞或掉出屏幕下方即淘汰。,點選振翅穿過空隙，最多生存兩分鐘。障礙物會加速，碰撞或掉出螢幕下方即淘汰。
+"<sprite name=""ml"">  FLAP","<sprite name=""ml"">  날갯짓","<sprite name=""ml"">  羽ばたく","<sprite name=""ml"">  振翅","<sprite name=""ml"">  振翅"
+Click to flap and glide through the gaps. Survive for up to two minutes; obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날갯짓하며 장애물 사이를 통과하세요. 최대 2분 동안 생존하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。最大2分間生き残ろう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙，最多生存两分钟。障碍物会加速，碰撞或掉出屏幕下方即淘汰。,點選振翅穿過空隙，最多生存兩分鐘。障礙物會加速，碰撞或掉出螢幕下方即淘汰。
 {0}.  {1}  SURVIVED {2:0.00}s  GOLD +{3},{0}위  {1}  생존 {2:0.00}초  골드 +{3},{0}位  {1}  生存 {2:0.00}秒  ゴールド +{3},第{0}名  {1}  生存 {2:0.00}秒  金币 +{3},第{0}名  {1}  生存 {2:0.00}秒  金幣 +{3}
 Saving match settings...,경기 설정 저장 중...,ゲーム設定を保存中...,正在保存对局设置…,正在儲存對局設定…
 Invalid match settings.,경기 설정을 확인해 주세요.,ゲーム設定を確認してください。,请检查对局设置。,請檢查對局設定。
@@ -870,7 +871,7 @@ Round Time,라운드당 시간,ラウンド時間,每轮时间,每輪時間
 Fixed,고정,固定,固定,固定
 {0}s,{0}초,{0}秒,{0}秒,{0}秒
 Select at least as many minigames as map turns.,맵 턴 수 이상으로 미니게임을 선택하세요.,マップのターン数以上のミニゲームを選んでください。,小游戏数量不能少于地图回合数。,小遊戲數量不能少於地圖回合數。
-Click to flap and glide through the gaps. Obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날개짓하며 장애물 사이를 통과하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙。障碍物会加速，碰撞或掉出屏幕下方即淘汰。,點選振翅穿過空隙。障礙物會加速，碰撞或掉出螢幕下方即淘汰。
+Click to flap and glide through the gaps. Obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날갯짓하며 장애물 사이를 통과하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙。障碍物会加速，碰撞或掉出屏幕下方即淘汰。,點選振翅穿過空隙。障礙物會加速，碰撞或掉出螢幕下方即淘汰。
 Choose left with A or right with D to dodge boxes. Boxes speed up; one collision eliminates you.,"A로 왼쪽, D로 오른쪽을 선택해 상자를 피하세요. 상자가 점점 빨라지며 한 번 부딪히면 탈락합니다.",Aで左、Dで右を選んで箱を避けよう。箱は加速し、一度ぶつかると脱落。,A向左、D向右躲避箱子。箱子不断加速，碰撞一次即淘汰。,A向左、D向右躲避箱子。箱子不斷加速，碰撞一次即淘汰。
 Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Click again to switch.,카운트다운 동안 남몰래 앉기 또는 서기를 선택하세요. 혼자 앉거나 혼자 서 있으면 1점입니다. 다시 클릭하면 전환합니다.,カウントダウン中に座るか立つかを秘密に選ぼう。一人だけ座るか立つと1点。再クリックで切り替え。,倒计时内秘密选择坐下或站立。只有一人坐下或站立时，该玩家得1分。再次点击可切换。,倒數計時內秘密選擇坐下或站立。只有一人坐下或站立時，該玩家得1分。再次點選可切換。
 "Collect falling coins and money. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.","떨어지는 코인과 돈을 주우세요. 코인은 1점, 돈은 5점입니다. 폭탄을 먹으면 1초 기절하고 점수 절반을 떨어뜨립니다. 클릭하면 밀기 공격을 합니다.",落ちるコインとお金を拾おう。コインは1点、お金は5点。爆弾は1秒気絶し得点の半分を落とす。クリックで押す。,拾取掉落的金币和钞票。金币加1分，钞票加5分。炸弹会眩晕1秒并掉落一半分数。点击推人。,拾取掉落的金幣和鈔票。金幣加1分，鈔票加5分。炸彈會眩暈1秒並掉落一半分數。點選推人。
@@ -879,8 +880,8 @@ Choose sit or stand secretly during the countdown. Only one sitting or standing 
 Round placement points: 3 / 2 / 1 / 0.,라운드 순위별 점수: 3 / 2 / 1 / 0점.,ラウンド順位点: 3 / 2 / 1 / 0。,每轮排名积分：3 / 2 / 1 / 0。,每輪排名積分：3 / 2 / 1 / 0。
 SWITCH LANE,좌우 전환,左右切替,左右切换,左右切換
 CHOOSE BOX,상자 선택,箱を選ぶ,选择箱子,選擇箱子
-FLAP,날개짓,羽ばたく,振翅,振翅
-Entering,입장중,入室中,正在进入,正在進入
+FLAP,날갯짓,羽ばたく,振翅,振翅
+Entering,입장 중,入室中,正在进入,正在進入
 FIGHT!,싸우세요,戦え！,战斗吧！,戰鬥吧！
 Invite Steam Friends,Steam 친구 초대,Steamフレンドを招待,邀请 Steam 好友,邀請 Steam 好友
 Steam Overlay is unavailable. Enable it in Steam or share the invite code.,Steam 오버레이를 사용할 수 없습니다. Steam에서 활성화하거나 초대 코드를 공유하세요.,Steamオーバーレイを利用できません。Steamで有効にするか招待コードを共有してください。,Steam 叠加界面不可用。请在 Steam 中启用或分享邀请码。,Steam 疊加介面不可用。請在 Steam 中啟用或分享邀請碼。
@@ -895,7 +896,7 @@ The Steam account changed or disconnected. Restart the game.,Steam 계정이 변
 The saved match settings do not match this lobby.,저장된 경기 설정이 현재 대기실과 일치하지 않습니다.,保存された試合設定が現在のロビーと一致しません。,已保存的比赛设置与当前大厅不一致。,已儲存的比賽設定與當前大廳不一致。
 Match statistics,경기 통계,試合の統計,对局统计,對局統計
 Statistics,통계,統計,统计,統計
-Results,최종결과,最終結果,最终结果,最終結果
+Results,최종 결과,最終結果,最终结果,最終結果
 Gold,골드,ゴールド,金币,金幣
 Minigames,미니게임,ミニゲーム,小游戏,小遊戲
 Items & combat,아이템 및 전투,アイテム・戦闘,道具与战斗,道具與戰鬥
@@ -910,8 +911,8 @@ Damage & movement · grouped by player,피해량과 이동 수 · 플레이어�
 Loading match records…,경기 기록을 불러오는 중…,試合記録を読み込み中…,正在加载对局记录…,正在載入對局紀錄…
 Some history is unavailable in this save. Only recorded data is shown.,이전 저장에는 일부 이력이 없습니다. 확인 가능한 기록만 표시합니다.,このセーブには一部の履歴がありません。記録済みのデータのみ表示します。,此存档部分历史缺失，仅显示已有记录。,此存檔部分歷史缺失，僅顯示已有紀錄。
 Horizontal axis: turns. Changes within a turn appear in event order.,가로축은 턴입니다. 같은 턴 안의 변화는 발생 순서대로 펼쳐집니다.,横軸はターンです。同じターン内の変化を発生順に表示します。,横轴为回合，同回合变化按发生顺序展开。,橫軸為回合，同回合變化按發生順序展開。
-Tied players each count toward their shared finishing place.,공동순위는 각 플레이어에게 해당 순위로 집계합니다.,同順位は各プレイヤーにその順位として集計します。,并列玩家分别计入对应名次。,並列玩家分別計入對應名次。
-Hover a bar for details. Movement counts completed board steps.,막대 위에 마우스를 올려 상세 기록을 확인하세요. 이동수는 실제 이동 완료 칸입니다.,バーにマウスを重ねると詳細を表示。移動数は実際に進んだマス数です。,悬停查看详情。移动数为实际走完的格数。,懸停查看詳情。移動數為實際走完的格數。
+Tied players each count toward their shared finishing place.,공동 순위는 각 플레이어에게 해당 순위로 집계합니다.,同順位は各プレイヤーにその順位として集計します。,并列玩家分别计入对应名次。,並列玩家分別計入對應名次。
+Hover a bar for details. Movement counts completed board steps.,막대 위에 마우스를 올려 상세 기록을 확인하세요. 이동 수는 실제 이동 완료 칸입니다.,バーにマウスを重ねると詳細を表示。移動数は実際に進んだマス数です。,悬停查看详情。移动数为实际走完的格数。,懸停查看詳情。移動數為實際走完的格數。
 Rank {0}  |  Keys {1}  |  Gold {2},최종 {0}위  |  열쇠 {1}  |  골드 {2},最終{0}位  |  鍵 {1}  |  ゴールド {2},第{0}名  |  钥匙 {1}  |  金币 {2},第{0}名  |  鑰匙 {1}  |  金幣 {2}
 Bonus ({0}): {1},보너스 {0}회: {1},ボーナス {0}回: {1},奖励 {0}次: {1},獎勵 {0}次: {1}
 Final balance {0}\nPeak {1}  |  Total earned {2},최종 보유 {0}\n최대 보유 {1}  |  총 획득 {2},最終所持 {0}\n最大所持 {1}  |  総獲得 {2},最终持有 {0}\n最高持有 {1}  |  累计获得 {2},最終持有 {0}\n最高持有 {1}  |  累計獲得 {2}
@@ -930,24 +931,41 @@ Damage,피해량,ダメージ,伤害,傷害
 Privacy & Support,개인정보 및 지원,プライバシー・サポート,隐私与支持,隱私與支援
 Copy Support Details,문의 정보 복사,問い合わせ情報をコピー,复制支持信息,複製支援資訊
 Email Support,이메일 문의,メールで問い合わせ,邮件联系支持,以電子郵件聯絡
-Delete Unity Account,Unity 인증계정 삭제,Unity認証アカウントを削除,删除 Unity 身份验证账户,刪除 Unity 驗證帳戶
+Delete Unity Account,Unity 인증 계정 삭제,Unity認証アカウントを削除,删除 Unity 身份验证账户,刪除 Unity 驗證帳戶
 Use Online Again,온라인 다시 사용,オンライン利用を再開,重新使用在线功能,重新使用線上功能
 Delete Permanently,영구 삭제,完全に削除,永久删除,永久刪除
-"Delete the Unity sign-in account used on this PC. This cannot be undone and may prevent recovery of saved online games. Steam/STOVE accounts, purchases, achievements, other service records and local save files are handled separately. For Lobby/Relay records or other privacy requests, copy your support details and email us. A draft opens; nothing is sent automatically.","이 PC에서 사용하는 Unity 인증계정을 삭제합니다. 되돌릴 수 없으며 저장된 온라인 경기 복구가 불가능해질 수 있습니다. Steam/STOVE 계정·구매·도전과제, 다른 서비스 기록과 로컬 저장 파일은 별도로 처리합니다. Lobby/Relay 기록 삭제 등 개인정보 요청은 문의 정보를 복사해 이메일로 보내주세요. 이메일 초안만 열리며 자동 발송되지 않습니다.",このPCで使用するUnity認証アカウントを削除します。元に戻せず、保存したオンライン対戦を復元できなくなる場合があります。Steam/STOVEアカウント・購入・実績、他のサービスの記録、ローカル保存ファイルは別途対応が必要です。Lobby/Relayの記録削除などは問い合わせ情報をコピーし、メールでご連絡ください。下書きが開くだけで、自動送信はされません。,删除此电脑上使用的 Unity 身份验证账户。此操作无法撤销，并可能导致已保存的在线对局无法恢复。Steam/STOVE 账户、购买记录、成就、其他服务记录和本地存档需单独处理。如需删除 Lobby/Relay 记录或提出其他隐私请求，请复制支持信息并发送邮件。仅打开邮件草稿，不会自动发送。,刪除此電腦上使用的 Unity 驗證帳戶。此操作無法復原，且可能導致已儲存的線上對局無法恢復。Steam/STOVE 帳戶、購買紀錄、成就、其他服務紀錄及本機存檔須另行處理。如需刪除 Lobby/Relay 紀錄或提出其他隱私請求，請複製支援資訊並寄送電子郵件。僅開啟郵件草稿，不會自動寄出。
-Permanently delete this Unity sign-in account?\nPlayer ID: {0}\n\nRecovery may be lost. Copy the support details before leaving this screen if you need help with other records. Other service records and local saves are not deleted by this button. Online access stays paused until you choose to use it again.,이 Unity 인증계정을 영구 삭제할까요?\n플레이어 ID: {0}\n\n경기 복구가 불가능해질 수 있습니다. 다른 기록도 처리하려면 이 화면을 떠나기 전에 문의 정보를 복사해 주세요. 이 버튼으로 다른 서비스 기록과 로컬 저장 파일이 삭제되지는 않습니다. 온라인 기능은 다시 사용하기로 선택할 때까지 중단됩니다.,このUnity認証アカウントを完全に削除しますか？\nプレイヤーID：{0}\n\n対戦を復元できなくなる場合があります。他の記録についても対応が必要な場合は、この画面を閉じる前に問い合わせ情報をコピーしてください。このボタンでは他のサービスの記録やローカル保存ファイルは削除されません。オンライン機能は利用再開を選ぶまで停止します。,永久删除此 Unity 身份验证账户？\n玩家 ID：{0}\n\n对局可能无法恢复。如需处理其他记录，请在离开此页面前复制支持信息。此按钮不会删除其他服务记录或本地存档。在您选择重新使用之前，在线功能将保持暂停。,永久刪除此 Unity 驗證帳戶？\n玩家 ID：{0}\n\n對局可能無法恢復。如需處理其他紀錄，請在離開此畫面前複製支援資訊。此按鈕不會刪除其他服務紀錄或本機存檔。在您選擇重新使用之前，線上功能將保持暫停。
-Use online features again? The game will reconnect to a remaining account or create a new Unity sign-in account if the previous one was deleted. A new account cannot restore the deleted identity. This does not cancel a previous deletion request.,"온라인 기능을 다시 사용할까요? 기존 계정이 남아 있으면 다시 연결하고, 삭제되었다면 새 Unity 인증계정을 만듭니다. 새 계정으로 삭제한 계정을 복원할 수 없습니다. 이전 삭제 요청이 취소되는 것은 아닙니다.",オンライン機能の利用を再開しますか？アカウントが残っていれば再接続し、削除済みなら新しいUnity認証アカウントを作成します。新しいアカウントで削除済みのIDを復元することはできません。以前の削除依頼は取り消されません。,重新使用在线功能？游戏将重新连接仍存在的账户；如果原账户已删除，则创建新的 Unity 身份验证账户。新账户无法恢复已删除的身份。这不会取消之前的删除请求。,重新使用線上功能？遊戲會重新連接仍存在的帳戶；若原帳戶已刪除，則建立新的 Unity 驗證帳戶。新帳戶無法恢復已刪除的身分。此操作不會取消先前的刪除請求。
+"Delete the Unity sign-in account used on this PC. This cannot be undone and may prevent recovery of saved online games. Steam/STOVE accounts, purchases, achievements, other service records and local save files are handled separately. For Lobby/Relay records or other privacy requests, copy your support details and email us. A draft opens; nothing is sent automatically.","이 PC에서 사용하는 Unity 인증 계정을 삭제합니다. 되돌릴 수 없으며 저장된 온라인 경기 복구가 불가능해질 수 있습니다. Steam/STOVE 계정·구매·도전과제, 다른 서비스 기록과 로컬 저장 파일은 별도로 처리합니다. Lobby/Relay 기록 삭제 등 개인정보 요청은 문의 정보를 복사해 이메일로 보내 주세요. 이메일 초안만 열리며 자동 발송되지 않습니다.",このPCで使用するUnity認証アカウントを削除します。元に戻せず、保存したオンライン対戦を復元できなくなる場合があります。Steam/STOVEアカウント・購入・実績、他のサービスの記録、ローカル保存ファイルは別途対応が必要です。Lobby/Relayの記録削除などは問い合わせ情報をコピーし、メールでご連絡ください。下書きが開くだけで、自動送信はされません。,删除此电脑上使用的 Unity 身份验证账户。此操作无法撤销，并可能导致已保存的在线对局无法恢复。Steam/STOVE 账户、购买记录、成就、其他服务记录和本地存档需单独处理。如需删除 Lobby/Relay 记录或提出其他隐私请求，请复制支持信息并发送邮件。仅打开邮件草稿，不会自动发送。,刪除此電腦上使用的 Unity 驗證帳戶。此操作無法復原，且可能導致已儲存的線上對局無法恢復。Steam/STOVE 帳戶、購買紀錄、成就、其他服務紀錄及本機存檔須另行處理。如需刪除 Lobby/Relay 紀錄或提出其他隱私請求，請複製支援資訊並寄送電子郵件。僅開啟郵件草稿，不會自動寄出。
+Permanently delete this Unity sign-in account?\nPlayer ID: {0}\n\nRecovery may be lost. Copy the support details before leaving this screen if you need help with other records. Other service records and local saves are not deleted by this button. Online access stays paused until you choose to use it again.,이 Unity 인증 계정을 영구 삭제할까요?\n플레이어 ID: {0}\n\n경기 복구가 불가능해질 수 있습니다. 다른 기록도 처리하려면 이 화면을 떠나기 전에 문의 정보를 복사해 주세요. 이 버튼으로 다른 서비스 기록과 로컬 저장 파일이 삭제되지는 않습니다. 온라인 기능은 다시 사용하기로 선택할 때까지 중단됩니다.,このUnity認証アカウントを完全に削除しますか？\nプレイヤーID：{0}\n\n対戦を復元できなくなる場合があります。他の記録についても対応が必要な場合は、この画面を閉じる前に問い合わせ情報をコピーしてください。このボタンでは他のサービスの記録やローカル保存ファイルは削除されません。オンライン機能は利用再開を選ぶまで停止します。,永久删除此 Unity 身份验证账户？\n玩家 ID：{0}\n\n对局可能无法恢复。如需处理其他记录，请在离开此页面前复制支持信息。此按钮不会删除其他服务记录或本地存档。在您选择重新使用之前，在线功能将保持暂停。,永久刪除此 Unity 驗證帳戶？\n玩家 ID：{0}\n\n對局可能無法恢復。如需處理其他紀錄，請在離開此畫面前複製支援資訊。此按鈕不會刪除其他服務紀錄或本機存檔。在您選擇重新使用之前，線上功能將保持暫停。
+Use online features again? The game will reconnect to a remaining account or create a new Unity sign-in account if the previous one was deleted. A new account cannot restore the deleted identity. This does not cancel a previous deletion request.,"온라인 기능을 다시 사용할까요? 기존 계정이 남아 있으면 다시 연결하고, 삭제되었다면 새 Unity 인증 계정을 만듭니다. 새 계정으로 삭제한 계정을 복원할 수 없습니다. 이전 삭제 요청이 취소되는 것은 아닙니다.",オンライン機能の利用を再開しますか？アカウントが残っていれば再接続し、削除済みなら新しいUnity認証アカウントを作成します。新しいアカウントで削除済みのIDを復元することはできません。以前の削除依頼は取り消されません。,重新使用在线功能？游戏将重新连接仍存在的账户；如果原账户已删除，则创建新的 Unity 身份验证账户。新账户无法恢复已删除的身份。这不会取消之前的删除请求。,重新使用線上功能？遊戲會重新連接仍存在的帳戶；若原帳戶已刪除，則建立新的 Unity 驗證帳戶。新帳戶無法恢復已刪除的身分。此操作不會取消先前的刪除請求。
 Return to the main menu and check the current account before deleting.,메인 화면으로 돌아가 현재 계정을 확인한 뒤 삭제해 주세요.,メイン画面に戻り、現在のアカウントを確認してから削除してください。,请返回主菜单，确认当前账户后再删除。,請返回主選單，確認目前帳戶後再刪除。
 Online access is paused after a deletion request. Open Settings > Privacy & Support to continue.,삭제 요청 후 온라인 기능이 중단되어 있습니다. 설정 > 개인정보 및 지원에서 다시 사용할 수 있습니다.,削除依頼後のオンライン利用は停止中です。設定 > プライバシー・サポートから再開できます。,删除请求后，在线功能已暂停。请打开设置 > 隐私与支持以继续。,刪除請求後，線上功能已暫停。請開啟設定 > 隱私與支援以繼續。
 No authenticated account is available. Contact support if needed.,현재 인증된 계정이 없습니다. 도움이 필요하면 이메일로 문의해 주세요.,現在認証済みのアカウントはありません。必要に応じてサポートにご連絡ください。,当前没有已验证的账户。如需帮助，请联系支持。,目前沒有已驗證的帳戶。如需協助，請聯絡支援。
-Unity account deleted. Other records require separate handling. Online access is paused.,Unity 인증계정이 삭제되었습니다. 다른 기록은 별도 처리가 필요합니다. 온라인 기능은 중단된 상태입니다.,Unity認証アカウントを削除しました。他の記録には別途対応が必要です。オンライン利用は停止中です。,Unity 身份验证账户已删除。其他记录需单独处理。在线功能已暂停。,Unity 驗證帳戶已刪除。其他紀錄須另行處理。線上功能已暫停。
+Unity account deleted. Other records require separate handling. Online access is paused.,Unity 인증 계정이 삭제되었습니다. 다른 기록은 별도 처리가 필요합니다. 온라인 기능은 중단된 상태입니다.,Unity認証アカウントを削除しました。他の記録には別途対応が必要です。オンライン利用は停止中です。,Unity 身份验证账户已删除。其他记录需单独处理。在线功能已暂停。,Unity 驗證帳戶已刪除。其他紀錄須另行處理。線上功能已暫停。
 Please wait for the current operation to finish.,현재 작업이 끝날 때까지 기다려 주세요.,現在の処理が完了するまでお待ちください。,请等待当前操作完成。,請等待目前操作完成。
 Leave the room before deleting your account.,계정을 삭제하려면 먼저 방에서 나가 주세요.,アカウントを削除する前にルームから退出してください。,删除账户前请先离开房间。,刪除帳戶前請先離開房間。
 Support details copied. Include them in your email; never send passwords or sign-in tokens.,문의 정보를 복사했습니다. 이메일에 첨부해 주세요. 비밀번호나 인증 토큰은 보내지 마세요.,問い合わせ情報をコピーしました。メールに貼り付けてください。パスワードや認証トークンは送らないでください。,已复制支持信息。请将其粘贴到邮件中，切勿发送密码或登录令牌。,已複製支援資訊。請將其貼入電子郵件，請勿寄送密碼或登入權杖。
 Describe your request and which records you want deleted:,문의 내용과 삭제를 원하는 기록을 적어 주세요:,ご相談内容と削除を希望する記録をご記入ください：,请描述您的请求以及希望删除的记录：,請描述您的請求及希望刪除的紀錄：
-"If no email app opens, copy the support details and email the address shown above.",메일 앱이 열리지 않으면 문의 정보를 복사해 위 주소로 이메일을 보내주세요.,メールアプリが開かない場合は、問い合わせ情報をコピーし、上記のアドレスへ送信してください。,若邮件应用未打开，请复制支持信息并发送至上方邮箱。,若郵件應用程式未開啟，請複製支援資訊並寄至上方信箱。
+"If no email app opens, copy the support details and email the address shown above.",메일 앱이 열리지 않으면 문의 정보를 복사해 위 주소로 이메일을 보내 주세요.,メールアプリが開かない場合は、問い合わせ情報をコピーし、上記のアドレスへ送信してください。,若邮件应用未打开，请复制支持信息并发送至上方邮箱。,若郵件應用程式未開啟，請複製支援資訊並寄至上方信箱。
 "Deletion could not be confirmed. Keep your support details and contact us, or retry if the account is still available.","삭제 결과를 확인하지 못했습니다. 문의 정보를 보관해 연락해 주시거나, 계정이 남아 있으면 다시 시도해 주세요.",削除結果を確認できませんでした。問い合わせ情報を控えてご連絡いただくか、アカウントがまだ利用可能な場合は再試行してください。,无法确认删除结果。请保留支持信息并联系我们；若账户仍可用，也可重试。,無法確認刪除結果。請保留支援資訊並聯絡我們；若帳戶仍可用，也可重試。
 Player ID: {0},플레이어 ID: {0},プレイヤーID：{0},玩家 ID：{0},玩家 ID：{0}
 
 Connection timed out. The previous attempt is being cleaned up. Please try again shortly.,연결 시간이 초과되었습니다. 이전 접속을 정리 중입니다. 잠시 후 다시 시도해 주세요.,接続がタイムアウトしました。前の接続を終了しています。しばらくしてから再試行してください。,连接超时。正在清理上一次连接。请稍后重试。,連線逾時。正在清理上一次連線。請稍後重試。
 The previous connection attempt is still finishing. Please wait and retry. Restart the game if this persists.,이전 접속 요청을 정리 중입니다. 잠시 후 다시 시도해 주세요. 계속되면 게임을 재시작해 주세요.,前の接続を終了しています。しばらくしてから再試行してください。続く場合はゲームを再起動してください。,上一次连接请求仍在结束中。请稍后重试。若持续出现请重启游戏。,上一次連線請求仍在結束中。請稍後重試。若持續出現請重新啟動遊戲。
 The previous connection could not be cleaned up. Please restart the game before reconnecting.,이전 접속을 정리하지 못했습니다. 게임을 재시작한 뒤 다시 접속해 주세요.,前の接続を終了できませんでした。ゲームを再起動してから再接続してください。,无法清理上一次连接。请重启游戏后重新连接。,無法清理上一次連線。請重新啟動遊戲後重新連線。
+"Bombardment","폭격","爆撃","轰炸","轟炸"
+"Set Bombardment","폭격 설정","爆撃を設定","设置轰炸","設定轟炸"
+"{0}/3","{0}/3","{0}/3","{0}/3","{0}/3"
+"Select 3 ground positions on the map. After a 1s warning, strike every 0.5s: 80 damage within 3m, 50 within 7m, 20 within 10m. Consumed on start; cannot cancel. Incomplete targeting ends on death or timeout.","지도에서 바닥 3곳을 지정합니다. 1초 경고 후 0.5초 간격으로 폭격: 3m 이내 80, 7m 이내 50, 10m 이내 20 피해. 시작 시 소모되며 취소할 수 없습니다. 지정 완료 전 사망하거나 시간이 끝나면 발동하지 않습니다.","マップの地面を3か所指定。1秒の警告後、0.5秒間隔で爆撃。3m以内80、7m以内50、10m以内20ダメージ。開始時に消費し、キャンセル不可。指定完了前に死亡または時間切れになると不発。","在地图上指定3处地面。警告1秒后，每隔0.5秒轰炸：3米内80、7米内50、10米内20伤害。开始时消耗，无法取消。指定完成前死亡或超时则不发动。","在地圖上指定3處地面。警告1秒後，每隔0.5秒轟炸：3公尺內80、7公尺內50、10公尺內20傷害。開始時消耗，無法取消。指定完成前死亡或逾時則不發動。"
+"Ghost Pass","유령이용권","ゴースト利用券","幽灵使用券","幽靈使用券"
+"Forest only. This turn's ghost steals from a random eligible opponent and delivers the stolen resource to the first user. Later uses are consumed without changing the recipient. Stolen health heals living users only. Available from turn 2.","숲 전용. 이번 턴 유령이 무작위 상대에게서 자원을 빼앗아 최초 사용자에게 전달합니다. 부활칸은 제외하며 대상이 없으면 효과가 없습니다. 후순위 사용도 소모됩니다. 빼앗은 체력은 생존 중일 때만 회복합니다. 2턴부터 사용할 수 있습니다.","森専用。このターンのゴーストがランダムな対象から資源を奪い、最初の使用者に届けます。復活マスは対象外で、対象がいなければ効果はありません。後続の使用も消費されます。奪った体力は生存中のみ回復します。 2ターン目から使用できます。","森林专用。本回合幽灵会随机从符合条件的对手处夺取资源，并交给首位使用者。复活格不作为目标，无目标则无效果。后续使用同样会消耗。夺取的生命值仅在使用者存活时恢复。 从第2回合起可使用。","森林專用。本回合幽靈會隨機從符合條件的對手處奪取資源，並交給首位使用者。復活格不作為目標，無目標則無效果。後續使用同樣會消耗。奪取的生命值僅在使用者存活時恢復。 從第2回合起可使用。"
+"The saved items are not valid for this map.","저장된 아이템을 이 맵에서 사용할 수 없습니다.","保存されたアイテムはこのマップでは使用できません。","此地图无法使用已保存的道具。","此地圖無法使用已儲存的道具。"
+
+"Wall","벽","壁","墙","牆"
+"Maze only. Aim at a two-way passage connected to your tile and click the blue preview to block it for 5 turns including this turn. Cannot seal off rooms or overlap players.","미로 전용. 현재 칸의 양방향 통로를 바라보고 파란 미리보기를 클릭해 벽을 설치합니다. 설치 턴 포함 5턴 유지하며 완전 고립이나 플레이어와 겹치는 설치는 불가합니다.","迷路専用。現在のマスにつながる双方向通路に青いプレビューを合わせてクリックし、設置ターンを含む5ターン封鎖します。完全な孤立やプレイヤーとの重なりは不可。","迷宫专用。瞄准当前格连接的双向通道并点击蓝色预览，封锁5回合（含当前回合）。不可完全隔离区域或与玩家重叠。","迷宮專用。瞄準目前格連接的雙向通道並點擊藍色預覽，封鎖5回合（含目前回合）。不可完全隔離區域或與玩家重疊。"
+"A saved wall location is no longer valid.","저장된 벽 위치가 올바르지 않습니다.","保存された壁の位置が無効です。","保存的墙体位置无效。","儲存的牆體位置無效。"
+STUN,기절시키기,気絶させる,击晕,擊暈
+Magic Maze,마법미로,魔法迷路,魔法迷宫,魔法迷宮
+MAGIC MAZE,마법미로,魔法迷路,魔法迷宫,魔法迷宮
+"Tile Amplifier","칸 증폭기","マス増幅器","格子增幅器","格子增幅器"
+"ITEMS ACQUIRED +{0}","아이템 {0}개 획득","アイテムを{0}個獲得","获得{0}件道具","獲得{0}件道具"
+"Magic Maze only. Amplifies everyone's gold, health and item tiles this turn; events excluded. Each different user adds +1 to the multiplier (2x, 3x, 4x...). Once per player per turn. Gain up to 3 random items in empty slots. Reshuffles tiles once after this turn, except the final turn.","마법미로 전용. 이번 턴 모두의 골드·체력·아이템 칸 효과를 증폭합니다. 이벤트는 제외됩니다. 다른 사용자가 사용할 때마다 2→3→4배로 증가하며, 각 플레이어는 턴당 1회만 사용할 수 있습니다. 아이템은 빈 슬롯에 맞춰 최대 3개를 각각 무작위로 획득합니다. 마지막 턴을 제외하고 턴 종료 후 칸 효과를 한 번 재배치합니다.","魔法迷路専用。このターン全員のゴールド・HP・アイテムマス効果を増幅。イベントは対象外。使用者が増えるたび2→3→4倍に増加し、各プレイヤーは1ターン1回まで。空き枠に最大3個のランダムアイテムを獲得。最終ターン以外は終了後にマス効果を1回シャッフル。","魔法迷宫专用。本回合增强所有人的金币、生命和道具格效果，不含事件。每位新使用者使倍率增加1倍（2、3、4倍…），每人每回合限用一次。按空槽数量分别随机获得最多3件道具。除最终回合外，回合结束后重排格子效果一次。","魔法迷宮專用。本回合增強所有人的金幣、生命和道具格效果，不含事件。每位新使用者使倍率增加1倍（2、3、4倍…），每人每回合限用一次。按空槽數量分別隨機獲得最多3件道具。除最終回合外，回合結束後重排格子效果一次。"

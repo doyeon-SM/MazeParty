@@ -392,10 +392,40 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                 ball.VelocityX,
                 ball.VelocityY,
                 sideSlot);
-            if (radialVelocity <= 0d)
+            var wallFace = BouncingBallsRules.ArenaHalfExtent - BouncingBallsRules.BallRadius;
+            var pocketHalfWidth = BouncingBallsRules.GoalHalfWidth - BouncingBallsRules.BallRadius;
+            var oldTangent = GetTangent(oldX, oldY, sideSlot);
+            var tangent = GetTangent(ball.X, ball.Y, sideSlot);
+
+            // Test the mouth at the crossing, before entering the recessed goal.
+            // Otherwise a shallow shot can cross the side of the old goal line
+            // behind the shield and score without ever passing its rail.
+            if (radialVelocity > 0d && oldRadial <= wallFace && radial >= wallFace)
             {
-                return false;
+                var fraction = (wallFace - oldRadial) / (radial - oldRadial);
+                var mouthTangent = oldTangent + (tangent - oldTangent) * fraction;
+                if (Math.Abs(mouthTangent) > pocketHalfWidth)
+                {
+                    SetRadial(ball, sideSlot, 2d * wallFace - radial);
+                    InvertRadialVelocity(ball, sideSlot);
+                    BallReflected?.Invoke(sideSlot, ball.X, ball.Y);
+                    return false;
+                }
             }
+
+            // The two pocket rails contain both outgoing and returning balls.
+            if (radial >= wallFace && Math.Abs(tangent) > pocketHalfWidth &&
+                Math.Abs(oldTangent) <= pocketHalfWidth + TimeEpsilon)
+            {
+                var corrected = Math.Sign(tangent) * 2d * pocketHalfWidth - tangent;
+                if (sideSlot == 0 || sideSlot == 2)
+                { ball.X = corrected; ball.VelocityX = -ball.VelocityX; }
+                else
+                { ball.Y = corrected; ball.VelocityY = -ball.VelocityY; }
+                tangent = corrected;
+                BallReflected?.Invoke(sideSlot, ball.X, ball.Y);
+            }
+            if (radialVelocity <= 0d) return false;
 
             var shieldFace =
                 BouncingBallsRules.ShieldRailDistance -
@@ -405,7 +435,6 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                 var crossingFraction =
                     (shieldFace - oldRadial) /
                     (radial - oldRadial);
-                var oldTangent = GetTangent(oldX, oldY, sideSlot);
                 var newTangent = GetTangent(
                     ball.X,
                     ball.Y,
@@ -430,19 +459,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                 }
             }
 
-            var wallFace = BouncingBallsRules.ArenaHalfExtent -
-                BouncingBallsRules.BallRadius;
-            var tangent = GetTangent(ball.X, ball.Y, sideSlot);
-            if (radial >= wallFace &&
-                Math.Abs(tangent) > BouncingBallsRules.GoalHalfWidth)
-            {
-                SetRadial(ball, sideSlot, (2d * wallFace) - radial);
-                InvertRadialVelocity(ball, sideSlot);
-                BallReflected?.Invoke(sideSlot, ball.X, ball.Y);
-                return false;
-            }
-
-            if (radial >= BouncingBallsRules.ArenaHalfExtent +
+            if (radial >= BouncingBallsRules.GoalLineDistance +
                 BouncingBallsRules.BallRadius &&
                 Math.Abs(tangent) <= BouncingBallsRules.GoalHalfWidth)
             {
@@ -485,7 +502,11 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 
         private void RespawnFromShield(BallState ball, int defenderSlot)
         {
-            var tangent = _shieldCenters[defenderSlot];
+            // A shield may slide past the opening, but the returned ball must
+            // fit between the pocket rails, including its radius.
+            var pocketHalfWidth = BouncingBallsRules.GoalHalfWidth - BouncingBallsRules.BallRadius;
+            var tangent = Math.Max(-pocketHalfWidth,
+                Math.Min(pocketHalfWidth, _shieldCenters[defenderSlot]));
             var radial = BouncingBallsRules.ShieldRailDistance;
             var variation = ((NextRandomUnit() * 2d) - 1d) *
                 BouncingBallsRules.RespawnVariationRadians;

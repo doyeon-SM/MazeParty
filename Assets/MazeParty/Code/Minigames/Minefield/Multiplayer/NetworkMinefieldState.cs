@@ -196,6 +196,7 @@ namespace MazeParty.Multiplayer
             new Vector2[MinefieldRules.PlayerCount];
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[MinefieldRules.PlayerCount];
+        private readonly bool[] _sonarQueued = new bool[MinefieldRules.PlayerCount];
         private readonly double[] _sonarEndsAt =
             new double[MinefieldRules.PlayerCount];
         private readonly double[] _pausedSonarRemaining =
@@ -439,7 +440,23 @@ namespace MazeParty.Multiplayer
             _serverInputs[slot] = Vector2.ClampMagnitude(currentInput, 1f);
             _avatars[slot] = avatar;
             avatar.StopServerInputOnServer();
-            var now = ServerNow;
+            QueueOrBeginSonarOnServer(slot, ServerNow);
+            return true;
+        }
+
+        private void QueueOrBeginSonarOnServer(int slot, double now)
+        {
+            if (IsSonarActive(slot) && now < _sonarEndsAt[slot])
+            {
+                _sonarQueued[slot] = true; // Coalesce repeated clicks into one follow-up pulse.
+                return;
+            }
+            BeginSonarOnServer(slot, now);
+        }
+
+        private void BeginSonarOnServer(int slot, double now)
+        {
+            _sonarQueued[slot] = false;
             _sonarEndsAt[slot] = now + SonarDetectionSeconds;
             SetSonarWave(slot, new MinefieldSonarWaveSnapshot
             {
@@ -450,7 +467,6 @@ namespace MazeParty.Multiplayer
             PlaySonarPresentationRpc(
                 (byte)slot,
                 GetRunnerPosition(slot));
-            return true;
         }
 
         public void PauseOnServer(double now)
@@ -684,6 +700,7 @@ namespace MazeParty.Multiplayer
             _eliminatedMask.Value = 0;
             _finishedMask.Value = 0;
             _sonarMask.Value = 0;
+            Array.Clear(_sonarQueued, 0, _sonarQueued.Length);
             _detonatedMineMask = 0UL;
             _eliminationCauses.Value = 0U;
             _sirenIntensities.Value = 0U;
@@ -1047,6 +1064,7 @@ namespace MazeParty.Multiplayer
 
             ClearAllInputsOnServer();
             _sonarMask.Value = 0;
+            Array.Clear(_sonarQueued, 0, _sonarQueued.Length);
             RefreshSensorReplicationOnServer();
             _phase.Value = (byte)NetworkMinefieldPhase.RoundResult;
             _phaseEndsAt.Value = now + RoundResultSeconds;
@@ -1147,6 +1165,14 @@ namespace MazeParty.Multiplayer
             if (sonarMask != _sonarMask.Value)
             {
                 _sonarMask.Value = sonarMask;
+            }
+            for (var slot = 0; slot < MinefieldRules.PlayerCount; slot++)
+            {
+                if (!_sonarQueued[slot] || IsSonarActive(slot)) continue;
+                _sonarQueued[slot] = false;
+                if (CanAcceptInputForSlot(slot) && now < _phaseEndsAt.Value &&
+                    _serverInputs[slot].sqrMagnitude <= StationaryInputThreshold)
+                    BeginSonarOnServer(slot, now);
             }
         }
 
@@ -1493,6 +1519,7 @@ namespace MazeParty.Multiplayer
             _eliminatedMask.Value = 0;
             _finishedMask.Value = 0;
             _sonarMask.Value = 0;
+            Array.Clear(_sonarQueued, 0, _sonarQueued.Length);
             _detonatedMineMask = 0UL;
             _sirenIntensities.Value = 0U;
             _eliminationCauses.Value = 0U;

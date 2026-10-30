@@ -53,8 +53,8 @@ namespace MazeParty.Gameplay
         private Transform _firstPersonItemRoot;
         private GameObject _topViewHighlight;
         private GameObject _shieldVfx;
-        private readonly Transform[] _worldItemModels = new Transform[13];
-        private readonly Transform[] _firstPersonItemModels = new Transform[13];
+        private readonly Transform[] _worldItemModels = new Transform[byte.MaxValue + 1];
+        private readonly Transform[] _firstPersonItemModels = new Transform[byte.MaxValue + 1];
         private CapsuleCollider _bodyHitbox;
         private SphereCollider _headHitbox;
         private SphereCollider _leftHandHitbox;
@@ -107,6 +107,13 @@ namespace MazeParty.Gameplay
         private byte _hatId;
         private Color _bodyColor = DefaultBodyColor;
         private bool _mouthBlowing;
+
+        // Standing and crouching controllers share the same foot plane.
+        public static Vector3 GetFeetPosition(Transform root)
+        {
+            return root.TransformPoint(Vector3.up *
+                (StandingControllerCenterY - StandingControllerHeight * 0.5f));
+        }
 
         public bool IsBuilt => _worldModel != null;
         public PlayerAvatarPresentationBindings Bindings => bindings;

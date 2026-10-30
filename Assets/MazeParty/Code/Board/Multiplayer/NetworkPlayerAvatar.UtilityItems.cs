@@ -56,7 +56,7 @@ namespace MazeParty.Multiplayer
         public bool BeginSwapOnServer(int targetSlot)
         {
             var match = NetworkMatchState.Instance;
-            if (!IsServer || match == null || !match.CanAcceptActionInput || !IsValidSwapTarget(this) || !HasResolvedItemChoice || IsSwapping ||
+            if (!IsServer || match == null || !match.CanAcceptActionInput || !IsValidSwapTarget(this) || !HasResolvedItemChoice || IsSwapping || IsSettingBombardment ||
                 IsBoardDeathInProgressOnServer || IsKnockedDown || !CanUseItemChargeOnServer ||
                 GetSelectedItemOnServer() != PrototypeItemId.PositionSwapper) return false;
             var target = match.GetAvatarForSlot(targetSlot);
@@ -155,6 +155,7 @@ namespace MazeParty.Multiplayer
         {
             if (!IsServer) return;
             _cloaked.Value = false;
+            ClearBombardmentSelectionOnServer();
             if (_swapChannel.Active)
             {
                 _swapChannel.Clear(); _swapSeconds.Value = 0; _equippedItem.Value = 0;

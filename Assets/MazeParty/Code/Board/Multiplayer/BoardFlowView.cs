@@ -26,6 +26,7 @@ namespace MazeParty.Multiplayer
     /// Runtime uGUI/Canvas presentation for the online board flow. All visible copy
     /// intentionally remains English until the project's Korean font is installed.
     /// </summary>
+    [DefaultExecutionOrder(1100)] // After owner eye pose and the rendered camera.
     public sealed class BoardFlowView : MonoBehaviour
     {
         internal const float BoardKillFeedEntrySeconds = 2f;
@@ -56,7 +57,7 @@ namespace MazeParty.Multiplayer
             new[] { "<sprite name=\"a\"><sprite name=\"d\">  ALTERNATE" },
             new[] { "<sprite name=\"a\"><sprite name=\"s\"><sprite name=\"d\">  REPEAT" },
             new[] { "<sprite name=\"a\"><sprite name=\"d\">  MOVE SHIELD" },
-            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PASS / STUN" },
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  STUN" },
             new[] { MoveKeys + "  ROLL" },
             new[]
             {
@@ -153,11 +154,11 @@ namespace MazeParty.Multiplayer
         private ItemShopWorldMarker _itemShopMarker;
         private BoardTopology _topology;
         private int _lastBoardEffectRevision = -1;
+        private int _lastMagicMazePreviewStep = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
         private bool _wired;
         private int _openItemShopIndex = -1;
-        private bool _topViewShopHighlightsVisible;
         private float _boardKillFeedVisibleUntil;
         private VideoClip _activeMinigamePreviewClip;
 
@@ -174,12 +175,7 @@ namespace MazeParty.Multiplayer
         public bool HasRequiredUiReferences =>
             uiBindings != null && uiBindings.HasRequiredReferences;
 
-        public void SetTopViewShopHighlights(bool visible)
-        {
-            _topViewShopHighlightsVisible = visible;
-            _keyShopMarker?.SetTopViewHighlight(visible);
-            _itemShopMarker?.SetTopViewHighlight(visible);
-        }
+
 
         public void Configure(GameplayCameraDirector director)
         {
@@ -296,6 +292,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            uiBindings?.Hud?.ResetGhostPassPresentation();
             for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
                 for (var kind = 0; kind < 3; kind++)
@@ -347,6 +344,7 @@ namespace MazeParty.Multiplayer
 
         private void LateUpdate()
         {
+            RefreshReticleColor(_reticle != null && _reticle.activeInHierarchy);
             if (cameraDirector == null)
                 cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
             uiBindings?.Item?.SetInventoryVisible(cameraDirector != null &&
@@ -674,7 +672,7 @@ namespace MazeParty.Multiplayer
                   match.IsCombatAlive(_localAvatar.AssignedSlot))) &&
                 !match.IsGlobalSimulationPaused;
             SetActive(_reticle, showReticle);
-            RefreshReticleColor(showReticle);
+            if (!showReticle) RefreshReticleColor(false);
 
             RefreshMinefieldPanelContent(match, showMinefieldReady);
 
@@ -888,14 +886,15 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            SetTextVisible(
-                _movesText,
-                Mathf.Max(0, _localAvatar.LocalRemainingMoves).ToString(),
-                true);
+            SetTextVisible(_movesText, _movesText.text, true);
+            uiBindings.Map.PresentMoves(
+                _localAvatar.HasRolled ? _localAvatar.LocalRemainingMoves : _localAvatar.LocalVisibleRoll,
+                _localAvatar.UsesDoubleDice, match.Turn, match.IsGlobalSimulationPaused);
         }
 
         private void RefreshInventory()
         {
+            var match = NetworkMatchState.Instance;
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
                 var itemId = _localAvatar != null
@@ -926,7 +925,8 @@ namespace MazeParty.Multiplayer
 
                 if (_choiceButtons[i] != null)
                 {
-                    _choiceButtons[i].interactable = occupied;
+                    _choiceButtons[i].interactable = occupied &&
+                        (itemId != PrototypeItemId.GhostPass || match != null && match.Turn > 1);
                 }
             }
 
@@ -937,6 +937,13 @@ namespace MazeParty.Multiplayer
                 _ammoText,
                 hasItemUses ? _localAvatar.LocalItemCharges.ToString() : string.Empty,
                 hasItemUses);
+            var item = _localAvatar != null ? _localAvatar.LocalEquippedItem : PrototypeItemId.None;
+            uiBindings.Item.SetUseHint(hasItemUses && match != null &&
+                match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
+                _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
+                !BoardUtilityItemView.IsTargetPickerOpen &&
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass && match.Turn > 1 || item == PrototypeItemId.Wall ||
+                 item == PrototypeItemId.TileAmplifier && !match.HasUsedTileAmplifier(_localAvatar.AssignedSlot)));
         }
 
         private void RefreshInteractionPrompt()
@@ -1080,6 +1087,7 @@ namespace MazeParty.Multiplayer
 
             for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
+                uiBindings.Hud.PresentGhostPass(slot, match.HasUsedGhostPass(slot) || match.ShowTileAmplifierOutline(slot), _hudFeedbackNow);
                 var isPresent = match.IsPlayerPresent(slot);
                 var avatar = match.GetAvatarForSlot(slot);
                 SetText(_playerHudRows[slot].Name, ResolveBoardPlayerName(avatar, slot));
@@ -1139,8 +1147,8 @@ namespace MazeParty.Multiplayer
                     ? avatar.Gold.ToString()
                     : "--");
                 SetText(_playerHudRows[slot].Rank, avatar != null
-                    ? GameText.F("RANK {0}", ranks[slot])
-                    : GameText.T("RANK --"));
+                    ? BoardHudCanvasBindings.FormatRank(ranks[slot])
+                    : "--");
 
                 var actionState = avatar != null && isPresent && !match.IsGlobalSimulationPaused
                     ? avatar.ActionState
@@ -1161,7 +1169,8 @@ namespace MazeParty.Multiplayer
         private void RefreshBoardEffects(NetworkMatchState match)
         {
             if (match.BoardEffectRevision <= 0 ||
-                _lastBoardEffectRevision == match.BoardEffectRevision)
+                (_lastBoardEffectRevision == match.BoardEffectRevision &&
+                 _lastMagicMazePreviewStep == match.MagicMazePreviewStep))
             {
                 return;
             }
@@ -1183,13 +1192,14 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
-                var effect = match.TryGetBoardLandingEffect(tile.Coordinate, out var assigned)
+                var effect = match.TryGetPresentedBoardLandingEffect(tile.Coordinate, out var assigned)
                     ? assigned
                     : BoardLandingEffectType.None;
                 tile.ApplyLandingEffectPresentation(effect);
             }
 
             _lastBoardEffectRevision = match.BoardEffectRevision;
+            _lastMagicMazePreviewStep = match.MagicMazePreviewStep;
         }
 
         private void RefreshKeyShop(NetworkMatchState match)
@@ -1197,8 +1207,6 @@ namespace MazeParty.Multiplayer
             if (_keyShopMarker == null)
             {
                 _keyShopMarker = FindAnyObjectByType<KeyShopWorldMarker>();
-                _keyShopMarker?.SetTopViewHighlight(
-                    _topViewShopHighlightsVisible);
             }
             if (_topology == null)
             {
@@ -1222,8 +1230,6 @@ namespace MazeParty.Multiplayer
             if (_itemShopMarker == null)
             {
                 _itemShopMarker = FindAnyObjectByType<ItemShopWorldMarker>();
-                _itemShopMarker?.SetTopViewHighlight(
-                    _topViewShopHighlightsVisible);
             }
             if (_topology == null)
             {
@@ -1297,6 +1303,9 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCursor(NetworkMatchState match)
         {
+            // Each minigame owns its camera/pointer policy while it is visible.
+            if (match.FlowState == BoardFlowState.MinigamePlaying ||
+                match.FlowState == BoardFlowState.MinigameResult) return;
             if (cameraDirector == null)
             {
                 cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
@@ -1312,7 +1321,8 @@ namespace MazeParty.Multiplayer
                                  match.IsKeyShopRevealActive ||
                                  (match.FlowState != BoardFlowState.Action &&
                                   !localCombatActive) ||
-                                 choicePending || IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen;
+                                 choicePending || IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen ||
+                                 (_localAvatar != null && _localAvatar.IsSettingBombardment);
             cameraDirector?.SetUiPointerVisible(pointerVisible);
         }
 
@@ -2135,6 +2145,7 @@ namespace MazeParty.Multiplayer
 
         private void SetWaitingState()
         {
+            uiBindings?.Hud?.ResetGhostPassPresentation();
             StopMinigamePreview();
             SetBoardUiVisible(true);
             SetActive(_selectionPanel, false);
@@ -2553,6 +2564,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve: return GameText.T("RESOLVING / ASCENDING");
                 case BoardFlowState.CombatResolve: return GameText.T("COMBAT QUEUE");
                 case BoardFlowState.LandingEffectResolve: return GameText.T("LANDING EFFECTS");
+                case BoardFlowState.MagicMazeChange: return GameText.T("MAGIC MAZE");
                 case BoardFlowState.MinigameIntroReady: return GameText.T("MINIGAME READY");
                 case BoardFlowState.MinigameLoading: return GameText.T("LOADING MINIGAME");
                 case BoardFlowState.MinigamePlaying: return GameText.T("MINIGAME");

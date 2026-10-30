@@ -69,7 +69,7 @@ namespace MazeParty.Multiplayer.Tests
                 ("interactionVfxPrefab", HitSparkPath)),
             SceneCase(
                 "TagChase", typeof(TagChaseNetworkView),
-                ("hitSparkVfxPrefab", HitSparkPath),
+                ("catchLightningVfxPrefab", LightningStrikePath),
                 ("taggerAuraPrefab", TaggerAuraPath)),
             SceneCase(
                 "TerritoryPaint", typeof(TerritoryPaintNetworkView),

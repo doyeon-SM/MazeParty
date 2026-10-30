@@ -74,6 +74,24 @@ namespace MazeParty.Multiplayer.Tests
                 Is.True);
             Assert.That(stageBindings.KeyLabels, Has.Length.EqualTo(3));
             Assert.That(stageBindings.StageFloor.enabled, Is.True);
+            var room = stageBindings.PresentationRoot.GetComponentInChildren<LobbyArenaBindings>(true);
+            Assert.That(room, Is.Not.Null);
+            Assert.That(room.HasRequiredReferences, Is.True);
+            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(room.gameObject),
+                Is.EqualTo("Assets/MazeParty/Prefabs/Multiplayer/World/LobbyArena.prefab"));
+            Assert.That(room.GetComponent<LobbyArena>(), Is.Null,
+                "The ceremony room must not register as a second active lobby.");
+            Assert.That(stageBindings.StageFloor.transform.IsChildOf(room.PresentationRoot.transform), Is.True);
+            var floor = stageBindings.StageFloor;
+            var bounds = room.HorizontalBounds;
+            foreach (var corner in new[] { new Vector3(-1, 0, -1), new Vector3(-1, 0, 1),
+                         new Vector3(1, 0, -1), new Vector3(1, 0, 1) })
+            {
+                var expected = bounds.transform.TransformPoint(bounds.center + Vector3.Scale(bounds.size * .5f, corner));
+                var actual = floor.transform.TransformPoint(floor.center + Vector3.Scale(floor.size * .5f, corner));
+                Assert.That(actual.x, Is.EqualTo(expected.x).Within(.001f));
+                Assert.That(actual.z, Is.EqualTo(expected.z).Within(.001f));
+            }
             foreach (var podium in stageBindings.PodiumRoots)
             {
                 Assert.That(podium.GetComponent<BoxCollider>(), Is.Not.Null);

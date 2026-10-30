@@ -85,7 +85,7 @@ namespace MazeParty.Multiplayer
                 !match.CanAcceptActionInput ||
                 !HasResolvedItemChoice ||
                 CurrentHealth <= 0 ||
-                BoardFlowView.IsItemShopOpen ||
+                IsSettingBombardment || BoardFlowView.IsItemShopOpen ||
                 BoardUtilityItemView.IsTargetPickerOpen ||
                 HandEmoteWheelView.BlocksPointerInput ||
                 IsPointerOverUi() ||

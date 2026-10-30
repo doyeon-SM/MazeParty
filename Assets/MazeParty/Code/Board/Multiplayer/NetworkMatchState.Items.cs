@@ -41,13 +41,19 @@ namespace MazeParty.Multiplayer
                 return false;
             var id = avatar.GetSelectedItemOnServer();
             if (!PrototypeItemCatalog.IsValid(id) || id == PrototypeItemId.DoubleDice || id == PrototypeItemId.HighDice ||
-                id == PrototypeItemId.PositionSwapper) return false;
+                id == PrototypeItemId.PositionSwapper || id == PrototypeItemId.Bombardment) return false;
             var item = PrototypeItemCatalog.Get(id);
+            if (!item.IsAvailableOnMap(BoardMapId) ||
+                (id == PrototypeItemId.GhostPass || id == PrototypeItemId.Wall || id == PrototypeItemId.TileAmplifier) && avatar.CurrentHealth <= 0) return false;
             var origin = avatar.EyePivot != null ? avatar.EyePivot.position : avatar.transform.position + Vector3.up * .75f;
             var direction = avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward;
             if (Vector3.Distance(origin, claimedOrigin) > 1.5f || Vector3.Dot(direction, claimedDirection.normalized) < .94f)
                 return false;
 
+            if (id == PrototypeItemId.GhostPass && Turn <= 1) return false;
+            if (id == PrototypeItemId.TileAmplifier && HasUsedTileAmplifier(avatar.AssignedSlot)) return false;
+            BoardGate wallGate = null;
+            if (id == PrototypeItemId.Wall && (!avatar.HasResolvedItemChoice || !TryGetWallPlacement(avatar, origin, direction, out wallGate))) return false;
             RaycastHit ground = default;
             var minePosition = default(Vector3);
             if (id == PrototypeItemId.Mine &&
@@ -59,7 +65,10 @@ namespace MazeParty.Multiplayer
                      ground.normal,
                      out minePosition))) return false;
             if (!avatar.SpendItemChargeOnServer(item)) return false;
+            if (id == PrototypeItemId.Wall) PlaceBoardWallOnServer(wallGate);
             if (id == PrototypeItemId.Cloak) avatar.ActivateCloakOnServer();
+            if (id == PrototypeItemId.GhostPass) RegisterGhostPassOnServer(avatar.AssignedSlot);
+            if (id == PrototypeItemId.TileAmplifier) RegisterTileAmplifierOnServer(avatar.AssignedSlot);
             avatar.PresentItemUseOnServer(id);
             if (id == PrototypeItemId.Pistol || id == PrototypeItemId.Sniper)
             {
@@ -69,16 +78,21 @@ namespace MazeParty.Multiplayer
                     direction,
                     item.Range,
                     avatar.gameObject,
-                    out var hit);
+                    out var hit,
+                    hitZonesOnly: true);
                 var hitPlayer = false;
                 if (didHit)
                 {
                     endpoint = hit.point;
                     var target = hit.collider.GetComponentInParent<NetworkPlayerAvatar>();
                     hitPlayer = target != null;
-                    if (hitPlayer) target.ApplyDamage(new DamageRequest(
-                        item.Damage, DamageKind.Item, avatar.gameObject,
-                        itemId: id));
+                    if (hitPlayer)
+                    {
+                        var region = PlayerHitDamageRules.RegionOf(hit.collider);
+                        var damage = PlayerHitDamageRules.ApplyRegionMultiplier(item.Damage, region);
+                        target.ApplyDamage(new DamageRequest(
+                            damage, DamageKind.Item, avatar.gameObject, region, id));
+                    }
                 }
                 PresentBoardShotRpc(origin, endpoint, (byte)id, didHit, hitPlayer);
             }
@@ -122,6 +136,8 @@ namespace MazeParty.Multiplayer
         private void TickBoardItemWorld()
         {
             if (!GameplayEnabled) return;
+            ExpireBoardWallsOnServer(Turn);
+            TickBoardBombardments();
             for (int slot = 0; slot < 4; slot++)
             {
                 var avatar = GetAvatarForSlot(slot);
@@ -267,9 +283,9 @@ namespace MazeParty.Multiplayer
                 for (int slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                 {
                     var target = GetAvatarForSlot(slot);
-                    if (slot == mine.OwnerSlot || target == null || target.CurrentHealth <= 0 ||
+                    if (target == null || target.CurrentHealth <= 0 ||
                         Vector3.Distance(target.transform.position, mine.Position) > mineDefinition.TriggerRadius ||
-                        !BoardItemPhysics.HasBlastLineOfSight(mine.Position + Vector3.up * .15f, target.transform.position)) continue;
+                        !BoardItemPhysics.HasBlastLineOfSight(mine.Position + Vector3.up * .15f, target.transform.position, target.gameObject)) continue;
                     _boardMines.RemoveAt(i);
                     ExplodeBoardItem(mine.Position, mine.OwnerSlot, mineDefinition);
                     minesChanged = true;
@@ -343,9 +359,11 @@ namespace MazeParty.Multiplayer
                 var target = GetAvatarForSlot(slot);
                 if (target == null || target.CurrentHealth <= 0 ||
                     Vector3.Distance(position, target.transform.position) > item.BlastRadius ||
-                    !BoardItemPhysics.HasBlastLineOfSight(position + Vector3.up * .15f, target.transform.position)) continue;
+                    !BoardItemPhysics.HasBlastLineOfSight(position + Vector3.up * .15f, target.transform.position, target.gameObject)) continue;
                 target.ApplyDamage(new DamageRequest(
-                    item.Damage, DamageKind.Item,
+                    item.Id == PrototypeItemId.Bombardment
+                        ? BoardBombardmentRules.DamageAtDistance(Vector3.Distance(position, target.transform.position))
+                        : item.Damage, DamageKind.Item,
                     owner != null ? owner.gameObject : null,
                     itemId: item.Id));
             }
@@ -512,6 +530,10 @@ namespace MazeParty.Multiplayer
 
         private void ClearBoardItemWorld()
         {
+            ClearBoardWalls();
+            ClearBoardBombardments();
+            ResetGhostPassOnServer();
+            ResetTileAmplifierOnServer();
             _boardMines.Clear(); _boardGrenades.Clear();
             foreach (var pair in _grenadeViews)
             {

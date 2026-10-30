@@ -7,7 +7,7 @@ namespace MazeParty.Gameplay
     public static class BoardEffectShotTiming
     {
         public const double Lead = 0.5d;
-        public const double Motion = 1d;
+        public const double Motion = 1.5d;
         public const double Tail = 0.5d;
         public const double Duration = Lead + Motion + Tail;
 

@@ -191,7 +191,9 @@ namespace MazeParty.Multiplayer
                     }
 
                     iconKind = BoardMapIconKind.Item;
-                    label = GameText.T("ITEM ACQUIRED");
+                    label = snapshot.SignedAmount > 1
+                        ? GameText.F("ITEMS ACQUIRED +{0}", snapshot.SignedAmount)
+                        : GameText.T("ITEM ACQUIRED");
                     return true;
                 default:
                     return false;
@@ -208,6 +210,35 @@ namespace MazeParty.Multiplayer
                        typeof(BoardLandingEffectFeedbackKind),
                        snapshot.FeedbackKind) &&
                    snapshot.FeedbackKind != BoardLandingEffectFeedbackKind.None;
+        }
+
+        public static bool TryGetForestGhostContent(BoardForestGhostSnapshot snapshot, double now,
+            out BoardMapIconKind iconKind, out string label, out float remaining)
+        {
+            iconKind = BoardMapIconKind.Item;
+            label = string.Empty;
+            remaining = (float)Math.Max(0d, BoardForestGhostRules.Duration - snapshot.Elapsed(now));
+            if (!snapshot.Active || remaining <= 0f) return false;
+            if (snapshot.IsIntro)
+            {
+                label = GameText.T("LET THE MISCHIEF BEGIN!");
+                return true;
+            }
+            if (!snapshot.Applied || snapshot.Slot < 0 || snapshot.Slot >= MultiplayerConstants.MaxPlayers)
+                return false;
+            switch ((ForestGhostResource)snapshot.Resource)
+            {
+                case ForestGhostResource.Gold:
+                case ForestGhostResource.Key:
+                    iconKind = snapshot.ActualAmount < 0 ? BoardMapIconKind.GoldLoss : BoardMapIconKind.GoldGain;
+                    break;
+                case ForestGhostResource.Health:
+                    iconKind = BoardMapIconKind.Healing;
+                    break;
+                default: return false;
+            }
+            label = FormatSigned(snapshot.ActualAmount);
+            return true;
         }
 
         private static string FormatSigned(int amount)

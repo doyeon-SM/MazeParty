@@ -7,7 +7,7 @@ namespace MazeParty.Gameplay
     // Values 1-3 and 9 (retired Low Dice) must never be reused as serialized IDs.
     public enum PrototypeItemId : byte
     {
-        None = 0, DoubleDice = 4, Pistol = 5, Sniper = 6, Grenade = 7, Mine = 8, HighDice = 10, PositionSwapper = 11, Cloak = 12
+        None = 0, DoubleDice = 4, Pistol = 5, Sniper = 6, Grenade = 7, Mine = 8, HighDice = 10, PositionSwapper = 11, Cloak = 12, Bombardment = 13, GhostPass = 14, Wall = 15, TileAmplifier = 16
     }
 
     public static class PrototypeItemCatalog
@@ -22,7 +22,7 @@ namespace MazeParty.Gameplay
                 {
                     _definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
                     Array.Sort(_definitions, (a, b) => a.Id.CompareTo(b.Id));
-                    if (_definitions.Length != 8) throw new InvalidOperationException("Expected eight board item SOs in Resources/MazeParty/Items.");
+                    if (_definitions.Length != 12) throw new InvalidOperationException("Expected twelve board item SOs in Resources/MazeParty/Items.");
                 }
                 return _definitions;
             }
@@ -33,15 +33,17 @@ namespace MazeParty.Gameplay
             foreach (var item in Definitions) if (item.Id == id) return item;
             throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown board item.");
         }
-        public static PrototypeItemId GetRandomId(System.Random random)
+        public static PrototypeItemId GetRandomId(System.Random random, string mapId = null)
         {
             if (random == null) throw new ArgumentNullException(nameof(random));
             int total = 0;
-            foreach (var item in Definitions) total = checked(total + Mathf.Max(0, item.SpawnWeight));
+            foreach (var item in Definitions)
+                if (item.IsAvailableOnMap(mapId)) total = checked(total + Mathf.Max(0, item.SpawnWeight));
             if (total == 0) throw new InvalidOperationException("At least one item needs a positive spawn weight.");
             int selected = random.Next(total);
             foreach (var item in Definitions)
             {
+                if (!item.IsAvailableOnMap(mapId)) continue;
                 selected -= Mathf.Max(0, item.SpawnWeight);
                 if (selected < 0) return item.Id;
             }
@@ -49,7 +51,7 @@ namespace MazeParty.Gameplay
         }
         public static bool IsValid(PrototypeItemId id) =>
             (id >= PrototypeItemId.DoubleDice && id <= PrototypeItemId.Mine) ||
-            (id >= PrototypeItemId.HighDice && id <= PrototypeItemId.Cloak);
+            (id >= PrototypeItemId.HighDice && id <= PrototypeItemId.TileAmplifier);
     }
 
     public static class ItemShopRules
@@ -65,12 +67,13 @@ namespace MazeParty.Gameplay
         private readonly PrototypeItemId[] _offers =
             new PrototypeItemId[ItemShopRules.OfferCount];
 
-        public ItemShopStock(int seed)
+        public ItemShopStock(int seed, string mapId = null)
         {
             Seed = seed;
             var random = new System.Random(seed);
             var candidates = new List<BoardItemDefinition>(
                 PrototypeItemCatalog.All);
+            candidates.RemoveAll(item => !item.IsAvailableOnMap(mapId));
             for (var i = 0; i < _offers.Length; i++)
             {
                 var totalWeight = 0;
@@ -112,7 +115,7 @@ namespace MazeParty.Gameplay
         private ItemShopStock(
             IReadOnlyList<PrototypeItemId> offers,
             byte soldMask,
-            int seed)
+            int seed, string mapId)
         {
             if (offers == null || offers.Count != ItemShopRules.OfferCount)
             {
@@ -125,7 +128,8 @@ namespace MazeParty.Gameplay
             var duplicateIndices = new List<int>();
             for (var index = 0; index < _offers.Length; index++)
             {
-                if (!PrototypeItemCatalog.IsValid(offers[index]))
+                if (!PrototypeItemCatalog.IsValid(offers[index]) ||
+                    !PrototypeItemCatalog.Get(offers[index]).IsAvailableOnMap(mapId))
                 {
                     throw new ArgumentException(
                         "A restored item shop contains an unknown offer.",
@@ -148,7 +152,7 @@ namespace MazeParty.Gameplay
                 var definitions = PrototypeItemCatalog.All;
                 for (var index = 0; index < definitions.Count; index++)
                 {
-                    if (!usedOffers.Contains(definitions[index].Id))
+                    if (!usedOffers.Contains(definitions[index].Id) && definitions[index].IsAvailableOnMap(mapId))
                     {
                         replacements.Add(definitions[index].Id);
                     }
@@ -208,9 +212,9 @@ namespace MazeParty.Gameplay
         public static ItemShopStock Restore(
             IReadOnlyList<PrototypeItemId> offers,
             byte soldMask,
-            int seed = 0)
+            int seed = 0, string mapId = null)
         {
-            return new ItemShopStock(offers, soldMask, seed);
+            return new ItemShopStock(offers, soldMask, seed, mapId);
         }
     }
 

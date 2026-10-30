@@ -5,6 +5,18 @@ namespace MazeParty.Gameplay.Minigames
 {
     public static class MinigameSpectatorSelection
     {
+        public static int NextTarget(int currentTarget, IReadOnlyList<bool> watchable)
+        {
+            if (watchable == null) throw new ArgumentNullException(nameof(watchable));
+            var current = currentTarget >= 0 && currentTarget < watchable.Count ? currentTarget : -1;
+            for (var offset = 1; offset <= watchable.Count; offset++)
+            {
+                var slot = (current + offset) % watchable.Count;
+                if (watchable[slot]) return slot;
+            }
+            return -1;
+        }
+
         public static int ChooseTarget(
             int currentTarget,
             IReadOnlyList<bool> watchable,

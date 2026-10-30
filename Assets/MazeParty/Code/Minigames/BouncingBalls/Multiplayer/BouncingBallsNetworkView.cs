@@ -387,7 +387,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var edge = (float)BouncingBallsRules.ArenaHalfExtent + 0.28f;
+            var edge = (float)BouncingBallsRules.GoalLineDistance;
             Vector3 localPosition;
             switch (slot)
             {
@@ -476,6 +476,9 @@ namespace MazeParty.Multiplayer
             _colorBlock.Clear();
             _colorBlock.SetColor(BaseColorProperty, color);
             _colorBlock.SetColor(ColorProperty, color);
+            // Only emissive ball materials use this; preserve the last hitter's colour.
+            _colorBlock.SetColor("_EmissionColor", new Color(
+                color.r * 2.5f + .12f, color.g * 2.5f + .12f, color.b * 2.5f + .12f, 1f));
             renderer.SetPropertyBlock(_colorBlock);
         }
 

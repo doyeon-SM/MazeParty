@@ -116,7 +116,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 StableFootingRules.CanPushDuring(
                     StableFootingCyclePhase.ShuffleReveal),
-                Is.False);
+                Is.True);
             Assert.That(
                 StableFootingRules.CanPushDuring(
                     StableFootingCyclePhase.Move),

@@ -221,6 +221,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 SequenceMemoryNetworkView.SharedCameraPosition,
                 SequenceMemoryNetworkView.SharedCameraRotation);
             cameraObject.AddComponent<AudioListener>();
+            _productionView.NpcPresentation?.SetCamera(_runtimeCamera.transform);
         }
 
         private void BeginMatch(int seed)
@@ -233,6 +234,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             _phaseElapsed = 0d;
             _phaseDuration = SequenceMemoryRules.CountdownSeconds;
             _presentedSymbolCount = 0;
+            _productionView.NpcPresentation?.ClearTone();
             Array.Clear(_nextAiInputAt, 0, _nextAiInputAt.Length);
             Array.Clear(_aiInputIntervals, 0, _aiInputIntervals.Length);
             for (var slot = 0;
@@ -293,15 +295,25 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void UpdateProblemPresentation()
         {
+            var previousCount = _presentedSymbolCount;
             _presentedSymbolCount = Math.Min(
                 _match.CurrentProblem.Length,
                 (int)Math.Floor(
                     _phaseElapsed /
                     SequenceMemoryRules.ProblemSymbolIntervalSeconds));
+            if (_presentedSymbolCount > previousCount)
+            {
+                var note = _match.CurrentProblem[_presentedSymbolCount - 1];
+                _productionView.NpcPresentation?.PresentTone(note);
+                GameSound.PlayPitched(SoundKeys.MinigameSequenceMemoryTone,
+                    note == SequenceMemoryInput.A ? GameSound.DoPitchScale :
+                    note == SequenceMemoryInput.S ? GameSound.MiPitchScale : GameSound.SolPitchScale);
+            }
         }
 
         private void BeginInputWindow()
         {
+            _productionView.NpcPresentation?.ClearTone();
             _match.OpenInputWindow();
             _phase = NetworkSequenceMemoryPhase.AcceptingInput;
             _phaseElapsed = 0d;

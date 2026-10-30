@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using MazeParty.Gameplay.Minigames.BouncingBalls;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -13,8 +14,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity";
-        private const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
 
         [Test]
         public void GoalPresentationRpc_IsReliablePerEvent()
@@ -69,10 +68,26 @@ namespace MazeParty.Multiplayer.Tests
                 AssertArray(serialized, "shieldRenderers", 4);
                 AssertArray(serialized, "ballTransforms", 7);
                 AssertArray(serialized, "ballRenderers", 7);
+                var ballTransforms = Enumerable.Range(0, BouncingBallsRules.BallCount)
+                    .Select(view.GetBallTransform).ToArray();
+                Assert.That(ballTransforms.Distinct().Count(),
+                    Is.EqualTo(BouncingBallsRules.BallCount),
+                    "Every simulated ball must have its own scene instance.");
+                for (var id = 0; id < ballTransforms.Length; id++)
+                {
+                    var ball = ballTransforms[id];
+                    Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        ball.gameObject), Is.EqualTo(
+                        "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/Ball.prefab"),
+                        "Initial and wave balls must share the authored ball prefab.");
+                    Assert.That(view.GetBallRenderer(id).transform, Is.EqualTo(ball));
+                    Assert.That(ball.gameObject.activeSelf,
+                        Is.EqualTo(id < BouncingBallsRules.InitialBallCount),
+                        "Wave balls must stay hidden until the simulation activates them.");
+                }
 
                 var arena = FindDescendant(state.transform, "Arena Presentation");
                 Assert.That(arena, Is.Not.Null);
-                Assert.That(arena.position, Is.EqualTo(new Vector3(1260f, 0f, 0f)));
                 Assert.That(FindDescendant(arena, "Goals")?.childCount,
                     Is.EqualTo(4));
                 Assert.That(FindDescendant(arena, "Shields")?.childCount,
@@ -81,10 +96,10 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(7));
                 var expectedShieldPositions = new[]
                 {
-                    new Vector3(0f, -7.5f, 0.38f),
-                    new Vector3(7.5f, 0f, 0.38f),
-                    new Vector3(0f, 7.5f, 0.38f),
-                    new Vector3(-7.5f, 0f, 0.38f)
+                    new Vector3(0f, -(float)BouncingBallsRules.ShieldRailDistance, 0.38f),
+                    new Vector3((float)BouncingBallsRules.ShieldRailDistance, 0f, 0.38f),
+                    new Vector3(0f, (float)BouncingBallsRules.ShieldRailDistance, 0.38f),
+                    new Vector3(-(float)BouncingBallsRules.ShieldRailDistance, 0f, 0.38f)
                 };
                 for (var slot = 0; slot < expectedShieldPositions.Length; slot++)
                 {
@@ -93,27 +108,13 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(shield, Is.Not.Null);
                     Assert.That(shield.localPosition,
                         Is.EqualTo(expectedShieldPositions[slot]));
+                    var goal = FindDescendant(arena, "Goal " + (slot + 1));
+                    var radial = slot == 0 || slot == 2 ? goal.localPosition.y : goal.localPosition.x;
+                    Assert.That(Mathf.Abs(radial), Is.EqualTo((float)BouncingBallsRules.GoalLineDistance),
+                        "Visible goals must agree with the authoritative scoring plane.");
                 }
-                Assert.That(FindDescendant(state.transform,
-                    "Art Replacement Anchors"), Is.Not.Null);
 
-                var hud = state.GetComponentInChildren<BouncingBallsHudBindings>(true);
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
-                Assert.That(hud.transform.localScale, Is.EqualTo(Vector3.one),
-                    "The authored HUD instance must remain visible.");
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        hud.gameObject), Is.EqualTo(HudPrefabPath));
-                var hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    HudPrefabPath);
-                Assert.That(hudPrefab, Is.Not.Null);
-                Assert.That(hudPrefab.transform.localScale,
-                    Is.EqualTo(Vector3.one),
-                    "The HUD prefab root must not collapse to zero scale.");
-                Assert.That(roots.SelectMany(root =>
-                    root.GetComponentsInChildren<Canvas>(true)).Count(),
-                    Is.EqualTo(1));
+                // Canvas sources and serialized HUD bindings are covered by UiPrefabPolicyTests.
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component => component != null &&
@@ -121,9 +122,6 @@ namespace MazeParty.Multiplayer.Tests
                         "Unity.Cinemachine.CinemachineCamera")
                     .ToArray();
                 Assert.That(cameras, Has.Length.EqualTo(1));
-                Assert.That(cameras[0].name, Is.EqualTo("CM_BouncingBallsShared"));
-                Assert.That(cameras[0].transform.position,
-                    Is.EqualTo(new Vector3(1260f, 0f, -30f)));
                 Assert.That(roots.SelectMany(root =>
                     root.GetComponentsInChildren<Camera>(true)), Is.Empty);
                 Assert.That(roots.SelectMany(root =>

@@ -16,6 +16,22 @@ namespace MazeParty.Gameplay
         private bool _consumed;
         public int ChestIndex { get; private set; }
         public Vector3 ObservationPoint => observationPoint.position;
+        private Renderer[] _observationRenderers;
+        public bool TryGetObservationBounds(out Bounds bounds)
+        {
+            if (_observationRenderers == null) _observationRenderers = GetComponentsInChildren<Renderer>(true);
+            bounds = default;
+            var found = false;
+            foreach (var renderer in _observationRenderers)
+            {
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy ||
+                    (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer))) continue;
+                if (!found) bounds = renderer.bounds;
+                else bounds.Encapsulate(renderer.bounds);
+                found = true;
+            }
+            return found;
+        }
         public bool HasRequiredReferences => chestAnimator != null &&
             interactionCollider != null && interactionCollider.isTrigger && observationPoint != null &&
             acquiredVfxPrefab != null;

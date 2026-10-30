@@ -24,7 +24,7 @@ namespace MazeParty.Gameplay
                 for (var index = 0; index < outgoing.Count; index++)
                 {
                     var next = outgoing[index]?.Destination;
-                    if (next == null || previous.ContainsKey(next))
+                    if (next == null || outgoing[index].IsTemporarilyBlocked || previous.ContainsKey(next))
                     {
                         continue;
                     }
@@ -68,7 +68,7 @@ namespace MazeParty.Gameplay
                     for (var i = 0; i < outgoing.Count; i++)
                     {
                         var to = outgoing[i]?.Destination;
-                        if (to == null) continue;
+                        if (to == null || outgoing[i].IsTemporarilyBlocked) continue;
                         if (!incoming.TryGetValue(to, out var sources))
                             incoming.Add(to, sources = new List<BoardTile>());
                         sources.Add(tile);
@@ -98,7 +98,7 @@ namespace MazeParty.Gameplay
                     for (var i = 0; i < outgoing.Count; i++)
                     {
                         var to = outgoing[i]?.Destination;
-                        if (to != null && distance.TryGetValue(to, out var remaining) &&
+                        if (to != null && !outgoing[i].IsTemporarilyBlocked && distance.TryGetValue(to, out var remaining) &&
                             remaining == pair.Value - 1)
                         {
                             _next.Add(pair.Key, to);

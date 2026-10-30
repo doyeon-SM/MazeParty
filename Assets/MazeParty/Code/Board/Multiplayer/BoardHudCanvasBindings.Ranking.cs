@@ -19,6 +19,11 @@ namespace MazeParty.Multiplayer
         private bool _rankingLayoutDirty;
         private double _rankSwapStarted;
 
+        public static string FormatRank(int rank) => rank switch
+        {
+            1 => "1st", 2 => "2nd", 3 => "3rd", 4 => "4th", _ => "--"
+        };
+
         public void PresentPlayerRanking(int[] ranks, double now)
         {
             if (ranks == null || ranks.Length != _rankOrder.Length ||
@@ -108,6 +113,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            ResetGhostPassPresentation();
             _rankingInitialized = false;
             if (references?.PlayerRankingLayout != null)
                 references.PlayerRankingLayout.enabled = true;

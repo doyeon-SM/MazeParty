@@ -44,8 +44,7 @@ namespace MazeParty.Multiplayer
                 for (var kind = 0; kind < deltas.Length; kind++)
                 {
                     var delta = deltas[kind];
-                    if (delta == null || delta.Label == null || delta.Icon == null ||
-                        delta.Icon.texture == null || delta.Group == null || delta.Value == null ||
+                    if (delta == null || delta.Label == null || delta.Group == null || delta.Value == null ||
                         (kind > 0 && delta.ValueIcon == null)) return false;
                 }
                 return true;
@@ -83,13 +82,13 @@ namespace MazeParty.Multiplayer
         {
             if (!HasRequiredReferences || kind < 0 || kind >= deltas.Length || amount == 0) return;
             var delta = deltas[kind];
-            delta.Label.text = (amount > 0 ? "+" : "-") + Math.Abs((long)amount).ToString("00");
+            delta.Label.text = (amount > 0 ? "+" : "-") + Math.Abs((long)amount).ToString();
             var color = amount < 0 ? loss : kind == 0 ? healthGain : currencyGain;
-            delta.Label.color = delta.Icon.color = color;
+            delta.Label.color = color;
+            if (delta.Icon != null) delta.Icon.gameObject.SetActive(false);
             _deltaStartedAt[kind] = now;
             delta.Label.gameObject.SetActive(true);
             delta.Value.enabled = false;
-            if (delta.ValueIcon != null) delta.ValueIcon.enabled = false;
             delta.Group.alpha = 0f;
         }
 

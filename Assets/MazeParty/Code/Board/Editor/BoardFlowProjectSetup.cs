@@ -1032,6 +1032,7 @@ namespace MazeParty.Editor
             var presenter = root.AddComponent<BoardFlowCameraPresenter>();
             presenter.Configure(director);
             presenter.ConfigureEventSplitView(BoardEventPresentationProjectSetup.EnsureSplitRig());
+            presenter.ConfigureForestGhost(BoardForestGhostAuthoring.EnsurePrefab());
             presenter.ConfigureLocalPlayerMarker(
                 BoardLocalPlayerMarkerProjectSetup.CreateInstance(root.transform));
             presenter.ConfigureResourceTransferAssets(
@@ -1042,6 +1043,8 @@ namespace MazeParty.Editor
             presenter.ConfigureLandingEffectFeedbackAssets(
                 BoardLandingEffectFeedbackProjectSetup.EnsureInstalled(),
                 SharedVfxProjectSetup.EnsureLightningStrikePrefab());
+            presenter.ConfigureCombatHitSpark(
+                RequireBoardResourceTransferPrefab(MinigameVfxProjectSetup.ArenaCombatHitSparkPrefabPath));
             presenter.ConfigureLandingRewardAssets(
                 BoardLandingEffectFeedbackProjectSetup.EnsureGiftPrefab(),
                 BoardLandingEffectFeedbackProjectSetup.EnsureHealingShieldPrefab());

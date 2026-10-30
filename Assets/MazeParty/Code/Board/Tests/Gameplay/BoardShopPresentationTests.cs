@@ -7,11 +7,6 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardShopPresentationTests
     {
-        private const string WaterShieldPath =
-            "Assets/MazeParty/Prefabs/Common/VFX/WaterShield.prefab";
-        private const string SandShieldPath =
-            "Assets/MazeParty/Prefabs/Common/VFX/SandShield.prefab";
-
         private static void AssertPeripheral(BoardTile tile, Vector3 position)
         {
             Assert.That(tile.ContainsHorizontalDisc(position, 1.45f), Is.True,
@@ -22,39 +17,25 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void ShopPrefabs_AuthorSharedShieldForBothHighlightRequests()
+        public void ShopPrefabs_SeparatePhysicalAndInteractionColliders()
         {
-            foreach (var shop in new[]
-                     {
-                         (Path: "Assets/MazeParty/Prefabs/Board/World/KeyShop.prefab",
-                             ShieldPath: SandShieldPath),
-                         (Path: "Assets/MazeParty/Prefabs/Board/World/ItemShop1.prefab",
-                             ShieldPath: WaterShieldPath),
-                         (Path: "Assets/MazeParty/Prefabs/Board/World/ItemShop2.prefab",
-                             ShieldPath: WaterShieldPath)
-                     })
+            foreach (var path in new[]
             {
-                var prefab = PrefabUtility.LoadPrefabContents(shop.Path);
+                "Assets/MazeParty/Prefabs/Board/World/KeyShop.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/ItemShop1.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/ItemShop2.prefab"
+            })
+            {
+                var prefab = PrefabUtility.LoadPrefabContents(path);
                 try
                 {
-                    Assert.That(prefab, Is.Not.Null, shop.Path);
+                    Assert.That(prefab, Is.Not.Null, path);
                     var visual = prefab.GetComponent<BoardShopVisual>();
-                    Assert.That(visual, Is.Not.Null, shop.Path);
+                    Assert.That(visual, Is.Not.Null, path);
                     Assert.That(
                         visual.HasRequiredReferences,
                         Is.True,
-                        shop.Path);
-                    Assert.That(
-                        visual.TopViewHighlight,
-                        Is.SameAs(visual.LocationHighlightVfx),
-                        shop.Path +
-                        " must combine top-view and location requests on one shield.");
-                    AssertLocationHighlightBinding(
-                        visual,
-                        shop.ShieldPath,
-                        shop.Path);
-                    Assert.That(visual.LocationHighlightVfx.activeSelf,
-                        Is.False, shop.Path);
+                        path);
                     var interactionColliders = prefab
                         .GetComponentsInChildren<Collider>(true)
                         .Where(item =>
@@ -64,35 +45,35 @@ namespace MazeParty.Gameplay.Tests
                     Assert.That(
                         interactionColliders,
                         Is.Not.Empty,
-                        shop.Path);
+                        path);
                     Assert.That(
                         interactionColliders.All(item => item.isTrigger),
                         Is.True,
-                        shop.Path +
+                        path +
                         " interaction volumes must remain query-only triggers.");
                     Assert.That(
                         visual.InteractionColliders,
                         Is.EquivalentTo(interactionColliders),
-                        shop.Path);
+                        path);
 
                     var physicalColliders = visual.PhysicalColliders;
-                    Assert.That(physicalColliders, Is.Not.Null, shop.Path);
-                    Assert.That(physicalColliders, Is.Not.Empty, shop.Path);
+                    Assert.That(physicalColliders, Is.Not.Null, path);
+                    Assert.That(physicalColliders, Is.Not.Empty, path);
                     Assert.That(
                         physicalColliders.All(item => item != null &&
                             !item.isTrigger &&
                             item.GetComponent<KeyShopWorldTarget>() == null &&
                             item.GetComponent<ItemShopWorldTarget>() == null),
                         Is.True,
-                        shop.Path +
+                        path +
                         " must separate solid occupancy from interaction targets.");
                     Assert.That(
                         physicalColliders.Intersect(interactionColliders),
                         Is.Empty,
-                        shop.Path);
+                        path);
 
                     var visualRoot = prefab.transform.Find("Visuals");
-                    Assert.That(visualRoot, Is.Not.Null, shop.Path);
+                    Assert.That(visualRoot, Is.Not.Null, path);
                     var authoredMeshes = visualRoot
                         .GetComponentsInChildren<MeshFilter>(true);
                     Assert.That(
@@ -105,7 +86,7 @@ namespace MazeParty.Gameplay.Tests
                                     meshCollider,
                                     authoredMesh))),
                         Is.True,
-                        shop.Path +
+                        path +
                         " physical occupancy must reuse the authored model mesh.");
                 }
                 finally
@@ -116,7 +97,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void ShopHighlights_PlayOncePerRevisionAndRejectStaleLocations()
+        public void ShopMarkers_ReuseInstancesAndRejectStaleLocations()
         {
             var root = new GameObject("Shop state test");
             try
@@ -134,27 +115,14 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.True);
                 var marker = key.MarkerObject;
                 AssertPeripheral(first, marker.transform.position);
-                var keyVisual = marker.GetComponent<BoardShopVisual>();
-                Assert.That(keyVisual.HasRequiredReferences, Is.True);
-                AssertRuntimeLocationHighlight(keyVisual, "Key shop marker");
-                Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.True);
-                keyVisual.StopLocationHighlight();
-                Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.True);
-                Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.False,
-                    "A repeated snapshot must not restart the location highlight.");
+                Assert.That(marker.GetComponent<BoardShopVisual>().HasRequiredReferences, Is.True);
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, second.Coordinate, topology, 3), Is.True);
                 Assert.That(key.MarkerObject, Is.SameAs(marker));
-                AssertPeripheral(second, marker.transform.position);
-                Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.True,
-                    "A new key-shop location revision must restart the highlight.");
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.False);
                 Assert.That(marker.activeSelf, Is.True);
                 AssertPeripheral(second, marker.transform.position);
-                Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.True,
-                    "A stale key-shop revision must not replace the active presentation state.");
                 key.ApplyReplicatedState(KeyShopLifecycleState.Inactive, false, first.Coordinate, topology, 4);
                 Assert.That(marker.activeSelf, Is.False);
-                Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.False);
 
                 var items = root.AddComponent<ItemShopWorldMarker>();
                 for (var index = 0; index < ItemShopRules.ShopCount; index++)
@@ -162,106 +130,19 @@ namespace MazeParty.Gameplay.Tests
                     Assert.That(items.ApplyReplicatedState(index, true, first.Coordinate, false, topology, 2), Is.True);
                     var item = items.GetMarkerObject(index);
                     AssertPeripheral(first, item.transform.position);
-                    var itemVisual = item.GetComponent<BoardShopVisual>();
-                    AssertRuntimeLocationHighlight(
-                        itemVisual,
-                        "Item shop marker " + index);
-                    Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
-                        Is.True);
+                    Assert.That(item.GetComponent<BoardShopVisual>().HasRequiredReferences, Is.True);
                     foreach (var target in item.GetComponentsInChildren<ItemShopWorldTarget>(true))
                         Assert.That(target.ShopIndex, Is.EqualTo(index));
-                    itemVisual.StopLocationHighlight();
-                    Assert.That(items.ApplyReplicatedState(index, true, first.Coordinate, false, topology, 2), Is.True);
-                    Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
-                        Is.False,
-                        "A repeated item-shop snapshot must not restart the highlight.");
                     Assert.That(items.ApplyReplicatedState(index, true, second.Coordinate, true, topology, 3), Is.True);
                     Assert.That(items.GetMarkerObject(index), Is.SameAs(item));
-                    AssertPeripheral(second, item.transform.position);
-                    Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
-                        Is.True,
-                        "A new item-shop location revision must restart the highlight.");
                     Assert.That(items.ApplyReplicatedState(index, false, first.Coordinate, false, topology, 2), Is.False);
                     Assert.That(item.activeSelf, Is.True);
                     AssertPeripheral(second, item.transform.position);
-                    Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
-                        Is.True,
-                        "A stale item-shop revision must not replace the active presentation state.");
                     items.ApplyReplicatedState(index, false, second.Coordinate, true, topology, 4);
                     Assert.That(item.activeSelf, Is.False);
-                    Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
-                        Is.False);
                 }
             }
             finally { Object.DestroyImmediate(root); }
-        }
-
-        [Test]
-        public void ShopHighlightRequests_DoNotCancelEachOther()
-        {
-            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/World/ItemShop1.prefab");
-            var instance = Object.Instantiate(source);
-            try
-            {
-                var visual = instance.GetComponent<BoardShopVisual>();
-                Assert.That(visual, Is.Not.Null);
-
-                visual.SetTopViewHighlightVisible(true);
-                visual.PlayLocationHighlight();
-                visual.StopLocationHighlight();
-                Assert.That(
-                    visual.LocationHighlightVfx.activeSelf,
-                    Is.True,
-                    "Ending the timed request must preserve top-view visibility.");
-
-                visual.SetTopViewHighlightVisible(false);
-                Assert.That(visual.LocationHighlightVfx.activeSelf, Is.False);
-
-                visual.PlayLocationHighlight();
-                visual.SetTopViewHighlightVisible(true);
-                visual.SetTopViewHighlightVisible(false);
-                Assert.That(
-                    visual.LocationHighlightVfx.activeSelf,
-                    Is.True,
-                    "Ending top-view mode must preserve the timed request.");
-            }
-            finally
-            {
-                Object.DestroyImmediate(instance);
-            }
-        }
-
-        private static void AssertLocationHighlightBinding(
-            BoardShopVisual visual,
-            string shieldPath,
-            string context)
-        {
-            Assert.That(visual, Is.Not.Null, context);
-            Assert.That(visual.LocationHighlightVfx, Is.Not.Null, context);
-            Assert.That(
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    visual.LocationHighlightVfx),
-                Is.EqualTo(shieldPath),
-                context);
-            Assert.That(
-                visual.LocationHighlightVfx.GetComponentsInChildren<Collider>(
-                    true),
-                Is.Empty,
-                context + " must remain presentation-only.");
-        }
-
-        private static void AssertRuntimeLocationHighlight(
-            BoardShopVisual visual,
-            string context)
-        {
-            Assert.That(visual, Is.Not.Null, context);
-            Assert.That(visual.LocationHighlightVfx, Is.Not.Null, context);
-            Assert.That(
-                visual.LocationHighlightVfx.GetComponentsInChildren<Collider>(
-                    true),
-                Is.Empty,
-                context + " must remain presentation-only.");
         }
 
         private static bool HasMatchingMeshTransform(

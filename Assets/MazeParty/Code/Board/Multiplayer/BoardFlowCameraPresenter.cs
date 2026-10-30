@@ -8,7 +8,7 @@ namespace MazeParty.Multiplayer
     /// Maps replicated flow state to the local-only Cinemachine presentation.
     /// Camera completion never blocks or advances the authoritative server timeline.
     /// </summary>
-    public sealed class BoardFlowCameraPresenter : MonoBehaviour
+    public sealed partial class BoardFlowCameraPresenter : MonoBehaviour
     {
         private const int NameplateOcclusionHitCapacity = 64;
 
@@ -21,6 +21,7 @@ namespace MazeParty.Multiplayer
         private BoardEventSplitView _eventSplitView;
         private readonly Transform[] _eventRoots = new Transform[4];
         private readonly Transform[] _eventHeads = new Transform[4];
+        private readonly int[] _retreatSlots = new int[4];
         private readonly GameObject[] _eventVisuals = new GameObject[4];
         private int _eventVisualRevision = -1;
         private byte _landingEventPlayedMask;
@@ -29,6 +30,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardLandingEffectFeedbackView
             landingEffectFeedbackPrefab;
         [SerializeField] private GameObject landingEventLightningPrefab;
+        [SerializeField] private GameObject combatHitSparkVfxPrefab;
         [SerializeField] private GameObject landingGiftPrefab;
         [SerializeField] private GameObject landingHealingShieldPrefab;
         [SerializeField, Min(0f)] private float resourceTransferHeadOffset = 0.3f;
@@ -96,6 +98,8 @@ namespace MazeParty.Multiplayer
 
         private void ClearLocalPresentation()
         {
+            cameraDirector?.ClearShopReveal();
+            ClearForestGhostPresentation();
             ClearEventPresentation();
             if (_localAvatar != null && _localAvatar.AvatarVisual != null)
             {
@@ -125,6 +129,17 @@ namespace MazeParty.Multiplayer
             OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
         }
 
+        public void ConfigureCombatHitSpark(GameObject prefab)
+        {
+            combatHitSparkVfxPrefab = prefab;
+            OneShotVfxPool.Prewarm(combatHitSparkVfxPrefab, 4);
+        }
+
+        public void PresentCombatHitSpark(Vector3 point, Vector3 normal)
+        {
+            CombatHitVfx.Play(combatHitSparkVfxPrefab, point, normal);
+        }
+
         public void ConfigureLandingRewardAssets(GameObject giftPrefab, GameObject healingShieldPrefab)
         {
             landingGiftPrefab = giftPrefab;
@@ -136,6 +151,7 @@ namespace MazeParty.Multiplayer
             BindCameraEvents();
             if (localPlayerMarker != null) localPlayerMarker.Hide();
             OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
+            OneShotVfxPool.Prewarm(combatHitSparkVfxPrefab, 4);
         }
 
         private void OnDisable()
@@ -144,13 +160,14 @@ namespace MazeParty.Multiplayer
             // first-person hidden-body or board top-view highlight presentation
             // out of the Board scene and into the lobby.
             UnbindCameraEvents();
+            ClearMagicMazePresentation();
             ClearLocalPresentation();
             ClearNameplateOcclusion();
             ClearResourceTransferVisual();
             ClearLandingEffectFeedbackVisual();
             _landingEffectFeedbackInitialized = false;
             _landingEffectFeedbackRevision = -1;
-            BoardFlowView.Instance?.SetTopViewShopHighlights(false);
+
         }
 
         private void Update()
@@ -165,6 +182,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             if (cameraDirector == null || match == null || !match.IsSpawned || !match.GameplayEnabled)
             {
+                ClearMagicMazePresentation();
                 ClearLocalPresentation();
                 ClearNameplateOcclusion();
                 ClearResourceTransferVisual();
@@ -181,9 +199,10 @@ namespace MazeParty.Multiplayer
                 cameraDirector.SetLocalPlayerEye(_localAvatar.EyePivot);
             }
 
-            if (match.IsReconnectPaused)
+            if (match.IsReconnectPaused && !match.IsCombatRetreatActive)
             {
                 _wasReconnectPaused = true;
+                RefreshForestGhostPresentation(match);
                 ApplyLocalBodyVisibility(cameraDirector.ActiveMode);
                 RefreshOpponentNameplateOcclusion(
                     match,
@@ -191,9 +210,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (RefreshMagicMazePresentation(match)) return;
+
             RefreshCombatSpectatorFocus(match);
-            var splitEvent = RefreshSplitEventPresentation(match);
+            var splitEvent = match.IsCombatRetreatActive
+                ? RefreshCombatRetreatPresentation(match)
+                : RefreshSplitEventPresentation(match);
             var purchasePhase = match.KeyPurchasePhase;
+            RefreshShopRevealCamera(match, purchasePhase);
             var resourceTransferPhase = match.IsKeyShopRevealActive
                 ? RefreshKeyPurchasePresentation(match)
                 : RefreshResourceTransferPresentation(match);
@@ -202,7 +226,11 @@ namespace MazeParty.Multiplayer
                                resourceTransferPhase !=
                                BoardResourceTransferPhase.Destination &&
                                RefreshLandingCameraFocus(match);
-            var targetMode = splitEvent ? GameplayMode.BoardResourceEvent : match.IsKeyShopRevealActive
+            var ghostFocus = RefreshForestGhostPresentation(match);
+            var targetMode = ghostFocus
+                ? (match.ForestGhost.IsIntro || match.ForestGhost.Slot >= 0 ? GameplayMode.BoardResourceEvent : GameplayMode.CombatSpectator)
+                : match.IsForestGhostReturningToTopView ? GameplayMode.BoardTopDown
+                : splitEvent ? GameplayMode.BoardResourceEvent : match.IsKeyShopRevealActive
                 ? purchasePhase == KeyPurchasePresentationPhase.AcquireKey
                     ? GameplayMode.BoardResourceEvent
                     : purchasePhase >= KeyPurchasePresentationPhase.ReturnToFirstPerson
@@ -227,7 +255,10 @@ namespace MazeParty.Multiplayer
                 _observedRevision = match.StateRevision;
                 if (cameraDirector.ActiveMode != targetMode)
                 {
-                    if (targetMode == GameplayMode.BoardResourceEvent ||
+                    if (match.IsForestGhostReturningToTopView)
+                        cameraDirector.SwitchTo(targetMode, () => System.Math.Max(0d,
+                            match.ForestGhost.Elapsed(match.SynchronizedNow) - BoardForestGhostRules.Duration));
+                    else if (ghostFocus || targetMode == GameplayMode.BoardResourceEvent ||
                         cameraDirector.ActiveMode == GameplayMode.BoardResourceEvent ||
                         purchasePhase == KeyPurchasePresentationPhase.RevealShop &&
                         _observedKeyPurchasePhase != KeyPurchasePresentationPhase.RevealShop)
@@ -251,6 +282,33 @@ namespace MazeParty.Multiplayer
         }
 
         public void ConfigureEventSplitView(BoardEventSplitView prefab) => eventSplitViewPrefab = prefab;
+
+        private bool RefreshCombatRetreatPresentation(NetworkMatchState match)
+        {
+            ClearEventVisuals();
+            if (match.CombatRetreat.HasReached(match.SynchronizedNow, BoardCombatRetreatTiming.TopViewAt) || eventSplitViewPrefab == null)
+            { ClearEventPresentation(); return false; }
+            var count = 0;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                if (!match.CombatRetreat.Contains(slot)) continue;
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar == null) continue;
+                _eventRoots[count] = avatar.transform;
+                _eventHeads[count] = ResolveHeadAnchor(avatar);
+                _retreatSlots[count++] = slot;
+            }
+            if (count == 0) { ClearEventPresentation(); return false; }
+            if (_eventSplitView == null)
+            {
+                _eventSplitView = Instantiate(eventSplitViewPrefab);
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(_eventSplitView.gameObject, gameObject.scene);
+            }
+            _eventSplitView.PresentCombatRetreat(cameraDirector, _eventRoots, _eventHeads,
+                _retreatSlots, count, match);
+            cameraDirector.SetBoardResourceEventFocus(_eventRoots[0], _eventHeads[0], 0f);
+            return true;
+        }
 
         private bool RefreshSplitEventPresentation(NetworkMatchState match)
         {
@@ -378,7 +436,9 @@ namespace MazeParty.Multiplayer
                 var bit = (byte)(1 << snapshot.Slot);
                 if ((_landingEventPlayedMask & bit) == 0 && landingEventLightningPrefab != null)
                 {
-                    OneShotVfxPool.Play(landingEventLightningPrefab, avatar.transform.position,
+                    var position = PlayerAvatarVisual.GetFeetPosition(avatar.transform);
+                    GameSound.PlayAt(SoundKeys.Lightning, position);
+                    OneShotVfxPool.Play(landingEventLightningPrefab, position,
                         Quaternion.identity, (float)BoardEffectShotTiming.Motion);
                     _landingEventPlayedMask |= bit;
                 }
@@ -551,6 +611,20 @@ namespace MazeParty.Multiplayer
             return phase;
         }
 
+        private void RefreshShopRevealCamera(NetworkMatchState match, KeyPurchasePresentationPhase phase)
+        {
+            if (phase == KeyPurchasePresentationPhase.RevealShop && match.KeyShopHasLocation)
+            {
+                var topology = BoardMapRuntimeLoader.ActiveTopology ?? FindAnyObjectByType<BoardTopology>();
+                if (topology != null && topology.TryGetTile(match.KeyShopLocation, out var tile))
+                {
+                    cameraDirector.SetShopReveal(tile, match.KeyShopZoomOutProgress);
+                    return;
+                }
+            }
+            cameraDirector.ClearShopReveal();
+        }
+
         private BoardResourceTransferPhase RefreshKeyPurchasePresentation(NetworkMatchState match)
         {
             var phase = match.GetKeyPurchasePhase(out var motion);
@@ -607,7 +681,7 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
-                _resourceTransferVisual = Instantiate(prefab);
+                _resourceTransferVisual = Instantiate(prefab, avatarRoot);
                 _resourceTransferVisualPrefab = prefab;
                 _resourceTransferVisual.name =
                     "Board Resource Transfer " + snapshot.ResourceKind;
@@ -634,7 +708,11 @@ namespace MazeParty.Multiplayer
             var visualTransform = visual.transform;
             visualTransform.position = headPosition +
                                        Vector3.up *
-                                       (resourceTransferHeadOffset + height);
+                                       height;
+            // Leave the caption column clear while both ends still meet the head.
+            var right = cameraDirector != null && cameraDirector.OutputCamera != null
+                ? cameraDirector.OutputCamera.transform.right : avatarRoot.right;
+            visualTransform.position += right * (.9f * Mathf.Sin(motionProgress * Mathf.PI));
             visualTransform.rotation = Quaternion.Euler(
                 0f,
                 eased * 240f,
@@ -643,7 +721,7 @@ namespace MazeParty.Multiplayer
                 ? Mathf.InverseLerp(0.72f, 1f, motionProgress)
                 : Mathf.InverseLerp(0.82f, 1f, motionProgress);
             visualTransform.localScale = Vector3.one *
-                                         Mathf.Lerp(1f, 0.2f, disappear);
+                                         1.2f * Mathf.Lerp(1f, 0.2f, disappear);
         }
 
         private void ClearResourceTransferVisual()
@@ -785,7 +863,7 @@ namespace MazeParty.Multiplayer
             for (var index = 0; index < hitCount; index++)
             {
                 var collider = _nameplateOcclusionHits[index].collider;
-                if (collider == null ||
+                if (collider == null || MagicMazeWall.AllowsSightAndAttacks(collider) ||
                     collider.GetComponentInParent<NetworkPlayerAvatar>() != null)
                 {
                     continue;
@@ -793,11 +871,9 @@ namespace MazeParty.Multiplayer
 
                 var boundaryWall =
                     collider.GetComponentInParent<BoardBoundaryWallVisual>();
-                if (boundaryWall != null && !boundaryWall.IsVisible)
+                if (boundaryWall != null)
                 {
-                    // Remote players' private movement walls keep their
-                    // colliders active for simulation but are not visible to
-                    // this client, so they must not mask a nickname.
+                    // Red movement barriers do not block sight or nicknames.
                     continue;
                 }
 
@@ -890,8 +966,7 @@ namespace MazeParty.Multiplayer
                         avatar != null ? avatar.Appearance.BodyColor : Color.white);
                 }
             }
-            BoardFlowView.Instance?.SetTopViewShopHighlights(
-                targetMode == GameplayMode.BoardTopDown);
+
         }
 
         private void RefreshCombatSpectatorFocus(NetworkMatchState match)
