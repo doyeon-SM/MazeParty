@@ -7,10 +7,8 @@ namespace MazeParty.Multiplayer
     [DisallowMultipleComponent]
     public sealed class PrivacyMenuView : MonoBehaviour
     {
-        public const string SupportEmail = "hwangdoyeon423@gmail.com";
-        public const string ScopeText = "Delete the Unity sign-in account used on this PC. This cannot be undone and may prevent recovery of saved online games. Steam/STOVE accounts, purchases, achievements, other service records and local save files are handled separately. For Lobby/Relay records or other privacy requests, copy your support details and email us. A draft opens; nothing is sent automatically.";
-        public const string DeleteWarning = "Permanently delete this Unity sign-in account?\nPlayer ID: {0}\n\nRecovery may be lost. Copy the support details before leaving this screen if you need help with other records. Other service records and local saves are not deleted by this button. Online access stays paused until you choose to use it again.";
-        public const string ResumeWarning = "Use online features again? The game will reconnect to a remaining account or create a new Unity sign-in account if the previous one was deleted. A new account cannot restore the deleted identity. This does not cancel a previous deletion request.";
+        public const string DeleteWarning = "Delete this Unity sign-in account permanently?\nPlayer ID: {0}\n\nOnline save recovery may be lost. Steam/STOVE accounts, other service records and local saves are handled separately. Online access stays paused until you resume it.";
+        public const string ResumeWarning = "Resume online play? A deleted account will be replaced with a new Unity sign-in account. Its old identity cannot be restored. Any pending deletion request remains in effect.";
         [SerializeField] private PrivacyMenuBindings bindings;
         private bool _wired, _resumeConfirmation;
         private string _expectedId, _expectedProfile, _statusSource = "";
@@ -28,8 +26,7 @@ namespace MazeParty.Multiplayer
             if (bindings == null || !bindings.HasRequiredReferences) return;
             bindings.OpenButton.onClick.AddListener(Open);
             bindings.CloseButton.onClick.AddListener(Close);
-            bindings.CopyButton.onClick.AddListener(CopySupport);
-            bindings.EmailButton.onClick.AddListener(OpenEmail);
+            bindings.PolicyButton.onClick.AddListener(OpenPolicy);
             bindings.DeleteButton.onClick.AddListener(AskDelete);
             bindings.ResumeButton.onClick.AddListener(AskResume);
             bindings.ConfirmButton.onClick.AddListener(Confirm);
@@ -41,8 +38,7 @@ namespace MazeParty.Multiplayer
             if (!_wired) return;
             bindings.OpenButton.onClick.RemoveListener(Open);
             bindings.CloseButton.onClick.RemoveListener(Close);
-            bindings.CopyButton.onClick.RemoveListener(CopySupport);
-            bindings.EmailButton.onClick.RemoveListener(OpenEmail);
+            bindings.PolicyButton.onClick.RemoveListener(OpenPolicy);
             bindings.DeleteButton.onClick.RemoveListener(AskDelete);
             bindings.ResumeButton.onClick.RemoveListener(AskResume);
             bindings.ConfirmButton.onClick.RemoveListener(Confirm);
@@ -70,9 +66,7 @@ namespace MazeParty.Multiplayer
         private void Refresh()
         {
             var c = OnlineSessionController.Instance;
-            bindings.AccountText.text = c != null && !string.IsNullOrEmpty(c.PrivacyPlayerId)
-                ? GameText.F("Player ID: {0}", c.PrivacyPlayerId) : GameText.T("No authenticated account is available. Contact support if needed.");
-            bindings.CopyButton.interactable = c != null && !string.IsNullOrEmpty(c.PrivacyPlayerId);
+            bindings.PolicyButton.interactable = TryGetPolicyUrl(out _);
             bindings.DeleteButton.interactable = c != null && c.CanDeletePrivacyAccount;
             bindings.ResumeButton.gameObject.SetActive(c != null && c.PrivacyOnlinePaused);
             bindings.ResumeButton.interactable = c != null && c.CanResumePrivacyOnline;
@@ -83,7 +77,10 @@ namespace MazeParty.Multiplayer
             else if (c != null && c.IsInSession) status = "Leave the room before deleting your account.";
             else if (string.IsNullOrEmpty(status) && c != null && c.PrivacyOnlinePaused)
                 status = "Online access is paused after a deletion request. Open Settings > Privacy & Support to continue.";
+            if (string.IsNullOrEmpty(status) && (c == null || string.IsNullOrEmpty(c.PrivacyPlayerId)))
+                status = "No authenticated account is available. Contact support if needed.";
             bindings.StatusText.text = GameText.T(status);
+            bindings.StatusText.gameObject.SetActive(!string.IsNullOrEmpty(status));
             if (bindings.ConfirmRoot.activeSelf)
             {
                 bindings.ConfirmButton.interactable = c != null && c.PrivacyProfile == _expectedProfile &&
@@ -92,19 +89,16 @@ namespace MazeParty.Multiplayer
                 bindings.ConfirmButtonText.text = GameText.T(_resumeConfirmation ? "Use Online Again" : "Delete Permanently");
             }
         }
-        private void CopySupport()
+        private bool TryGetPolicyUrl(out Uri url)
         {
-            var c = OnlineSessionController.Instance;
-            if (c == null || string.IsNullOrEmpty(c.PrivacyPlayerId)) return;
-            GUIUtility.systemCopyBuffer = c.PrivacySupportDetails;
-            _statusSource = "Support details copied. Include them in your email; never send passwords or sign-in tokens.";
+            // Do not open workspace/editor URLs as though they were a published policy.
+            return Uri.TryCreate(bindings.PrivacyPolicyUrl, UriKind.Absolute, out url) &&
+                url.Scheme == Uri.UriSchemeHttps && !string.IsNullOrEmpty(url.Host) &&
+                !url.Host.Equals("app.notion.com", StringComparison.OrdinalIgnoreCase);
         }
-        private void OpenEmail()
+        private void OpenPolicy()
         {
-            var c = OnlineSessionController.Instance;
-            var body = GameText.T("Describe your request and which records you want deleted:") + "\n\n" + (c?.PrivacySupportDetails ?? "MazeParty");
-            Application.OpenURL("mailto:" + SupportEmail + "?subject=" + Uri.EscapeDataString("MazeParty - Privacy / Support") + "&body=" + Uri.EscapeDataString(body));
-            _statusSource = "If no email app opens, copy the support details and email the address shown above.";
+            if (TryGetPolicyUrl(out var url)) Application.OpenURL(url.AbsoluteUri);
         }
         private void AskDelete() { Ask(false); }
         private void AskResume() { Ask(true); }
@@ -141,7 +135,7 @@ namespace MazeParty.Multiplayer
             catch (Exception)
             {
                 // Do not expose service exceptions/tokens or erase credentials after an unknown outcome.
-                if (this != null) _statusSource = "Deletion could not be confirmed. Keep your support details and contact us, or retry if the account is still available.";
+                if (this != null) _statusSource = "Deletion could not be confirmed. Retry if the account is available, or contact us through Privacy Policy & Support.";
             }
             if (this != null && isActiveAndEnabled) Refresh();
         }

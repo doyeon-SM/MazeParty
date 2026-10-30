@@ -31,31 +31,33 @@ namespace MazeParty.Editor
                 rect.anchorMin = new Vector2(.42f, 0); rect.anchorMax = new Vector2(.9f, 1);
                 rect.offsetMin = new Vector2(0, 6); rect.offsetMax = new Vector2(0, -6);
                 var panelRoot = Blocker(root.transform, "Privacy & Support");
-                var panel = Panel(panelRoot.transform, "Privacy Panel", new Vector2(1000, 940));
-                Label(panel, "Title", "Privacy & Support", 32, 22, 46, true);
-                Label(panel, "Scope", PrivacyMenuView.ScopeText, 24, 82, 245, true);
-                Label(panel, "Email", PrivacyMenuView.SupportEmail, 24, 337, 36, false);
-                var account = Label(panel, "Account", "", 22, 385, 140, false);
-                var status = Label(panel, "Status", "", 23, 537, 95, false);
-                var copy = Button(panel, "Copy Support", "Copy Support Details", false); Place(copy.transform, 24, 644, 466, 56);
-                var email = Button(panel, "Email Support", "Email Support", false); Place(email.transform, 510, 644, 466, 56);
-                var delete = Button(panel, "Delete Account", "Delete Unity Account", true); Place(delete.transform, 24, 716, 952, 56);
-                var resume = Button(panel, "Resume Online", "Use Online Again", false); Place(resume.transform, 24, 788, 952, 56);
-                var close = Button(panel, "Close Privacy", "Close", false); Place(close.transform, 24, 860, 952, 56);
+                var panel = Panel(panelRoot.transform, "Privacy Panel", new Vector2(760, 0));
+                var layout = panel.gameObject.AddComponent<VerticalLayoutGroup>();
+                layout.padding = new RectOffset(24, 24, 24, 24); layout.spacing = 12;
+                layout.childControlWidth = layout.childControlHeight = true;
+                layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
+                panel.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                Row(Label(panel, "Title", "Privacy & Support", 30, 0, 44, true).gameObject, 44);
+                var status = Label(panel, "Status", "", 22, 0, 84, false); Row(status.gameObject, 84);
+                status.gameObject.SetActive(false);
+                var policy = Button(panel, "Privacy Policy", "Privacy Policy & Support", false); Row(policy.gameObject, 56);
+                var delete = Button(panel, "Delete Account", "Delete Unity Account", true); Row(delete.gameObject, 56);
+                var resume = Button(panel, "Resume Online", "Use Online Again", false); Row(resume.gameObject, 56);
+                resume.gameObject.SetActive(false);
+                var close = Button(panel, "Close Privacy", "Close", false); Row(close.gameObject, 56);
                 var confirmRoot = Blocker(root.transform, "Privacy Confirmation");
-                var confirmPanel = Panel(confirmRoot.transform, "Confirm Panel", new Vector2(960, 620));
-                var confirmText = Label(confirmPanel, "Message", "", 26, 30, 450, false);
+                var confirmPanel = Panel(confirmRoot.transform, "Confirm Panel", new Vector2(960, 460));
+                var confirmText = Label(confirmPanel, "Message", "", 26, 30, 320, false);
                 var confirm = Button(confirmPanel, "Confirm Privacy", "Delete Permanently", true);
-                Place(confirm.transform, 24, 532, 446, 56);
+                Place(confirm.transform, 24, 380, 446, 56);
                 var cancel = Button(confirmPanel, "Cancel Privacy", "Cancel", false);
-                Place(cancel.transform, 490, 532, 446, 56);
+                Place(cancel.transform, 490, 380, 446, 56);
                 // The action label is dynamic: the view owns translation for delete/resume.
                 var confirmLabel = confirm.GetComponentInChildren<Text>(true);
                 UnityEngine.Object.DestroyImmediate(confirmLabel.GetComponent<LocalizedText>());
                 var so = new SerializedObject(bindings);
                 Bind(so, "openButton", open); Bind(so, "panelRoot", panelRoot);
-                Bind(so, "accountText", account); Bind(so, "statusText", status);
-                Bind(so, "copyButton", copy); Bind(so, "emailButton", email);
+                Bind(so, "statusText", status); Bind(so, "policyButton", policy);
                 Bind(so, "deleteButton", delete); Bind(so, "resumeButton", resume); Bind(so, "closeButton", close);
                 Bind(so, "confirmRoot", confirmRoot); Bind(so, "confirmText", confirmText);
                 Bind(so, "confirmButtonText", confirmLabel); Bind(so, "confirmButton", confirm); Bind(so, "cancelButton", cancel);
@@ -67,6 +69,8 @@ namespace MazeParty.Editor
             }
             finally { PrefabUtility.UnloadPrefabContents(root); }
         }
+        private static void Row(GameObject go, float height)
+        { go.AddComponent<LayoutElement>().preferredHeight = height; }
         private static void Bind(SerializedObject so, string name, UnityEngine.Object value)
         { so.FindProperty(name).objectReferenceValue = value; }
         private static GameObject Rect(Transform parent, string name)
