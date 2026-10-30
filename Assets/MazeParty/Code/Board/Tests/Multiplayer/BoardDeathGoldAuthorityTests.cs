@@ -273,7 +273,7 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void ForestGhost_FirstTurnIntroPreservesResourcesAndWaitsForTopViewBeforeReady()
         {
-            var tiles = PrepareGhostBoard();
+            PrepareGhostBoard();
             Set(_match, "_turn", 1);
             var before = _players.Select(player => (player.Gold, player.KeyCount, player.CurrentHealth)).ToArray();
             Authority(_match, false);
@@ -293,7 +293,6 @@ namespace MazeParty.Multiplayer.Tests
                 }
             }
             Assert.That(intro.Slot, Is.EqualTo(-1));
-            Assert.That(intro.Position, Is.EqualTo((tiles[0].WorldCenter + tiles[6].WorldCenter) * .5f));
             Assert.That((bool)typeof(NetworkMatchState).GetMethod("ApplyForestGhostOnServer", Private)
                 .Invoke(_match, null), Is.False);
             Invoke("AdvanceForestGhostOnServer", 101.25d);

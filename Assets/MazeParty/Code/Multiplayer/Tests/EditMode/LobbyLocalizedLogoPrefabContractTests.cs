@@ -10,10 +10,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string LobbyPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
-        private const string EnglishLogoAssetPath =
-            "Assets/Ignore/AIImage/MazePartyLogo_EN.png";
-        private const string KoreanLogoAssetPath =
-            "Assets/Ignore/AIImage/MazePartyLogo_KO.png";
 
         [SetUp]
         public void SetUp()
@@ -51,8 +47,8 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(video.sendFrameReadyEvents, Is.True);
                     Assert.That(video.GetTargetAudioSource(0).GetComponent<AudioChannelSource>().Channel,
                         Is.EqualTo(AudioChannel.Sfx));
-                    Assert.That(AssetDatabase.GetAssetPath(video.clip),
-                        Does.StartWith("Assets/MazeParty/Media/Lobby/"));
+                    Assert.That(video.clip, Is.Not.Null);
+                    Assert.That(EditorUtility.IsPersistent(video.clip), Is.True);
                 }
                 var localizedLogos =
                     root.GetComponentsInChildren<LocalizedLogo>(true);
@@ -81,8 +77,10 @@ namespace MazeParty.Multiplayer.Tests
                     Is.SameAs(localizedLogo.transform),
                     "Both authored logos must share the selector parent.");
 
-                AssertLogoAsset(englishLogo, EnglishLogoAssetPath);
-                AssertLogoAsset(koreanLogo, KoreanLogoAssetPath);
+                AssertLogoAsset(englishLogo);
+                AssertLogoAsset(koreanLogo);
+                Assert.That(englishLogo.GetComponent<Image>().sprite,
+                    Is.Not.SameAs(koreanLogo.GetComponent<Image>().sprite));
             }
             finally
             {
@@ -111,17 +109,12 @@ namespace MazeParty.Multiplayer.Tests
             Assert.Fail("LocalizedLogo must be authored inside LobbyCanvas.");
         }
 
-        private static void AssertLogoAsset(
-            GameObject logoObject,
-            string expectedAssetPath)
+        private static void AssertLogoAsset(GameObject logoObject)
         {
             var image = logoObject.GetComponent<Image>();
             Assert.That(image, Is.Not.Null, logoObject.name);
             Assert.That(image.sprite, Is.Not.Null, logoObject.name);
-            Assert.That(
-                AssetDatabase.GetAssetPath(image.sprite),
-                Is.EqualTo(expectedAssetPath),
-                logoObject.name);
+            Assert.That(EditorUtility.IsPersistent(image.sprite), Is.True, logoObject.name);
         }
 
     }

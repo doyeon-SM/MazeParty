@@ -88,7 +88,7 @@ namespace MazeParty.Multiplayer.Tests
                 "WrongWay", "Wrong Way Environment",
                 "WrongWayEnvironment.prefab",
                 typeof(NetworkWrongWayState),
-                "Lane 1", "Finish Arch"),
+                "Lane 1"),
             EnvironmentCase(
                 "StableFooting", "Stable Footing Environment",
                 "StableFootingEnvironment.prefab",

@@ -103,52 +103,24 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(PlayerStatRules.ClampHealth(130, 100), Is.EqualTo(100));
         }
 
-        [TestCase(40, 12, 12, 5, 3, 2, 2, 2, 2)]
-        [TestCase(60, 18, 18, 7, 4, 3, 4, 3, 3)]
-        public void LandingLayout_AuthoredMapSizes_RespectSixCategoryWeights(
-            int eligibleTileCount,
-            int goldGain,
-            int goldLoss,
-            int itemReward,
-            int healing20,
-            int healing10,
-            int damage40,
-            int damage20,
-            int specialEvent)
+        [Test]
+        public void LandingLayout_AuthoredMapSizes_RespectSixCategoryWeights()
         {
-            var tiles = new List<BoardTile>();
-            for (var index = 0; index < eligibleTileCount; index++)
+            foreach (var sample in new[]
             {
-                tiles.Add(CreateTile(
-                    new Vector2Int(index, 0),
-                    BoardTileType.Normal));
+                (size: 40, counts: new[] { 12, 12, 5, 3, 2, 2, 2, 2 }),
+                (size: 60, counts: new[] { 18, 18, 7, 4, 3, 4, 3, 3 })
+            })
+            {
+                var tiles = new List<BoardTile>();
+                for (var index = 0; index < sample.size; index++)
+                    tiles.Add(CreateTile(new Vector2Int(index, 0), BoardTileType.Normal));
+                var layout = BoardLandingEffectLayout.Create(tiles, 24680);
+                Assert.That(new[] { layout.GainCount, layout.LossCount, layout.ItemRewardCount,
+                    layout.Healing20Count, layout.Healing10Count, layout.Damage40Count,
+                    layout.Damage20Count, layout.SpecialEventCount }, Is.EqualTo(sample.counts),
+                    "eligible tiles=" + sample.size);
             }
-
-            var layout = BoardLandingEffectLayout.Create(tiles, 24680);
-
-            Assert.That(
-                new[]
-                {
-                    layout.GainCount,
-                    layout.LossCount,
-                    layout.ItemRewardCount,
-                    layout.Healing20Count,
-                    layout.Healing10Count,
-                    layout.Damage40Count,
-                    layout.Damage20Count,
-                    layout.SpecialEventCount
-                },
-                Is.EqualTo(new[]
-                {
-                    goldGain,
-                    goldLoss,
-                    itemReward,
-                    healing20,
-                    healing10,
-                    damage40,
-                    damage20,
-                    specialEvent
-                }));
         }
 
         [Test]
@@ -179,7 +151,7 @@ namespace MazeParty.Gameplay.Tests
             };
             var duration = BoardLandingEffectLayout
                 .GetTotalDurationSeconds(turnEffects);
-            Assert.That(duration, Is.EqualTo(16.5d));
+            Assert.That(duration, Is.EqualTo(19d));
             Assert.That(
                 BoardLandingEffectLayout.GetTotalDurationSeconds(
                     turnEffects.Length,

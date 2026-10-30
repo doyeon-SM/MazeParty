@@ -1,10 +1,10 @@
 # MazeParty 현재 기준·남은 작업
 
-갱신: 2026-10-30 (Asia/Seoul). 최신 사용자 지시가 우선이다. 완료 상세는 Notion·Git에 보존하고 여기에는 현재 계약과 TODO만 둔다.
+갱신: 2026-10-31 (Asia/Seoul). 최신 사용자 지시가 우선이다. 완료 상세는 Notion·Git에 보존하고 여기에는 현재 계약과 TODO만 둔다.
 
 ## 작업 기준·대표 문서
 
-- 실제 Git·Unity 루트: `C:/Unity/MazeParty`. 브랜치 `development`, HEAD `5a3e59d91ef1704ffa3edda6d72d7d8ca6edb4da`(`26.10.30`). 기획 v0.56·런타임 0.0.56 유지. 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`.
+- 실제 Git·Unity 루트: `C:/Unity/MazeParty`. 브랜치 `development`, HEAD `9d9c16d44886b43a9a9dc9790cf42f1751771363`(`26.10.30`). 기획 v0.56 유지·런타임 1.0.0 출시 기준(2026-10-31 사용자 지정). 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`.
 - [기획 홈](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [분야별 상세](https://app.notion.com/p/406c227fda0381b69cb1ce78dcdc1351) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0).
 - [변경 색인 C01~C52](https://app.notion.com/p/406c227fda03811b966ff4186e8bfcdb) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026) · [10/30 회의록](https://app.notion.com/p/408c227fda0381be9f06e697e86a1354). 프리뷰 재촬영 `a96c6db`·NPC `5a3e59d`의 원문·실제 변경·검증을 기존 10/30 회의록에 추가하고 C51·C52를 반영했다.
 - `AGENTS.md`의 Canvas 프리팹·직렬화 바인딩·기존 디자인 보존·핵심 테스트 기준을 따른다. 전체 EditMode와 Notion 쓰기는 별도 명시 요청 때만 진행한다. 회의록은 날짜당 하나에 누적한다. 실행·배포는 `README.md`·`Docs/STOVE_SETUP.md`·`STOVE_LAUNCHER_TEST.md`·`STEAM_SETUP.md`를 따른다.
@@ -37,8 +37,10 @@
 
 ## 남은 작업·검증 한계
 
+- **1.0.0 출시 기준·테스트 최신화(2026-10-31):** Windows x64·IL2CPP, Development/디버깅/프로파일러 연결 OFF, Frame Timing OFF, Windows/STOVE/Steam Engine Diagnostics Disabled 유지. 사용자는 이전 13건을 최신화 문제로 판단해 테스트 정리를 요청했다. 테스트 11개 파일의 시각 세부값/고정 경로/중복 검사를 정리하고 최신 권한·시간 경계·실제 참조 계약으로 갱신했다. 4개 항목 통합으로 853→849개, 소스 491줄 감소. 표적 50개 성공, **전체 EditMode 849/849 통과·실패 0·건너뜀 0**. 결과창 출처/바인딩은 중앙 UI 계약으로 통합, 선택 타이머의 바인딩된 활성 상태만 런타임 출력으로 인정. 런타임·씬·프리팹·VFX 에셋 변경 없음. 기존 SphereVfx.mesh import 로그는 에셋 수정 없이 보존(사용자 게임 동작 정상 판단). 새 실행 파일/원격 4인/배포/커밋 검증은 별도다. 근거: 보조 폴더 `output/test-modernization-2026-10-31/REPORT.md`, `full-editmode-results.json`.
+
 1. 날기: 빌드 로그의 Particle Velocity 오류 516회 원인인 공용 폭발 연기 축 모드 불일치를 수정했다. 본인 사망 폭발만 표시·타인/관전 숨김(기존 사망음 유지). 28/28 표적·슬롯별 실제 재생·로컬 프레임 검증 완료. 사용자가 느낀 약 12FPS 현상의 전체 해소는 새 빌드/호스트·참가자 재확인 필요; 원본 로그에는 프레임 계측이 없어 인과를 단정하지 않는다.
-2. 음원 setup/테스트의 Resources 대 0.Resources 경로 대조는 별도 잔여 작업이다. 폰트 경로 문제는 복구·표적 검증 완료(아래 근거).
+2. 음원 테스트는 고정 경로 대신 실제 clip 참조/등록/채널 계약으로 최신화하여 전체 통과. setup의 Resources 대 0.Resources 경로 대조는 별도 잔여 작업이다. 폰트 경로 문제는 복구·표적 검증 완료(아래 근거).
 3. 최신 Player·별도 PC 4인 STOVE·10/15/20턴·고지연/장시간 검증. [3차 QA](https://app.notion.com/p/404c227fda0381dc901aecb9586491b3) 24건 중 22건 구현; 수류탄 직후 강퇴 QA-1025-01·언어 변경 후 참가 실패 QA-1025-03 원인 미확정.
 4. 아이템 동시 사용/사망/종료/차폐/5턴 만료, 마법미로 3·5턴 중첩·마지막 턴, 유령 환경 사망·중복 정산, 원 호스트/계정 복귀·슬롯 재배치·재접속/재시작을 실계정으로 확인. 로비·프리뷰·시상식 통계/300초 복귀·최신 TagChase/미로 동선도 포함한다.
 5. 새 카메라/HUD/VFX/미니맵 시각 피드백, 외부 조명·연속 폭격 부하·사운드 청음·비추적 에셋 참조·깨끗한 Windows 재배포. 최소 720p/Low/30FPS·권장 1080p/High/60FPS는 검증 목표; CPU/GPU·최종 용량·진단 통신 효과는 미확정. 강제 Solo 씬 교체 정리 예외도 남아 있다.
@@ -55,7 +57,7 @@
 
 ## 검증 근거·문서 동기화
 
-모든 경로는 보조 폴더 `C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output` 기준이다. 결과는 각 구현 당시 표적·로컬 검증이며 최신 전체 EditMode·새 Player·원격 실계정 4인 통과가 아니다.
+모든 경로는 보조 폴더 `C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output` 기준이다. 아래 과거 결과는 각 구현 당시 표적·로컬 검증이다. 최신 전체 EditMode는 위 2026-10-31의 849/849 통과이며 새 Player·원격 실계정 4인 통과를 뜻하지 않는다.
 
 - `minigame-previews-2026-10-30/REPORT.md`: 20종/12,000프레임 디코딩 오류 0, 준비 UI 20/20·반복/이탈 정지·UI 계약 1/1. `sequence-memory-npc-2026-10-30/REPORT.md`: 실제 문제음 3자세·정면/모자·연습 연결/복귀·씬 계약 1/1, 후속 영상 600프레임 오류 0·컴파일 오류 0.
 - `hud-spectator-2026-10-30/REPORT.md`: 6/6, 관전 전환/대상 없음/차단·5언어 서수·눈치게임 4:3~32:9 지면 확인. `vfx-connections-2026-10-30/REPORT.md`: 표적 24/24·확장 21/21, 실제 반복 재생/수명·21씬 연결·8종 재사용 검증.

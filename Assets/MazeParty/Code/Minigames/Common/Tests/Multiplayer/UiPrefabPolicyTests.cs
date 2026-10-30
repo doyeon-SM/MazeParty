@@ -265,6 +265,7 @@ namespace MazeParty.Multiplayer.Tests
                     requiredReferences.GetValue(binding),
                     Is.EqualTo(true),
                     path + " has an incomplete serialized binding contract.");
+                if (binding is MinigameResultCanvasBindings result) AssertResultCanvas(result);
                 if (binding is OddOneOutHudBindings oddHud) AssertOddOneOutSelectionTimer(oddHud);
                 if (binding is OnlineLobbyView lobby)
                 {
@@ -279,16 +280,36 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(hud.HasGhostPassReferences, Is.True);
             var data = new SerializedObject(hud);
             var outlines = data.FindProperty("ghostPassOutlines");
-            var sliders = data.FindProperty("references.PlayerHealthSliders");
+            var cards = data.FindProperty("references.PlayerCards");
             Assert.That(outlines.arraySize, Is.EqualTo(MultiplayerConstants.MaxPlayers));
             for (var slot = 0; slot < outlines.arraySize; slot++)
             {
                 var outline = (Outline)outlines.GetArrayElementAtIndex(slot).objectReferenceValue;
-                var slider = (Slider)sliders.GetArrayElementAtIndex(slot).objectReferenceValue;
+                var card = (Image)cards.GetArrayElementAtIndex(slot).objectReferenceValue;
                 Assert.That(outline, Is.Not.Null);
-                Assert.That(outline.gameObject, Is.SameAs(slider.gameObject));
+                Assert.That(card, Is.Not.Null);
+                Assert.That(outline.gameObject, Is.SameAs(card.gameObject),
+                    "Ghost-pass feedback must enclose the complete player card.");
+                Assert.That(hud.PlayerHealthSliders[slot].transform.IsChildOf(card.transform), Is.True);
                 if (sceneInstance) Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(outline), Is.Not.Null);
             }
+        }
+
+        private static void AssertResultCanvas(MinigameResultCanvasBindings result)
+        {
+            var board = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
+            Assert.That(board, Is.Not.Null);
+            var boardBindings = board.GetComponent<BoardCanvasBindings>();
+            Assert.That(boardBindings, Is.Not.Null);
+            Assert.That(result.RootCanvas, Is.SameAs(result.GetComponent<Canvas>()));
+            Assert.That(result.RootCanvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
+            Assert.That(result.GetComponentsInChildren<Canvas>(true), Has.Length.EqualTo(1));
+            Assert.That(result.GetComponent<CanvasScaler>(), Is.Not.Null);
+            Assert.That(result.ResultPanel.activeSelf, Is.False);
+            Assert.That(result.ResultSummary.supportRichText, Is.True);
+            Assert.That(result.RootCanvas.sortingOrder, Is.GreaterThan(boardBindings.RootCanvas.sortingOrder));
+            Assert.That(board.GetComponentsInChildren<MinigameResultCanvasBindings>(true), Is.Empty);
         }
 
         private static void AssertOddOneOutSelectionTimer(OddOneOutHudBindings hud)
@@ -303,8 +324,6 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bar.minValue, Is.Zero); Assert.That(bar.maxValue, Is.EqualTo(1f));
             Assert.That(bar.interactable, Is.False);
             Assert.That(bar.handleRect, Is.Null);
-            Assert.That(bar.GetComponent<Image>().color, Is.EqualTo(new Color(.35f, .35f, .38f, 1f)));
-            Assert.That(bar.fillRect.GetComponent<Image>().color, Is.EqualTo(new Color(.93f, .18f, .2f, 1f)));
             Assert.That(timer.GetComponentsInChildren<Graphic>(true).All(graphic => !graphic.raycastTarget), Is.True);
         }
 
@@ -374,7 +393,7 @@ namespace MazeParty.Multiplayer.Tests
             {
                 Assert.That(hat.Prefab, Is.Not.Null);
                 Assert.That(hat.Preview, Is.Not.Null, hat.Name);
-                Assert.That(AssetDatabase.GetAssetPath(hat.Preview), Does.StartWith("Assets/MazeParty/Art/Player/HatPreviews/"));
+                Assert.That(EditorUtility.IsPersistent(hat.Preview), Is.True);
             }
             Assert.That(catalog.Gestures.Length, Is.EqualTo(MazeParty.Gameplay.HandEmoteRules.GestureCount));
             foreach (var gesture in catalog.Gestures)
@@ -600,6 +619,29 @@ namespace MazeParty.Multiplayer.Tests
                     Check(handle.GetComponent<Image>(), "m_Color.r", false);
                 }
 
+                var oddRoot = (GameObject)PrefabUtility.InstantiatePrefab(
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab"), scene);
+                var oddHud = oddRoot.GetComponent<OddOneOutHudBindings>();
+                var oddData = new SerializedObject(oddHud);
+                var timer = (GameObject)oddData.FindProperty("selectionTimerRoot").objectReferenceValue;
+                var sourceTimer = PrefabUtility.GetCorrespondingObjectFromSource(timer);
+                foreach (var choosing in new[] { false, true })
+                {
+                    oddHud.SetSelectionTime(choosing
+                        ? MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Choosing
+                        : MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Complete, 2d);
+                    Assert.That(timer.activeSelf, Is.EqualTo(choosing));
+                    Assert.That(IsAllowedSceneOverride(oddRoot, new PropertyModification {
+                        target = sourceTimer, propertyPath = "m_IsActive", value = choosing ? "1" : "0" }), Is.True);
+                }
+                Assert.That(IsAllowedSceneOverride(oddRoot, new PropertyModification {
+                    target = sourceTimer, propertyPath = "m_Name", value = "Changed" }), Is.False);
+                var action = (GameObject)oddData.FindProperty("actionRoot").objectReferenceValue;
+                Assert.That(IsAllowedSceneOverride(oddRoot, new PropertyModification {
+                    target = PrefabUtility.GetCorrespondingObjectFromSource(action),
+                    propertyPath = "m_IsActive", value = "0" }), Is.False);
+
                 bindings.MenuRoot.SetActive(false);
                 slider.enabled = false;
                 Check(handle, "m_AnchorMax.x", false);
@@ -750,6 +792,19 @@ namespace MazeParty.Multiplayer.Tests
                         Assert.That(scroll.vertical && !scroll.horizontal, Is.True);
                         Assert.That(scroll.verticalScrollbar, Is.Null);
                         Assert.That(scroll.horizontalScrollbar, Is.Null);
+                    }
+
+                    if (contract.Path == "Assets/MazeParty/Scenes/Board/Board.unity")
+                    {
+                        var roots = scene.GetRootGameObjects();
+                        var results = roots.SelectMany(root =>
+                            root.GetComponentsInChildren<MinigameResultCanvasBindings>(true)).ToArray();
+                        Assert.That(results, Has.Length.EqualTo(1));
+                        Assert.That(results[0].HasRequiredReferences, Is.True);
+                        Assert.That(results[0].ResultPanel.activeSelf, Is.False);
+                        var presenters = roots.SelectMany(root => root.GetComponentsInChildren<BoardFlowView>(true)).ToArray();
+                        Assert.That(presenters, Has.Length.EqualTo(1));
+                        Assert.That(presenters[0].ResultUiBindings, Is.SameAs(results[0]));
                     }
 
                     var hitFlashPath = contract.Path switch
@@ -1048,6 +1103,14 @@ namespace MazeParty.Multiplayer.Tests
                        PrefabUtility
                            .GetPrefabAssetPathOfNearestInstanceRoot(
                                instanceRoot) == LobbyCanvasPrefabPath;
+            }
+
+            if (modification.propertyPath == "m_IsActive" &&
+                modification.target is GameObject &&
+                sourceRoot.TryGetComponent<OddOneOutHudBindings>(out var oddHud))
+            {
+                var timer = new SerializedObject(oddHud).FindProperty("selectionTimerRoot").objectReferenceValue;
+                if (timer != null && modification.target == timer) return true;
             }
 
             if (modification.target == sourceRoot.transform)
