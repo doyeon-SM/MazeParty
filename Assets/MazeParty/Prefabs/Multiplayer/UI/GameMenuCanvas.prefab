@@ -1056,7 +1056,7 @@ MonoBehaviour:
   deleteButton: {fileID: 7029133092604002046}
   resumeButton: {fileID: 5606587044660972839}
   closeButton: {fileID: 1417913820396760252}
-  privacyPolicyUrl:
+  privacyPolicyUrl: https://easy-church-7b9.notion.site/MazeParty-409c227fda0381b8994bedb4db0e6321
   confirmRoot: {fileID: 6630577020339303742}
   confirmText: {fileID: 2550185574876448085}
   confirmButtonText: {fileID: 4282143829964552338}
